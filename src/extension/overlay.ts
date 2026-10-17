@@ -18,8 +18,9 @@ import type { Candidate, CartAnalysis, ResolveResponse, Sourced } from '../share
 const HOST_ID = 'buycan-overlay-host';
 
 const STYLES = `
-  :host { all: initial; }
-  * { box-sizing: border-box; }
+  /* The host carries its own inline reset; resetting it again here would
+     clobber the fixed positioning. Only normalize what is inside. */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
   .panel {
     font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     width: 340px; max-width: calc(100vw - 32px);
@@ -110,18 +111,33 @@ function remove(): void {
   document.getElementById(HOST_ID)?.remove();
 }
 
-function mount(expanded: boolean): ShadowRoot {
+function mount(): ShadowRoot {
   remove();
   const host = document.createElement('div');
   host.id = HOST_ID;
-  host.style.cssText =
-    'position:fixed;bottom:20px;right:20px;z-index:2147483647;all:initial';
+
+  // ORDER MATTERS. `all:initial` is a shorthand for every property, so it has
+  // to come FIRST - putting it last silently resets the positioning declared
+  // before it, leaving the host static and inline at the foot of <body>,
+  // where it renders but is never seen.
+  host.style.cssText = [
+    'all: initial',
+    'position: fixed',
+    'bottom: 20px',
+    'right: 20px',
+    'z-index: 2147483647',
+    'display: block',
+    'width: auto',
+    'height: auto',
+    'margin: 0',
+    'padding: 0',
+  ].join(';');
+
   const shadow = host.attachShadow({ mode: 'open' });
   const style = document.createElement('style');
   style.textContent = STYLES;
   shadow.append(style);
-  document.body.append(host);
-  void expanded;
+  (document.body ?? document.documentElement).append(host);
   return shadow;
 }
 
@@ -198,7 +214,7 @@ export function renderProduct(result: ResolveResponse, expanded: boolean): void 
     return;
   }
 
-  const shadow = mount(expanded);
+  const shadow = mount();
   const originalPrice = result.product.price?.amount ?? null;
   const count = result.candidates.length;
 
@@ -240,7 +256,7 @@ export function renderSearch(result: ResolveResponse, query: string): void {
     return;
   }
 
-  const shadow = mount(true);
+  const shadow = mount();
   const count = result.candidates.length;
 
   const container = document.createElement('div');
@@ -274,7 +290,7 @@ export function renderCart(analysis: CartAnalysis): void {
     return;
   }
 
-  const shadow = mount(true);
+  const shadow = mount();
   const money = (n: number) => `$${n.toFixed(2)}`;
 
   const swaps = analysis.lines

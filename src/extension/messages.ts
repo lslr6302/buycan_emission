@@ -8,6 +8,7 @@ export type Message =
   | { type: 'search'; site: string; query: string }
   | { type: 'analyzeCart'; site: string; lines: CartLine[] }
   | { type: 'getTabState' }
+  | { type: 'resetSite'; site: string }
   | { type: 'getSettings' }
   | { type: 'setSettings'; settings: Partial<Settings> };
 
@@ -40,6 +41,11 @@ export interface PageReport {
   cartLines: number | null;
   /** What the user typed, on a search-results page. */
   searchQuery: string | null;
+  /**
+   * Whether the overlay actually reached the screen. "It did not pop up" has
+   * several causes that look identical from the outside; this separates them.
+   */
+  overlay: 'shown' | 'suppressed_dismissed' | 'suppressed_abstained' | 'not_attempted';
   /** Set when the lookup itself failed, e.g. the API is not running. */
   error: string | null;
 }

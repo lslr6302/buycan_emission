@@ -73,6 +73,7 @@ function renderDiagnostics(): void {
   if (report.priceCad !== null) rows.push(['Price', `$${report.priceCad.toFixed(2)}`]);
   if (report.cartLines !== null) rows.push(['Cart lines', String(report.cartLines)]);
   if (report.searchQuery) rows.push(['Search', report.searchQuery.slice(0, 50)]);
+  rows.push(['Overlay', OVERLAY_LABEL[report.overlay] ?? report.overlay]);
 
   const table = `<table class="diag">${rows
     .map(([k, v]) => `<tr><td>${k}</td><td>${escapeHtml(v)}</td></tr>`)
@@ -80,6 +81,13 @@ function renderDiagnostics(): void {
 
   host.innerHTML = table + explain(report);
 }
+
+const OVERLAY_LABEL: Record<string, string> = {
+  shown: 'shown on the page',
+  suppressed_dismissed: 'hidden — dismissed on this site',
+  suppressed_abstained: 'hidden — nothing to show',
+  not_attempted: 'not reached',
+};
 
 /** Turn the raw report into the one sentence that says what to do next. */
 function explain(report: PageReport): string {
@@ -92,6 +100,10 @@ function explain(report: PageReport): string {
         ? '<div class="muted" style="margin-top:4px">Start it with <code>npm run server</code>, or point the API endpoint below at a deployed one.</div>'
         : ''
     }</div>`;
+  }
+
+  if (report.overlay === 'suppressed_dismissed') {
+    return '<div class="muted" style="margin-top:8px">You dismissed the overlay on this site, so it stays hidden. Use the reset button below to bring it back.</div>';
   }
 
   if (report.pageKind === 'none') {
@@ -210,6 +222,13 @@ function bindSettings(): void {
   verifiedOnly.checked = settings.verifiedOnly;
   verifiedOnly.addEventListener('change', () => {
     void send({ type: 'setSettings', settings: { verifiedOnly: verifiedOnly.checked } });
+  });
+
+  const reset = $<HTMLButtonElement>('reset');
+  reset.addEventListener('click', () => {
+    void send({ type: 'resetSite', site: tabState?.site ?? '' }).then(() => {
+      reset.textContent = 'Cleared — reload the page';
+    });
   });
 
   const demoMode = $<HTMLInputElement>('demo-mode');

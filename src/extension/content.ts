@@ -45,6 +45,7 @@ function report(patch: Partial<PageReport>): void {
     priceCad: null,
     cartLines: null,
     searchQuery: null,
+    overlay: 'not_attempted',
     error: null,
   };
   void send({ type: 'report', report: { ...base, ...patch } }).catch(() => undefined);
@@ -90,11 +91,28 @@ async function runProduct(): Promise<void> {
     return;
   }
 
-  if (await isDismissed()) return;
+  const base = {
+    pageKind: 'product' as const,
+    tier: product.extraction.tier,
+    title: product.title,
+    brand: product.brand,
+    gtin: product.gtin,
+    priceCad: product.price?.amount ?? null,
+  };
+
+  if (response.data.abstained) {
+    report({ ...base, overlay: 'suppressed_abstained' });
+    return;
+  }
+  if (await isDismissed()) {
+    report({ ...base, overlay: 'suppressed_dismissed' });
+    return;
+  }
 
   // Auto-expand only on a strong match. Anything weaker opens collapsed and
   // waits to be asked.
   renderProduct(response.data, isStrongMatch(response.data.candidates[0]));
+  report({ ...base, overlay: 'shown' });
 }
 
 // --- cart pages ------------------------------------------------------------
@@ -150,8 +168,16 @@ async function runSearch(): Promise<void> {
     return;
   }
 
-  if (await isDismissed()) return;
+  if (response.data.abstained || response.data.candidates.length === 0) {
+    report({ pageKind: 'search', searchQuery: query, overlay: 'suppressed_abstained' });
+    return;
+  }
+  if (await isDismissed()) {
+    report({ pageKind: 'search', searchQuery: query, overlay: 'suppressed_dismissed' });
+    return;
+  }
   renderSearch(response.data, query);
+  report({ pageKind: 'search', searchQuery: query, tier: 'adapter', overlay: 'shown' });
 }
 
 let cartTimer: ReturnType<typeof setTimeout> | undefined;
@@ -181,9 +207,13 @@ async function runCart(): Promise<void> {
     });
     return;
   }
-  if (await isDismissed()) return;
+  if (await isDismissed()) {
+    report({ pageKind: 'cart', cartLines: lines.length, overlay: 'suppressed_dismissed' });
+    return;
+  }
 
   renderCart(response.data);
+  report({ pageKind: 'cart', cartLines: lines.length, tier: 'adapter', overlay: 'shown' });
 }
 
 function scheduleCart(): void {

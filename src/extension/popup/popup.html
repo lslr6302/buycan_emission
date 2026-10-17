@@ -42,6 +42,12 @@
       .field { margin-bottom: 9px; }
       .field > span { display: block; font-size: 11px; color: var(--dim); margin-bottom: 3px; }
       footer { padding: 9px 14px; font-size: 10.5px; color: var(--dim); }
+      button#reset {
+        margin-top: 10px; width: 100%; padding: 6px 8px; font: inherit; font-size: 11.5px;
+        border: 1px solid var(--line); border-radius: 5px; cursor: pointer;
+        background: var(--card); color: var(--fg);
+      }
+      button#reset:hover { border-color: var(--dim); }
       table.diag { width: 100%; border-collapse: collapse; font-size: 11.5px; }
       table.diag td { padding: 2px 0; vertical-align: top; }
       table.diag td:first-child { color: var(--dim); width: 86px; }
@@ -109,6 +115,7 @@
       </div>
       <label class="check"><input type="checkbox" id="verified-only" /> Verified dataset only (no AI search)</label>
       <label class="check"><input type="checkbox" id="demo-mode" /> Demo mode (use saved cart fixture)</label>
+      <button id="reset" type="button">Reset dismissals &amp; clear cache</button>
     </section>
 
     <footer>

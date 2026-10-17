@@ -18,6 +18,13 @@ import {
  * changes and the popup explains why.
  */
 
+/**
+ * Bump when the response shape or the dataset changes. Without this, a stale
+ * abstention cached before a data fix keeps being served for a day, and the
+ * fix looks like it did not work.
+ */
+const CACHE_VERSION = 'v2';
+
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const MAX_CACHE_ENTRIES = 500;
 
@@ -91,7 +98,7 @@ async function resolve(product: ProductRef): Promise<ResolveResponse> {
   const settings = await getSettings();
   const key = productKey(product);
 
-  const cached = await cacheGet(key);
+  const cached = await cacheGet(`${CACHE_VERSION}:${key}`);
   if (cached) return cached;
 
   const data = await post<ResolveResponse>(
@@ -104,7 +111,7 @@ async function resolve(product: ProductRef): Promise<ResolveResponse> {
     },
     settings,
   );
-  await cachePut(key, data);
+  await cachePut(`${CACHE_VERSION}:${key}`, data);
   return data;
 }
 
@@ -233,6 +240,16 @@ chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) =>
           const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
           const state = tab?.id !== undefined ? (tabStates.get(tab.id) ?? null) : null;
           sendResponse({ ok: true, kind: 'tabState', data: state } satisfies Response);
+          break;
+        }
+        case 'resetSite': {
+          // Clears a sticky dismissal and the response cache together. Both
+          // produce the same symptom - "it stopped appearing" - so they get
+          // one button rather than two.
+          const stored = await chrome.storage.local.get(null);
+          const keys = Object.keys(stored).filter((k) => k.startsWith('dismissed:'));
+          await chrome.storage.local.remove([...keys, 'cache']);
+          sendResponse({ ok: true, kind: 'tabState', data: null } satisfies Response);
           break;
         }
         case 'getSettings': {
