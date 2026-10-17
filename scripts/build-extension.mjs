@@ -69,6 +69,9 @@ const options = {
   format: 'iife',
   platform: 'browser',
   target: ['chrome114'],
+  // Cold-starts the response cache on every build, so a server-side fix is
+  // never masked by a cached answer from before it.
+  define: { __BUILD_ID__: JSON.stringify(`b${Date.now().toString(36)}`) },
   sourcemap: watch ? 'inline' : false,
   minify: !watch,
   logLevel: 'info',

@@ -79,6 +79,12 @@ export interface BrandRecord {
   mfgOrigin: Sourced<string>;
   cfiaClass: CfiaClass | null;
   lastReviewed: string;
+  /**
+   * Whether a brand with no identified parent but a Canadian HQ may be read as
+   * Canadian-owned. Defaults to true; a dataset that tracks ownership
+   * explicitly sets false so "unconfirmed" stays unknown.
+   */
+  inferOwnershipFromHq?: boolean;
 }
 
 /**
@@ -145,6 +151,12 @@ export interface Candidate {
   components: ScoreComponents;
   /** Recomputed client-side whenever the weight sliders move. */
   score: number;
+  /**
+   * Whether `url` reaches an actual product or only the brand's homepage.
+   * Shown in the UI: dropping someone on a homepage is a worse experience
+   * and should look like one, not be passed off as a product link.
+   */
+  linkKind: 'product' | 'brand';
   /** Mandatory for AI-origin candidates. */
   sourceUrl: string | null;
   /** Human-readable reason this was surfaced, shown under the card. */
@@ -160,6 +172,11 @@ export interface ResolveRequest {
   weights?: Weights;
   /** Skip the AI fallback. Used by the eval harness for reproducible runs. */
   verifiedOnly?: boolean;
+  /**
+   * The "product" was synthesised from a search box, so its title is a query
+   * and not a listing. Brand recovery must not run on it.
+   */
+  fromSearch?: boolean;
   destinationRegion?: string | null;
 }
 
@@ -169,11 +186,25 @@ export type AbstentionReason =
   | 'insufficient_product_data'
   | 'all_candidates_failed_validation';
 
+/**
+ * What the product in front of the user already is. Drives whether we offer
+ * alternatives at all - there is no point suggesting a Canadian option for
+ * something that is already Canadian-owned.
+ *
+ * `mixed` is deliberately its own state rather than being folded into
+ * `canadian`. A Canadian-founded brand with a foreign parent still sends the
+ * money abroad, so it gets the nuance AND the alternatives.
+ */
+export type OwnStatus = 'canadian' | 'mixed' | 'foreign' | 'unknown';
+
 export interface ResolveResponse {
   key: string;
   product: ProductRef;
   spec: ProductSpec | null;
   provenance: ProvenanceVerdict;
+  ownStatus: OwnStatus;
+  /** True when ownStatus is 'canadian'. No alternatives are retrieved. */
+  alreadyCanadian: boolean;
   candidates: Candidate[];
   /** True when we have nothing to offer. The overlay stays hidden. */
   abstained: boolean;
@@ -189,6 +220,8 @@ export interface ResolveDiagnostics {
   verifiedCandidates: number;
   aiCandidates: number;
   aiCandidatesRejected: number;
+  /** Earlier AI discoveries reused from the AI store instead of asking the model. */
+  aiStoreHits: number;
   rejections: GateRejection[];
   elapsedMs: number;
   dataSource: string;

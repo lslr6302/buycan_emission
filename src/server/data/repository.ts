@@ -55,6 +55,8 @@ export interface AlternativeQuery {
   hard: Record<string, string | number | boolean>;
   /** Free-text fallback when there is no usable category. */
   text: string;
+  /** Raw brand off the page. Brand-level datasets look alternatives up by it. */
+  brand?: string | null;
   /** Precomputed query embedding, when the caller has one. */
   embedding?: number[] | null;
   limit: number;

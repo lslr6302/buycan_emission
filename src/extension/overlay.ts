@@ -1,3 +1,4 @@
+import { normalizeSite } from '../shared/normalize';
 import type { Candidate, CartAnalysis, ResolveResponse, Sourced } from '../shared/types';
 
 /**
@@ -86,6 +87,16 @@ const STYLES = `
     border-top: 1px solid #e4e4e7; background: #fafafa;
   }
   .cart-line { display: flex; justify-content: space-between; gap: 8px; font-size: 11.5px; padding: 3px 0; }
+  /* Already-Canadian confirmation. A quiet green edge, not a celebration
+     banner - the point is reassurance, not a reward for shopping. */
+  .panel.success { border-color: #86efac; }
+  .panel.success .head { background: #f0fdf4; }
+  .panel.success .title { color: #15803d; }
+  @media (prefers-color-scheme: dark) {
+    .panel.success { border-color: #166534; }
+    .panel.success .head { background: #0f2a18; }
+    .panel.success .title { color: #86efac; }
+  }
 `;
 
 function escapeHtml(value: string): string {
@@ -94,17 +105,25 @@ function escapeHtml(value: string): string {
   );
 }
 
-function dismissKey(): string {
-  return `dismissed:${location.hostname}`;
+/**
+ * Dismissal is per page view, held in memory, and nowhere else.
+ *
+ * It used to persist for seven days per site, which was far too blunt:
+ * closing the panel once on one product silenced the extension across the
+ * whole retailer, and the only way back was a settings button nobody would
+ * think to look for. "Not now" means this page, now. Navigate to another
+ * product, come back, or reload, and it reappears.
+ */
+let pageKey = '';
+let dismissedFor: string | null = null;
+
+/** Called before each render with an identifier for the current page. */
+export function setPageKey(key: string): void {
+  pageKey = key;
 }
 
-export async function isDismissed(): Promise<boolean> {
-  try {
-    const stored = await chrome.storage.local.get(dismissKey());
-    return Boolean(stored[dismissKey()]);
-  } catch {
-    return false;
-  }
+export function isDismissed(): boolean {
+  return dismissedFor !== null && dismissedFor === pageKey;
 }
 
 function remove(): void {
@@ -127,18 +146,91 @@ function mount(): ShadowRoot {
     'right: 20px',
     'z-index: 2147483647',
     'display: block',
-    'width: auto',
+    // Explicit, not shrink-to-fit. `all: initial` leaves width:auto, and a
+    // fixed-position host sized only by its shadow content measured 0x0 in
+    // practice - present in the DOM, correctly positioned, and invisible.
+    // Sizing the host directly removes the dependency entirely.
+    'width: 340px',
+    'max-width: calc(100vw - 32px)',
     'height: auto',
     'margin: 0',
     'padding: 0',
   ].join(';');
 
   const shadow = host.attachShadow({ mode: 'open' });
-  const style = document.createElement('style');
-  style.textContent = STYLES;
-  shadow.append(style);
-  (document.body ?? document.documentElement).append(host);
+
+  // Prefer a constructed stylesheet. A dynamically inserted <style> can be
+  // refused on sites with a strict style-src CSP, and when that happens the
+  // panel is in the DOM but completely unstyled - which looks exactly like
+  // "nothing appeared".
+  let styled = false;
+  try {
+    const sheet = new CSSStyleSheet();
+    sheet.replaceSync(STYLES);
+    shadow.adoptedStyleSheets = [sheet];
+    styled = true;
+  } catch {
+    /* fall through */
+  }
+  if (!styled) {
+    const style = document.createElement('style');
+    style.textContent = STYLES;
+    shadow.append(style);
+  }
+
+  const parent = document.body ?? document.documentElement;
+  parent.append(host);
+
+  // Deferred: the caller appends the panel to this shadow root *after*
+  // mount() returns, so checking synchronously here measures an empty
+  // shadow and reports "zero size - stylesheet did not apply" on a panel
+  // that is about to render perfectly.
+  setTimeout(() => verifyMounted(host, styled), 0);
   return shadow;
+}
+
+/**
+ * Confirms the host actually landed and kept its positioning. Silent failure
+ * here is the worst outcome: everything reports success while the user sees
+ * nothing, which is precisely the bug this is here to catch.
+ */
+function verifyMounted(host: HTMLElement, usedAdoptedSheet: boolean): void {
+  try {
+    if (!host.isConnected) {
+      console.warn('[buycan] overlay host was not attached to the document');
+      return;
+    }
+    const computed = getComputedStyle(host);
+    if (computed.position !== 'fixed') {
+      console.warn(
+        `[buycan] overlay host is position:${computed.position}, expected fixed. ` +
+          'The page or its CSP is overriding our inline style; the panel will be invisible.',
+      );
+      return;
+    }
+    const rect = host.getBoundingClientRect();
+    const panel = host.shadowRoot?.querySelector('.panel');
+    const panelRect = panel?.getBoundingClientRect();
+
+    if (rect.width === 0 || rect.height === 0) {
+      console.warn(
+        '[buycan] overlay host measured 0x0.' +
+          (panel
+            ? ` Panel is present and ${Math.round(panelRect?.width ?? 0)}x${Math.round(
+                panelRect?.height ?? 0,
+              )} - the host box is the problem, not the stylesheet.`
+            : ' No .panel in the shadow root - content was never appended.'),
+      );
+      return;
+    }
+    console.info(
+      `[buycan] overlay mounted (${Math.round(rect.width)}x${Math.round(rect.height)} at ` +
+        `${Math.round(rect.left)},${Math.round(rect.top)}; styles via ` +
+        `${usedAdoptedSheet ? 'adoptedStyleSheets' : '<style>'})`,
+    );
+  } catch (error) {
+    console.warn('[buycan] overlay self-check failed', error);
+  }
 }
 
 function wire(shadow: ShadowRoot): void {
@@ -149,7 +241,8 @@ function wire(shadow: ShadowRoot): void {
   });
   shadow.querySelector('.x')?.addEventListener('click', (event) => {
     event.stopPropagation();
-    void chrome.storage.local.set({ [dismissKey()]: true });
+    dismissedFor = pageKey;
+    console.info('[buycan] hidden for this page; it returns on the next product or reload');
     remove();
   });
 }
@@ -190,6 +283,13 @@ function candidateCard(candidate: Candidate, originalPrice: number | null): stri
     ? `<span class="dim"> · price checked ${escapeHtml(candidate.priceChecked)}</span>`
     : '<span class="dim"> · price unverified</span>';
 
+  // Say plainly when the link only reaches a homepage. Implying it is a
+  // product page is the small dishonesty that costs trust in the rest.
+  const linkNote =
+    candidate.linkKind === 'brand'
+      ? '<span class="dim"> · brand site, find the product there</span>'
+      : '';
+
   const source = candidate.sourceUrl
     ? ` · <a href="${escapeHtml(candidate.sourceUrl)}" target="_blank" rel="noopener">source</a>`
     : '';
@@ -202,11 +302,66 @@ function candidateCard(candidate: Candidate, originalPrice: number | null): stri
       <div class="price">${price}${delta}</div>
     </div>
     <div class="why">${tag}${escapeHtml(candidate.rationale)}</div>
-    <div class="why dim">${escapeHtml(candidate.retailer)}${checked}${source}</div>
+    <div class="why dim">${escapeHtml(candidate.retailer)}${checked}${linkNote}${source}</div>
   </div>`;
 }
 
+/**
+ * The product is already Canadian-owned. Confirm it and get out of the way -
+ * offering "alternatives" here would be noise, and would imply the thing
+ * they are looking at is a problem when it is the answer.
+ *
+ * Manufacturing is still stated plainly. Canadian-owned and made overseas is
+ * a real and common combination, and quietly implying otherwise under a
+ * maple leaf is the overclaiming this project exists to avoid.
+ */
+export function renderAlreadyCanadian(result: ResolveResponse): void {
+  const shadow = mount();
+  const p = result.provenance;
+  const made = p.dimensions.madeInCanada.value;
+
+  const madeNote =
+    made === true
+      ? 'Made in Canada too.'
+      : made === false
+        ? 'Canadian-owned, though not manufactured in Canada.'
+        : 'Manufacturing location unknown.';
+
+  const container = document.createElement('div');
+  container.innerHTML = `
+    <div class="panel open success">
+      <div class="head">
+        <span class="leaf">🍁</span>
+        <div class="head-text">
+          <div class="title">This one is Canadian</div>
+          <div class="sub">${escapeHtml(p.displayName)} · ${escapeHtml(madeNote)}</div>
+        </div>
+        <button class="x" title="Hide for this page">×</button>
+      </div>
+      <div class="body">
+        ${dimensionChips(p)}
+        <div class="why">${escapeHtml(p.summary)}</div>
+        ${
+          p.cfiaClass
+            ? `<div class="why dim">Labelled "${escapeHtml(p.cfiaClass)}" — a specific legal claim, not a slogan.</div>`
+            : ''
+        }
+        <div class="why dim">No alternatives suggested: you are already buying Canadian.</div>
+      </div>
+      <div class="foot">Every claim above links to its source. Hover a tag.</div>
+    </div>`;
+
+  shadow.append(container);
+  wire(shadow);
+}
+
 export function renderProduct(result: ResolveResponse, expanded: boolean): void {
+  // Already Canadian-owned: confirm rather than suggest.
+  if (result.alreadyCanadian) {
+    renderAlreadyCanadian(result);
+    return;
+  }
+
   // Nothing to offer means nothing on screen. The badge and the popup carry
   // the abstention; the page stays untouched.
   if (result.abstained) {
@@ -227,7 +382,7 @@ export function renderProduct(result: ResolveResponse, expanded: boolean): void 
           <div class="title">${count} Canadian alternative${count === 1 ? '' : 's'}</div>
           <div class="sub">${escapeHtml(result.provenance.summary)}</div>
         </div>
-        <button class="x" title="Dismiss on this site">×</button>
+        <button class="x" title="Hide for this page">×</button>
       </div>
       <div class="body">
         <div class="verdict">
@@ -270,7 +425,7 @@ export function renderSearch(result: ResolveResponse, query: string): void {
           )}"</div>
           <div class="sub">Before you pick a brand</div>
         </div>
-        <button class="x" title="Dismiss on this site">×</button>
+        <button class="x" title="Hide for this page">×</button>
       </div>
       <div class="body">
         ${result.candidates.map((c) => candidateCard(c, null)).join('')}
@@ -314,7 +469,7 @@ export function renderCart(analysis: CartAnalysis): void {
           <div class="title">${money(analysis.leavesCanadaCad)} of ${money(analysis.totalCad)} leaves Canada</div>
           <div class="sub">${analysis.swapCount} swap${analysis.swapCount === 1 ? '' : 's'} available</div>
         </div>
-        <button class="x" title="Dismiss on this site">×</button>
+        <button class="x" title="Hide for this page">×</button>
       </div>
       <div class="body">
         <div class="verdict">${escapeHtml(analysis.headline)}</div>

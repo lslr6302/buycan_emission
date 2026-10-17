@@ -8,6 +8,7 @@ import {
 } from '../../shared/scoring';
 import type {
   AbstentionReason,
+  BrandRecord,
   Candidate,
   GateRejection,
   ProductRef,
@@ -18,15 +19,18 @@ import type {
   Weights,
 } from '../../shared/types';
 import type { AiClient } from '../ai/client';
+import type { AiStore, StoredAlternative, StoredAlternativeInput } from '../data/ai-store';
 import type { CatalogueItem, Repository } from '../data/repository';
 import { runGates } from './gates';
-import { qualifiesAsCanadian, verdictFor } from './provenance';
+import { findProductLink, priceCeiling, requiredNouns, searchTermsFor } from './storefront';
+import { ownStatusFor, qualifiesAsCanadian, verdictFor } from './provenance';
 
 /**
  * The runtime pipeline for one product.
  *
  *   spec -> brand -> provenance -> verified retrieval
- *        -> AI fallback (gated) -> retailer fallback -> score -> abstain?
+ *        -> stored AI discoveries -> AI fallback (gated, then stored)
+ *        -> retailer fallback -> score -> abstain?
  *
  * Order matters and is not an accident. The verified dataset always runs
  * first; the AI only sees products the database could not answer for.
@@ -39,6 +43,10 @@ export interface PipelineDeps {
   maxCandidates?: number;
   /** Disable the yes/no veto (it costs one AI call per top candidate). */
   sanityVeto?: boolean;
+  /** Second database: remembered AI discoveries. Omit to never store them. */
+  aiStore?: AiStore;
+  /** Used by the gates to fetch candidate pages. Injected in tests. */
+  fetchImpl?: typeof fetch;
 }
 
 const VERIFIED_POOL = 30;
@@ -62,38 +70,91 @@ export async function resolveProduct(
 
   // 2. Brand linking and the decomposed provenance verdict for what the user
   //    is looking at. This renders even when we have no alternative to offer.
-  const brand = product.brand ? await repo.findBrand(product.brand) : null;
-  const provenance = verdictFor(brand, product.brand);
+  // The brand is the single most valuable field: without it the curated
+  // brand-to-brand match table is unreachable and the verdict degrades to
+  // "unknown". So when the page did not give us one, recover it from the
+  // title, which almost always opens with the brand.
+  const { brand, brandName } = await linkBrand(product, repo, request.fromSearch === true);
+  const provenance = verdictFor(brand, brandName);
+  const ownStatus = ownStatusFor(provenance);
 
-  // 3. Verified path.
-  const verifiedItems = await findVerified(product, spec, repo);
+  // 3. Already Canadian-owned? Then there is nothing to switch to, and
+  //    suggesting a "better" Canadian option would be noise. Stop here and
+  //    let the UI confirm what they are already holding. Skipping retrieval
+  //    also saves a database round trip and any AI call on this path.
+  if (ownStatus === 'canadian') {
+    return {
+      key,
+      product,
+      spec,
+      provenance,
+      ownStatus,
+      alreadyCanadian: true,
+      candidates: [],
+      abstained: false,
+      abstentionReason: null,
+      abstentionMessage: null,
+      diagnostics: {
+        extractionTier: product.extraction.tier,
+        brandLinked: brand !== null,
+        verifiedCandidates: 0,
+        aiCandidates: 0,
+        aiCandidatesRejected: 0,
+        aiStoreHits: 0,
+        rejections: [],
+        elapsedMs: Date.now() - started,
+        dataSource: repo.name,
+        aiSource: ai.name,
+      },
+    };
+  }
+
+  // 4. Verified path.
+  const verifiedItems = await findVerified(product, spec, repo, brandName);
   let candidates = verifiedItems.map((item) =>
     toCandidate(item, product, spec, 'verified', item.gtin && item.gtin === product.gtin ? 'gtin_exact' : 'equivalent', null),
   );
 
-  // 4. AI fallback - only when the database came up empty.
+  // 5. AI fallback - only when the database came up empty. Earlier AI
+  //    discoveries for this product are tried first; the model is only asked
+  //    when there are none. Either way they stay origin 'ai'.
+  const brandKey = normalizeBrand(product.brand) || null;
+  let aiStoreHits = 0;
+  const freshAiIds = new Set<string>();
+
+  if (candidates.length === 0 && !request.verifiedOnly && deps.aiStore) {
+    const stored = await deps.aiStore
+      .find({ productKey: key, brandKey, category: spec?.category ?? null, limit: 4 })
+      .catch((error) => {
+        console.error('[ai-store] find failed:', error instanceof Error ? error.message : error);
+        return [];
+      });
+    aiStoreHits = stored.length;
+    candidates = stored.map((entry) => toCandidateFromStore(entry, product, spec));
+  }
+
   if (candidates.length === 0 && !request.verifiedOnly) {
     const proposed = await ai.searchAlternative({ product, spec, limit: 4 }).catch(() => []);
     aiCandidatesSeen = proposed.length;
 
     for (const proposal of proposed) {
-      const result = await runGates(proposal);
+      const result = await runGates(proposal, { fetchImpl: deps.fetchImpl });
       if (!result.passed) {
         if (result.rejection) rejections.push(result.rejection);
         continue;
       }
-      candidates.push(
-        toCandidateFromAi(proposal, result.verified!, product, spec),
-      );
+      const candidate = toCandidateFromAi(proposal, result.verified!, product, spec);
+      freshAiIds.add(candidate.id);
+      candidates.push(candidate);
     }
   }
 
-  // 5. Provenance filter. A candidate that is not actually Canadian is not an
+  // 6. Provenance filter. A candidate that is not actually Canadian is not an
   //    alternative, however well it matches on attributes.
   candidates = await attachProvenance(candidates, repo);
   candidates = candidates.filter((c) => qualifiesAsCanadian(c.provenance));
 
-  // 6. Rank deterministically, then veto the top few.
+  // 7. Rank deterministically, then veto the top few.
   candidates = rank(candidates, weights);
   if (deps.sanityVeto !== false && candidates.length > 0) {
     candidates = await applySanityVeto(candidates.slice(0, maxCandidates + 2), product, ai, rejections);
@@ -101,7 +162,33 @@ export async function resolveProduct(
   }
   candidates = candidates.slice(0, maxCandidates);
 
-  // 7. Retailer fallback. When there is no Canadian product, the lever moves
+  // Only now, on the handful we will actually show, turn each brand
+  // homepage into a real product link. Doing this before ranking would mean
+  // a network request per candidate across a pool of thirty.
+  candidates = await attachProductLinks(candidates, product, spec);
+
+  // Enforce the ceiling wherever the price came from. A candidate several
+  // times the price of what the shopper is holding is a different purchase,
+  // not a dearer version of the same one.
+  const ceiling = product.price ? priceCeiling(product.price.amount) : null;
+  if (ceiling !== null) {
+    candidates = candidates.filter((c) => c.priceCad === null || c.priceCad <= ceiling);
+  }
+
+  candidates = rank(candidates, weights);
+
+  // Only fresh discoveries that survived every gate, the provenance filter
+  // and the veto are worth remembering.
+  if (deps.aiStore && freshAiIds.size > 0) {
+    const keep = candidates.filter((c) => freshAiIds.has(c.id));
+    await deps.aiStore
+      .save(keep.map((c) => toStoredInput(c, product, key, brandKey, spec, ai.name)))
+      .catch((error) => {
+        console.error('[ai-store] save failed:', error instanceof Error ? error.message : error);
+      });
+  }
+
+  // 8. Retailer fallback. When there is no Canadian product, the lever moves
   //    from what you buy to where you buy it.
   if (candidates.length === 0) {
     const swaps = await retailerFallback(product, repo, weights);
@@ -118,6 +205,8 @@ export async function resolveProduct(
     product,
     spec,
     provenance,
+    ownStatus,
+    alreadyCanadian: false,
     candidates,
     abstained,
     abstentionReason,
@@ -130,6 +219,7 @@ export async function resolveProduct(
       verifiedCandidates: verifiedItems.length,
       aiCandidates: aiCandidatesSeen,
       aiCandidatesRejected: rejections.length,
+      aiStoreHits,
       rejections,
       elapsedMs: Date.now() - started,
       dataSource: repo.name,
@@ -139,6 +229,56 @@ export async function resolveProduct(
 }
 
 // ---------------------------------------------------------------------------
+
+/**
+ * Resolves the page's brand, falling back to leading n-grams of the title.
+ *
+ * Longest first, so "Head & Shoulders" is tried before "Head" - a one-word
+ * fragment is exactly the kind of thing that fuzzy-matches the wrong
+ * company, and a confidently wrong owner is worse than an honest unknown.
+ */
+async function linkBrand(
+  product: ProductRef,
+  repo: Repository,
+  fromSearch: boolean,
+): Promise<{ brand: BrandRecord | null; brandName: string | null }> {
+  if (product.brand) {
+    const found = await repo.findBrand(product.brand);
+    if (found) return { brand: found, brandName: product.brand };
+  }
+
+  // On a search page the "title" is whatever the user typed, so treating it
+  // as a brand is actively harmful: "laundry detergent" fuzzy-matched the
+  // clothing label "Local Laundry", which is Canadian-owned, and the whole
+  // lookup short-circuited to "you are already buying Canadian".
+  if (fromSearch) return { brand: null, brandName: null };
+
+  for (const candidate of brandCandidatesFromTitle(product.title)) {
+    const found = await repo.findBrand(candidate);
+    if (found) return { brand: found, brandName: found.displayName };
+  }
+
+  return { brand: null, brandName: product.brand };
+}
+
+/** Leading 4-, 3- and 2-word prefixes of the title, longest first. */
+export function brandCandidatesFromTitle(title: string): string[] {
+  const words = title
+    .split(/[\s,|–—]+/)
+    .map((w) => w.trim())
+    .filter(Boolean)
+    .slice(0, 4);
+
+  const out: string[] = [];
+  for (let n = words.length; n >= 2; n--) out.push(words.slice(0, n).join(' '));
+
+  // A single leading word only when it is substantial enough to identify a
+  // brand on its own: "Dove", "Tide", "Colgate" - never "The" or "Pro".
+  const first = words[0];
+  if (first && first.length >= 4) out.push(first);
+
+  return out;
+}
 
 async function loadSpec(
   key: string,
@@ -158,6 +298,8 @@ async function findVerified(
   product: ProductRef,
   spec: ProductSpec | null,
   repo: Repository,
+  /** The linked brand, which may have been recovered from the title. */
+  brandName: string | null,
 ): Promise<CatalogueItem[]> {
   // Exact barcode match first. It is the strongest claim the system can make.
   if (product.gtin) {
@@ -169,6 +311,10 @@ async function findVerified(
     category: spec?.category ?? null,
     hard: spec?.hard ?? {},
     text: product.title,
+    // The LINKED brand, not the raw page field. A brand recovered from the
+    // title is the only way into the curated match table on sites that do
+    // not publish one, and passing the raw null here wasted that recovery.
+    brand: brandName ?? product.brand,
     limit: VERIFIED_POOL,
   });
 }
@@ -181,10 +327,16 @@ function toCandidate(
   matchType: Candidate['matchType'],
   sourceUrl: string | null,
 ): Candidate {
-  const equivalence = equivalenceScore(
-    { gtin: product.gtin, title: product.title, spec },
-    { gtin: item.gtin, title: item.title, category: item.category, attrs: item.attrs },
-  );
+  // A repository that reports its own match quality knows better than we do.
+  // Curated "Broad coverage, verified" beats token overlap between a listing
+  // title and a different brand's name, which is near zero by construction.
+  const equivalence =
+    typeof item.similarity === 'number'
+      ? item.similarity
+      : equivalenceScore(
+          { gtin: product.gtin, title: product.title, spec },
+          { gtin: item.gtin, title: item.title, category: item.category, attrs: item.attrs },
+        );
 
   return {
     id: item.id,
@@ -201,6 +353,7 @@ function toCandidate(
     massKg: item.massKg,
     shipsFrom: item.shipsFrom,
     provenance: placeholderProvenance(item.brand),
+    linkKind: 'brand',
     components: {
       equivalence,
       // Provenance is filled in by attachProvenance once the candidate's own
@@ -242,6 +395,7 @@ function toCandidateFromAi(
     massKg: verified.massKg,
     shipsFrom: null,
     provenance: placeholderProvenance(verified.brand ?? proposal.brand),
+    linkKind: 'product',
     components: {
       equivalence,
       canadian: 0.5,
@@ -250,6 +404,75 @@ function toCandidateFromAi(
     score: 0,
     sourceUrl: proposal.sourceUrl,
     rationale: proposal.claim,
+  };
+}
+
+/**
+ * A previous AI discovery. Its facts were re-read from the retailer page when
+ * it was stored; provenance is looked up afresh by attachProvenance.
+ */
+function toCandidateFromStore(
+  entry: StoredAlternative,
+  product: ProductRef,
+  spec: ProductSpec | null,
+): Candidate {
+  const equivalence = equivalenceScore(
+    { gtin: product.gtin, title: product.title, spec },
+    { gtin: entry.gtin, title: entry.title, category: null, attrs: {} },
+  );
+
+  return {
+    id: `ai-store:${entry.id}`,
+    origin: 'ai',
+    matchType: 'equivalent',
+    title: entry.title,
+    brand: entry.brand,
+    url: entry.url,
+    linkKind: 'product',
+    retailer: entry.retailer,
+    retailerCanadianOwned: null,
+    priceCad: entry.priceCad,
+    priceChecked: entry.verifiedAt.slice(0, 10),
+    gtin: entry.gtin,
+    massKg: entry.massKg,
+    shipsFrom: null,
+    provenance: placeholderProvenance(entry.brand),
+    components: {
+      equivalence,
+      canadian: 0.5,
+      price: priceScore(product.price?.amount ?? null, entry.priceCad),
+    },
+    score: 0,
+    sourceUrl: entry.sourceUrl,
+    rationale: entry.claim,
+  };
+}
+
+function toStoredInput(
+  candidate: Candidate,
+  product: ProductRef,
+  key: string,
+  brandKey: string | null,
+  spec: ProductSpec | null,
+  aiBackend: string,
+): StoredAlternativeInput {
+  return {
+    productKey: key,
+    originalBrandKey: brandKey,
+    originalTitle: product.title,
+    originalSite: product.site,
+    category: spec?.category ?? null,
+    url: candidate.url,
+    title: candidate.title,
+    brand: candidate.brand,
+    retailer: candidate.retailer,
+    priceCad: candidate.priceCad,
+    gtin: candidate.gtin,
+    massKg: candidate.massKg,
+    // The gates refuse any candidate without one, so this is always set here.
+    sourceUrl: candidate.sourceUrl ?? candidate.url,
+    claim: candidate.rationale,
+    aiBackend,
   };
 }
 
@@ -343,6 +566,55 @@ function domainOf(url: string): string {
   } catch {
     return '';
   }
+}
+
+/**
+ * Replaces homepage links with deep links, and backfills the prices the
+ * ownership dataset does not carry. Runs candidates in parallel; any that
+ * fails keeps its homepage link rather than disappearing.
+ */
+async function attachProductLinks(
+  candidates: Candidate[],
+  product: ProductRef,
+  spec: ProductSpec | null,
+): Promise<Candidate[]> {
+  const terms = searchTermsFor(product.title, product.brand, spec?.category ?? null);
+  if (!terms.trim()) return candidates;
+
+  const specType = typeof spec?.hard['type'] === 'string' ? (spec.hard['type'] as string) : null;
+  const mustBe = requiredNouns(spec?.category ?? null, specType);
+
+  return Promise.all(
+    candidates.map(async (candidate) => {
+      try {
+        const found = await findProductLink(
+          candidate.url,
+          terms,
+          mustBe,
+          product.price?.amount ?? null,
+        );
+        if (!found) return candidate;
+
+        return {
+          ...candidate,
+          url: found.url,
+          title: found.title,
+          linkKind: 'product' as const,
+          priceCad: found.priceCad ?? candidate.priceCad,
+          priceChecked:
+            found.priceCad !== null ? new Date().toISOString().slice(0, 10) : candidate.priceChecked,
+          retailer: candidate.brand ?? candidate.retailer,
+          components: {
+            ...candidate.components,
+            // A real price makes the price weighting mean something again.
+            price: priceScore(product.price?.amount ?? null, found.priceCad),
+          },
+        };
+      } catch {
+        return candidate; // A homepage link beats no candidate.
+      }
+    }),
+  );
 }
 
 function pickAbstentionReason(

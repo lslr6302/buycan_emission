@@ -9,6 +9,7 @@ export type Message =
   | { type: 'analyzeCart'; site: string; lines: CartLine[] }
   | { type: 'getTabState' }
   | { type: 'resetSite'; site: string }
+  | { type: 'undismiss'; site: string }
   | { type: 'getSettings' }
   | { type: 'setSettings'; settings: Partial<Settings> };
 

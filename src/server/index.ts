@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { DEFAULT_WEIGHTS } from '../shared/scoring';
 import { analyzeCart } from './pipeline/cart';
 import { type PipelineDeps, resolveProduct } from './pipeline/resolve';
-import { createAiClient, createRepository, loadConfig } from './config';
+import { createAiClient, createAiStore, createRepository, loadConfig } from './config';
 
 /**
  * The API the extension talks to.
@@ -68,12 +68,14 @@ async function main(): Promise<void> {
   const config = loadConfig();
   const repo = await createRepository(config);
   const ai = createAiClient(config);
+  const aiStore = await createAiStore(config);
 
   const deps: PipelineDeps = {
     repo,
     ai,
     maxCandidates: config.maxCandidates,
     sanityVeto: config.sanityVeto,
+    aiStore,
   };
 
   const app = express();
@@ -91,6 +93,8 @@ async function main(): Promise<void> {
       dataHealthy: await repo.healthy(),
       aiBackend: ai.name,
       aiHealthy: await ai.healthy(),
+      aiStore: aiStore?.name ?? 'none',
+      aiStoreHealthy: aiStore ? await aiStore.healthy() : false,
       defaultWeights: DEFAULT_WEIGHTS,
     });
   });
@@ -140,6 +144,7 @@ async function main(): Promise<void> {
             },
             weights,
             verifiedOnly,
+            fromSearch: true,
           },
           deps,
         ),
@@ -164,7 +169,9 @@ async function main(): Promise<void> {
 
   const server = app.listen(config.port, () => {
     console.log(`buycan api on http://localhost:${config.port}`);
-    console.log(`  data: ${repo.name}   ai: ${ai.name}   sanityVeto: ${config.sanityVeto}`);
+    console.log(
+      `  data: ${repo.name}   ai: ${ai.name}   ai store: ${aiStore?.name ?? 'none'}   sanityVeto: ${config.sanityVeto}`,
+    );
     if (repo.name.startsWith('mock')) {
       console.log('  NOTE: seed data is placeholder and unverified. Not demo-ready.');
     }

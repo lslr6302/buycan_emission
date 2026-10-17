@@ -84,7 +84,7 @@ function renderDiagnostics(): void {
 
 const OVERLAY_LABEL: Record<string, string> = {
   shown: 'shown on the page',
-  suppressed_dismissed: 'hidden — dismissed on this site',
+  suppressed_dismissed: 'hidden — you closed it on this page',
   suppressed_abstained: 'hidden — nothing to show',
   not_attempted: 'not reached',
 };
@@ -103,7 +103,7 @@ function explain(report: PageReport): string {
   }
 
   if (report.overlay === 'suppressed_dismissed') {
-    return '<div class="muted" style="margin-top:8px">You dismissed the overlay on this site, so it stays hidden. Use the reset button below to bring it back.</div>';
+    return '<div class="muted" style="margin-top:8px">You hid the panel on this page. It returns on the next product, or when you reload.</div>';
   }
 
   if (report.pageKind === 'none') {
@@ -159,6 +159,16 @@ function render(): void {
   }
 
   status.textContent = `${escapeHtml(resolved.provenance.displayName)} · ${escapeHtml(resolved.provenance.summary)}`;
+
+  if (resolved.alreadyCanadian) {
+    result.innerHTML = `
+      <div class="card">
+        <div class="card-title">Already Canadian-owned</div>
+        <div class="muted">${escapeHtml(resolved.provenance.summary)}</div>
+        <div class="muted">No alternatives suggested — there is nothing to switch to.</div>
+      </div>`;
+    return;
+  }
 
   // The abstention path. This is the whole reason the popup exists.
   if (resolved.abstained) {
@@ -238,6 +248,27 @@ function bindSettings(): void {
   });
 }
 
+/**
+ * Chrome closes a popup the instant it loses focus, so the first click on
+ * anything else - including the Windows taskbar - is swallowed dismissing
+ * it. Opening the same page as an ordinary tab sidesteps that entirely:
+ * it stays put, never steals focus, and can sit beside the shopping page.
+ */
+function bindDetach(): void {
+  const detached = new URLSearchParams(location.search).get('detached') === '1';
+  if (detached) {
+    document.body.classList.add('detached');
+    return;
+  }
+
+  document.getElementById('detach')?.addEventListener('click', () => {
+    void chrome.tabs.create({
+      url: chrome.runtime.getURL('popup/popup.html?detached=1'),
+    });
+    window.close();
+  });
+}
+
 async function init(): Promise<void> {
   const [settingsResponse, stateResponse] = await Promise.all([
     send({ type: 'getSettings' }),
@@ -247,6 +278,7 @@ async function init(): Promise<void> {
   if (settingsResponse.ok && settingsResponse.kind === 'settings') settings = settingsResponse.data;
   if (stateResponse.ok && stateResponse.kind === 'tabState') tabState = stateResponse.data;
 
+  bindDetach();
   bindSliders();
   bindSettings();
   render();
