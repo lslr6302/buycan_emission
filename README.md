@@ -24,7 +24,7 @@ Then: `chrome://extensions` → Developer mode → **Load unpacked** → `dist/e
 reload in `chrome://extensions` after each rebuild.
 
 ### Testing against real storefronts
-
+ 
 The shipped build only injects on six curated sites. To try it anywhere:
 
 ```bash
