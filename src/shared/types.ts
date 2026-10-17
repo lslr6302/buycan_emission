@@ -79,6 +79,12 @@ export interface BrandRecord {
   mfgOrigin: Sourced<string>;
   cfiaClass: CfiaClass | null;
   lastReviewed: string;
+  /**
+   * Whether a brand with no identified parent but a Canadian HQ may be read as
+   * Canadian-owned. Defaults to true; a dataset that tracks ownership
+   * explicitly sets false so "unconfirmed" stays unknown.
+   */
+  inferOwnershipFromHq?: boolean;
 }
 
 /**

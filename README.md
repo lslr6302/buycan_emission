@@ -70,7 +70,8 @@ curl localhost:8787/v1/health
 | AI candidate validation gates | done, tested |
 | Cart aggregation | done |
 | Overlay + popup | done, needs real-page testing |
-| **Ownership/catalogue data** | **placeholder seed, 25 items / 11 categories — not demo-ready** |
+| Ownership data (Tiger Cloud) | connected: 1,404 Canadian brands, 1,250 US brands, 2,431 matches |
+| **Product catalogue** | **none — alternatives are brand-level, no prices or deep links** |
 | **Gemini integration** | **stub — throws NotImplemented** |
 
 The seed data under `src/server/data/seed/` is unverified placeholder and every
@@ -95,27 +96,29 @@ Each partner owns exactly one file. Nothing else needs to change.
 **File:** `src/server/data/tiger-repository.ts`
 **Interface:** `src/server/data/repository.ts`
 
-The queries are already written. The only thing needed is making `COLUMNS` at
-the top of the file match the real schema — or adding a Postgres view that
-matches it, which is often less work.
+**Connected.** `npm run server` uses Tiger Cloud whenever `.env` holds
+`TIMESCALE_SERVICE_URL` (or `TIGER_URL`); `DATA_BACKEND=mock` forces the seed
+data. The repository reads the live schema as-is, read-only:
 
-```bash
-npm install pg @types/pg
-DATA_BACKEND=tiger TIGER_URL=postgres://... npm run server
-```
+| Table | Used for |
+|---|---|
+| `brands` | Canadian brands; `status_tags` become the four provenance dimensions, `verification` becomes confidence |
+| `us_brands` | Brand linking for the product being viewed; listed = sourced "not Canadian-owned" |
+| `matches` | The verified alternatives: product brand → US brand → curated Canadian brands |
+| `ownership_overrides` | Team-researched ultimate owner; beats the tags |
 
-Notes for whoever owns the schema:
+What the dataset does not have, and what that means:
 
-- **Sources are per-field, not per-record.** A brand can have verified
-  ownership and unknown manufacturing, and the UI renders exactly that. If the
-  table has one `source_url` per row, say so — it is a real limitation and the
-  adapter in `field()` needs to know.
-- **Vector search** is pushed into SQL via pgvector (`<=>`). Something upstream
-  has to embed the query; the repository takes `query.embedding` and falls back
-  to full-text ranking when it is absent.
-- `findBrand()` receives raw, messy strings off product pages — `"Klean Kanteen
-  Canada"`, `"KLEANKANTEEN"`. Normalize with `normalizeBrand()` from
-  `src/shared/normalize.ts` so both sides agree on what a key looks like.
+- **Brand-level, not product-level.** No products, prices, GTINs or retailers,
+  so a candidate is a Canadian brand linking to its homepage, price scores
+  neutral, and the GTIN and retailer-swap paths return nothing.
+- **Sources are per-row, not per-field.** Every tag-derived fact cites the
+  row's first source.
+- **"HQ in Canada" without "Canadian-owned" stays unknown**, matching the
+  dataset's own `swaps` view, rather than being inferred as Canadian-owned.
+- **No spec cache table**; specs are cached in process memory.
+- Brand linking is exact-or-high-similarity (`pg_trgm` ≥ 0.6) on purpose:
+  `"Starbucks Coffee"` misses rather than risking a link to the wrong company.
 
 ### 2. AI → Gemini
 

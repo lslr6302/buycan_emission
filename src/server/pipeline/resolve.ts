@@ -169,6 +169,7 @@ async function findVerified(
     category: spec?.category ?? null,
     hard: spec?.hard ?? {},
     text: product.title,
+    brand: product.brand,
     limit: VERIFIED_POOL,
   });
 }

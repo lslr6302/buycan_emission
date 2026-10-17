@@ -60,7 +60,7 @@ function ownershipDimension(brand: BrandRecord): Sourced<boolean> {
   // No parent found. Privately held Canadian SMBs land here constantly - the
   // structured sources simply do not cover them.
   const noParent = brand.parent.value === null;
-  if (noParent && brand.hqCountry.value) {
+  if (noParent && brand.inferOwnershipFromHq !== false && brand.hqCountry.value) {
     return {
       value: brand.hqCountry.value.toUpperCase() === 'CA',
       source: brand.hqCountry.source,
