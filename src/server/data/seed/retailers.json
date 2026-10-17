@@ -1,0 +1,24 @@
+{
+  "_meta": {
+    "status": "PLACEHOLDER SEED - NOT VERIFIED",
+    "purpose": "The retailer-fallback table. When no Canadian product exists in a category, the lever moves from what you buy to where you buy it.",
+    "warning": "Ownership below is asserted from company about-pages, not checked against a registry. architecture.md budgets ~50 rows; this is a starting dozen.",
+    "generated": "2026-10-17"
+  },
+  "retailers": [
+    { "name": "Canadian Tire", "domain": "canadiantire.ca", "canadianOwned": true, "source": "https://corp.canadiantire.ca/" },
+    { "name": "London Drugs", "domain": "londondrugs.com", "canadianOwned": true, "source": "https://www.londondrugs.com/about-us/" },
+    { "name": "Home Hardware", "domain": "homehardware.ca", "canadianOwned": true, "source": "https://www.homehardware.ca/en/about-us" },
+    { "name": "Lee Valley Tools", "domain": "leevalley.com", "canadianOwned": true, "source": "https://www.leevalley.com/en-ca/about-us" },
+    { "name": "MEC", "domain": "mec.ca", "canadianOwned": false, "source": "https://www.mec.ca/en/explore/about-mec", "note": "Acquired by Kingswood Capital (US) in 2020. A Canadian institution that is no longer Canadian-owned - the kind of case the tool exists to catch." },
+    { "name": "Simons", "domain": "simons.ca", "canadianOwned": true, "source": "https://www.simons.ca/en/about-us" },
+    { "name": "Indigo", "domain": "indigo.ca", "canadianOwned": true, "source": "https://www.indigo.ca/en-ca/about-us/" },
+    { "name": "Well.ca", "domain": "well.ca", "canadianOwned": true, "source": "https://well.ca/aboutus.html" },
+    { "name": "Canada Computers", "domain": "canadacomputers.com", "canadianOwned": true, "source": "https://www.canadacomputers.com/en/about-us" },
+    { "name": "Memory Express", "domain": "memoryexpress.com", "canadianOwned": true, "source": "https://www.memoryexpress.com/About" },
+    { "name": "Sporting Life", "domain": "sportinglife.ca", "canadianOwned": true, "source": "https://www.sportinglife.ca/en-ca/pages/about-us" },
+    { "name": "Amazon.ca", "domain": "amazon.ca", "canadianOwned": false, "source": "https://ir.aboutamazon.com/" },
+    { "name": "Walmart Canada", "domain": "walmart.ca", "canadianOwned": false, "source": "https://stock.walmart.com/" },
+    { "name": "Best Buy Canada", "domain": "bestbuy.ca", "canadianOwned": false, "source": "https://investors.bestbuy.com/" }
+  ]
+}

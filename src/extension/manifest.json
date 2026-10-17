@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "Canadian Alternatives",
+  "version": "0.1.0",
+  "description": "Shows who really owns a brand and whether a verified Canadian alternative exists. Says \"unknown\" when it does not know.",
+
+  "permissions": ["storage"],
+
+  "host_permissions": [
+    "http://localhost:8787/*"
+  ],
+
+  "optional_host_permissions": ["*://*/*"],
+
+  "background": { "service_worker": "background.js" },
+
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "Canadian Alternatives"
+  },
+
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.amazon.ca/*",
+        "*://*.well.ca/*",
+        "*://*.indigo.ca/*",
+        "*://*.canadiantire.ca/*",
+        "*://*.simons.ca/*",
+        "*://*.leevalley.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+
+  "web_accessible_resources": [
+    {
+      "resources": ["demo-cart.json"],
+      "matches": ["*://*/*"]
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "name": "buycan-emission",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Browser extension surfacing Canadian alternatives with cited ownership data and explicit abstention.",
+  "scripts": {
+    "dev": "tsx watch src/server/index.ts",
+    "server": "tsx src/server/index.ts",
+    "build:ext": "node scripts/build-extension.mjs",
+    "build:ext:dev": "node scripts/build-extension.mjs --dev",
+    "watch:ext": "node scripts/build-extension.mjs --watch",
+    "watch:ext:dev": "node scripts/build-extension.mjs --watch --dev",
+    "typecheck": "tsc --noEmit",
+    "build": "npm run build:ext && npm run typecheck && npm test",
+    "test": "tsx scripts/smoke.ts"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.287",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.10.2",
+    "esbuild": "^0.24.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
