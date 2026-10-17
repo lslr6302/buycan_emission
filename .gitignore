@@ -3,3 +3,6 @@ __pycache__/
 *.pyc
 .venv/
 node_modules/
+
+/notes_and_planning
+8a3552bb9904d3301ef766eb3b47b03dd4a60190
