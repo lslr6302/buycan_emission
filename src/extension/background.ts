@@ -268,7 +268,27 @@ chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) =>
         }
         case 'getTabState': {
           const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-          const state = tab?.id !== undefined ? (tabStates.get(tab.id) ?? null) : null;
+
+          // When the popup is opened as its own tab - the workaround for
+          // Chrome closing popups the moment they lose focus - the "active
+          // tab" is the popup itself, which has no shopping page behind it.
+          // Fall back to the most recently seen shopping tab so the
+          // detached view still shows something useful.
+          const ownPage = tab?.url?.startsWith('chrome-extension://') ?? false;
+          let state: TabState | null = null;
+
+          if (!ownPage && tab?.id !== undefined) {
+            state = tabStates.get(tab.id) ?? null;
+          } else {
+            let newest = 0;
+            for (const candidate of tabStates.values()) {
+              if (candidate.updatedAt > newest) {
+                newest = candidate.updatedAt;
+                state = candidate;
+              }
+            }
+          }
+
           sendResponse({ ok: true, kind: 'tabState', data: state } satisfies Response);
           break;
         }
@@ -370,6 +390,23 @@ async function purgeStaleCache(): Promise<void> {
     console.warn('[buycan] cache purge failed', error);
   }
 }
+
+/**
+ * Dismissals are in-memory and per page view now, so any `dismissed:*` keys
+ * are leftovers from the old seven-day behaviour. Clearing them stops
+ * someone upgrading from staying silently opted out.
+ */
+async function purgeLegacyDismissals(): Promise<void> {
+  try {
+    const stored = await chrome.storage.local.get(null);
+    const legacy = Object.keys(stored).filter((k) => k.startsWith('dismissed:'));
+    if (legacy.length > 0) await chrome.storage.local.remove(legacy);
+  } catch {
+    /* nothing to do */
+  }
+}
+
+void purgeLegacyDismissals();
 
 chrome.runtime.onInstalled.addListener(() => void purgeStaleCache());
 chrome.runtime.onStartup.addListener(() => void purgeStaleCache());

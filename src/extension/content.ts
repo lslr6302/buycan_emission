@@ -10,7 +10,14 @@ import {
   type Response,
   type Settings,
 } from './messages';
-import { isDismissed, removeOverlay, renderCart, renderProduct, renderSearch } from './overlay';
+import {
+  isDismissed,
+  removeOverlay,
+  renderCart,
+  renderProduct,
+  renderSearch,
+  setPageKey,
+} from './overlay';
 
 /**
  * Content script. Resolves which site we are on, extracts, asks the worker,
@@ -164,7 +171,7 @@ async function runProduct(): Promise<void> {
     report({ ...base, overlay: 'suppressed_abstained' });
     return;
   }
-  if (await isDismissed()) {
+  if (isDismissed()) {
     log('not rendering: dismissed on', site, '- clear it from the popup');
     report({ ...base, overlay: 'suppressed_dismissed' });
     return;
@@ -239,7 +246,7 @@ async function runSearch(): Promise<void> {
     report({ pageKind: 'search', searchQuery: query, overlay: 'suppressed_abstained' });
     return;
   }
-  if (await isDismissed()) {
+  if (isDismissed()) {
     report({ pageKind: 'search', searchQuery: query, overlay: 'suppressed_dismissed' });
     return;
   }
@@ -274,7 +281,7 @@ async function runCart(): Promise<void> {
     });
     return;
   }
-  if (await isDismissed()) {
+  if (isDismissed()) {
     report({ pageKind: 'cart', cartLines: lines.length, overlay: 'suppressed_dismissed' });
     return;
   }
@@ -311,6 +318,10 @@ async function guard(label: string, fn: () => Promise<void>): Promise<void> {
 let cartObserver: MutationObserver | undefined;
 
 function start(): void {
+  // Scopes dismissal to this page view: a different product, or the same
+  // one revisited, gets a fresh panel.
+  setPageKey(pageIdentity(location.href));
+
   const kind = adapter.pageKind();
   log(`adapter=${adapter.id} pageKind=${kind} url=${location.pathname.slice(0, 60)}`);
   if (kind === 'none') {

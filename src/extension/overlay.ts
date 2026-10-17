@@ -106,43 +106,24 @@ function escapeHtml(value: string): string {
 }
 
 /**
- * Keyed on the normalized host so the popup, which only knows the normalized
- * form, can clear the same entry the content script wrote.
+ * Dismissal is per page view, held in memory, and nowhere else.
+ *
+ * It used to persist for seven days per site, which was far too blunt:
+ * closing the panel once on one product silenced the extension across the
+ * whole retailer, and the only way back was a settings button nobody would
+ * think to look for. "Not now" means this page, now. Navigate to another
+ * product, come back, or reload, and it reappears.
  */
-function dismissKey(): string {
-  return `dismissed:${normalizeSite(location.hostname)}`;
+let pageKey = '';
+let dismissedFor: string | null = null;
+
+/** Called before each render with an identifier for the current page. */
+export function setPageKey(key: string): void {
+  pageKey = key;
 }
 
-/**
- * Dismissals expire. A permanent one is a trap: the extension goes quiet
- * forever, every diagnostic still reports success, and the only way back is
- * a settings button the user has no reason to look for. A week is long
- * enough to respect the "not now" and short enough to be self-healing.
- */
-const DISMISS_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-
-export async function isDismissed(): Promise<boolean> {
-  try {
-    const key = dismissKey();
-    const stored = await chrome.storage.local.get([key, `dismissed:${location.hostname}`]);
-    const entry = stored[key] ?? stored[`dismissed:${location.hostname}`];
-    if (!entry) return false;
-
-    // Legacy `true` values predate the timestamp; treat them as expired so
-    // nobody stays silently opted out from an old build.
-    if (entry === true) {
-      await chrome.storage.local.remove([key, `dismissed:${location.hostname}`]);
-      return false;
-    }
-    const at = typeof entry === 'object' && entry !== null ? Number((entry as { at?: number }).at) : 0;
-    if (!Number.isFinite(at) || Date.now() - at > DISMISS_TTL_MS) {
-      await chrome.storage.local.remove([key, `dismissed:${location.hostname}`]);
-      return false;
-    }
-    return true;
-  } catch {
-    return false;
-  }
+export function isDismissed(): boolean {
+  return dismissedFor !== null && dismissedFor === pageKey;
 }
 
 function remove(): void {
@@ -260,8 +241,8 @@ function wire(shadow: ShadowRoot): void {
   });
   shadow.querySelector('.x')?.addEventListener('click', (event) => {
     event.stopPropagation();
-    console.info('[buycan] dismissed on this site for 7 days - undo from the popup');
-    void chrome.storage.local.set({ [dismissKey()]: { at: Date.now() } });
+    dismissedFor = pageKey;
+    console.info('[buycan] hidden for this page; it returns on the next product or reload');
     remove();
   });
 }
@@ -348,7 +329,7 @@ export function renderAlreadyCanadian(result: ResolveResponse): void {
           <div class="title">This one is Canadian</div>
           <div class="sub">${escapeHtml(p.displayName)} · ${escapeHtml(madeNote)}</div>
         </div>
-        <button class="x" title="Dismiss on this site">×</button>
+        <button class="x" title="Hide for this page">×</button>
       </div>
       <div class="body">
         ${dimensionChips(p)}
@@ -394,7 +375,7 @@ export function renderProduct(result: ResolveResponse, expanded: boolean): void 
           <div class="title">${count} Canadian alternative${count === 1 ? '' : 's'}</div>
           <div class="sub">${escapeHtml(result.provenance.summary)}</div>
         </div>
-        <button class="x" title="Dismiss on this site">×</button>
+        <button class="x" title="Hide for this page">×</button>
       </div>
       <div class="body">
         <div class="verdict">
@@ -437,7 +418,7 @@ export function renderSearch(result: ResolveResponse, query: string): void {
           )}"</div>
           <div class="sub">Before you pick a brand</div>
         </div>
-        <button class="x" title="Dismiss on this site">×</button>
+        <button class="x" title="Hide for this page">×</button>
       </div>
       <div class="body">
         ${result.candidates.map((c) => candidateCard(c, null)).join('')}
@@ -481,7 +462,7 @@ export function renderCart(analysis: CartAnalysis): void {
           <div class="title">${money(analysis.leavesCanadaCad)} of ${money(analysis.totalCad)} leaves Canada</div>
           <div class="sub">${analysis.swapCount} swap${analysis.swapCount === 1 ? '' : 's'} available</div>
         </div>
-        <button class="x" title="Dismiss on this site">×</button>
+        <button class="x" title="Hide for this page">×</button>
       </div>
       <div class="body">
         <div class="verdict">${escapeHtml(analysis.headline)}</div>

@@ -16,6 +16,13 @@
       }
       header { padding: 12px 14px 10px; border-bottom: 1px solid var(--line); }
       h1 { font-size: 14px; margin: 0; display: flex; align-items: center; gap: 7px; }
+      h1 button#detach {
+        margin-left: auto; border: 1px solid var(--line); background: var(--card);
+        color: var(--dim); border-radius: 5px; cursor: pointer;
+        font: inherit; font-size: 12px; line-height: 1; padding: 3px 7px;
+      }
+      h1 button#detach:hover { color: var(--fg); border-color: var(--dim); }
+      body.detached button#detach { display: none; }
       .sub { color: var(--dim); font-size: 11.5px; margin-top: 3px; }
       section { padding: 12px 14px; border-bottom: 1px solid var(--line); }
       h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .05em;
@@ -67,7 +74,10 @@
   </head>
   <body>
     <header>
-      <h1><span>🍁</span> Canadian Alternatives</h1>
+      <h1>
+        <span>🍁</span> Canadian Alternatives
+        <button id="detach" type="button" title="Open in a tab so it stays open">↗</button>
+      </h1>
       <div class="sub" id="status">Reading page…</div>
     </header>
 
@@ -122,7 +132,7 @@
       </div>
       <label class="check"><input type="checkbox" id="verified-only" /> Verified dataset only (no AI search)</label>
       <label class="check"><input type="checkbox" id="demo-mode" /> Demo mode (use saved cart fixture)</label>
-      <button id="reset" type="button">Reset dismissals &amp; clear cache</button>
+      <button id="reset" type="button">Clear cached results</button>
     </section>
 
     <footer>
