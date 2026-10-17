@@ -140,6 +140,7 @@ async function main(): Promise<void> {
             },
             weights,
             verifiedOnly,
+            fromSearch: true,
           },
           deps,
         ),

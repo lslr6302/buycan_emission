@@ -6,7 +6,7 @@
  * Not a substitute for the eval harness - that measures accuracy against
  * hand-labelled ground truth. This just checks the machinery works.
  */
-import { extractFromHtml } from '../src/shared/extract';
+import { extractFromHtml, isUsable, mergeProducts, pickPrice } from '../src/shared/extract';
 import { gtinCheckDigitValid, normalizeGtin, parsePrice, productKey } from '../src/shared/normalize';
 import { DEFAULT_WEIGHTS, priceScore, rank, totalScore } from '../src/shared/scoring';
 import { runGates } from '../src/server/pipeline/gates';
@@ -73,6 +73,62 @@ check(
 );
 check('survives malformed JSON-LD', extractFromHtml('<script type="application/ld+json">{nope}</script>', { site: 'x', url: 'u' }) === null);
 
+// --- merging partial extractions --------------------------------------------
+
+console.log('\nMerging partial reads (Walmart publishes a Product with no price)');
+
+const titleOnly = {
+  site: 'walmart.ca', siteId: null, url: 'u',
+  title: 'Head & Shoulders Classic Clean Shampoo 613 ml',
+  brand: null, gtin: null, price: null, categoryHint: null, imageUrl: null, massKg: null,
+  extraction: { tier: 'jsonld' as const, confidence: 'high' as const },
+};
+const priceOnly = {
+  ...titleOnly,
+  title: 'Head and Shoulders Shampoo | Walmart Canada',
+  brand: 'Head & Shoulders',
+  price: { amount: 8.97, currency: 'CAD' },
+  extraction: { tier: 'adapter' as const, confidence: 'medium' as const },
+};
+
+const merged = mergeProducts([titleOnly, priceOnly]);
+check('merged result is usable', isUsable(merged));
+check('keeps the higher-tier title', merged.title === titleOnly.title);
+check('borrows the missing price', merged.price?.amount === 8.97);
+check('borrows the missing brand', merged.brand === 'Head & Shoulders');
+check(
+  'a complete read is unchanged by merging',
+  mergeProducts([priceOnly]).price?.amount === 8.97,
+);
+
+// --- visible-price fallback -------------------------------------------------
+
+console.log('\nPicking the real price off a page (Walmart ships no price in JSON-LD)');
+
+// A realistic Walmart-shaped shelf: unit pricing, other sizes, a struck-out
+// list price, and the actual current price.
+const walmartish = [
+  { text: '$4.41/100ml', weight: 30 },
+  { text: '$3.97', weight: 30 },
+  { text: '$5.97', weight: 30 },
+  { text: 'Save 15%', weight: 30 },
+  { text: 'was $11.47', weight: 30 },
+  { text: '$8.97', weight: 85 },
+];
+check('prefers the strongest-claiming element', pickPrice(walmartish) === 8.97);
+check('ignores per-unit pricing', pickPrice([{ text: '$1.61/100ml', weight: 90 }]) === null);
+check('ignores "per ml" phrasing', pickPrice([{ text: '$0.04 per ml', weight: 90 }]) === null);
+check('ignores percentage savings', pickPrice([{ text: 'Save 20%', weight: 90 }]) === null);
+check('ignores was/list copy', pickPrice([{ text: 'was $11.47', weight: 90 }]) === null);
+check('ignores monthly financing', pickPrice([{ text: '\$12.00/mo', weight: 90 }]) === null);
+check('rejects implausible values', pickPrice([{ text: '\$250000.00', weight: 90 }]) === null);
+check('reads a bare amount', pickPrice([{ text: '8.97', weight: 50 }]) === 8.97);
+check('returns null with nothing usable', pickPrice([]) === null);
+check(
+  'weight beats document order',
+  pickPrice([{ text: '\$99.99', weight: 30 }, { text: '\$8.97', weight: 100 }]) === 8.97,
+);
+
 // --- GTIN ------------------------------------------------------------------
 
 console.log('\nGTIN normalization (the only key that crosses storefronts)');
@@ -97,6 +153,11 @@ check('plain', parsePrice('$54.99') === 54.99);
 check('with currency suffix', parsePrice('CA$1,234.50 CAD') === 1234.5);
 check('european decimal comma', parsePrice('54,99 $') === 54.99);
 check('null on junk', parsePrice('Currently unavailable') === null);
+// Regression: these read as 123 and 250 before the separator rewrite.
+check('four digits, no separator', parsePrice('1234.50') === 1234.5);
+check('six digits, no separator', parsePrice('$250000.00') === 250000);
+check('thousands separator only', parsePrice('$1,234') === 1234);
+check('european thousands', parsePrice('1.234.567') === 1234567);
 
 // --- scoring ---------------------------------------------------------------
 

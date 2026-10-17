@@ -165,7 +165,12 @@ function mount(): ShadowRoot {
     'right: 20px',
     'z-index: 2147483647',
     'display: block',
-    'width: auto',
+    // Explicit, not shrink-to-fit. `all: initial` leaves width:auto, and a
+    // fixed-position host sized only by its shadow content measured 0x0 in
+    // practice - present in the DOM, correctly positioned, and invisible.
+    // Sizing the host directly removes the dependency entirely.
+    'width: 340px',
+    'max-width: calc(100vw - 32px)',
     'height: auto',
     'margin: 0',
     'padding: 0',
@@ -195,7 +200,11 @@ function mount(): ShadowRoot {
   const parent = document.body ?? document.documentElement;
   parent.append(host);
 
-  verifyMounted(host, styled);
+  // Deferred: the caller appends the panel to this shadow root *after*
+  // mount() returns, so checking synchronously here measures an empty
+  // shadow and reports "zero size - stylesheet did not apply" on a panel
+  // that is about to render perfectly.
+  setTimeout(() => verifyMounted(host, styled), 0);
   return shadow;
 }
 
@@ -219,14 +228,25 @@ function verifyMounted(host: HTMLElement, usedAdoptedSheet: boolean): void {
       return;
     }
     const rect = host.getBoundingClientRect();
+    const panel = host.shadowRoot?.querySelector('.panel');
+    const panelRect = panel?.getBoundingClientRect();
+
+    if (rect.width === 0 || rect.height === 0) {
+      console.warn(
+        '[buycan] overlay host measured 0x0.' +
+          (panel
+            ? ` Panel is present and ${Math.round(panelRect?.width ?? 0)}x${Math.round(
+                panelRect?.height ?? 0,
+              )} - the host box is the problem, not the stylesheet.`
+            : ' No .panel in the shadow root - content was never appended.'),
+      );
+      return;
+    }
     console.info(
       `[buycan] overlay mounted (${Math.round(rect.width)}x${Math.round(rect.height)} at ` +
         `${Math.round(rect.left)},${Math.round(rect.top)}; styles via ` +
         `${usedAdoptedSheet ? 'adoptedStyleSheets' : '<style>'})`,
     );
-    if (rect.width === 0 || rect.height === 0) {
-      console.warn('[buycan] overlay has zero size - its stylesheet did not apply.');
-    }
   } catch (error) {
     console.warn('[buycan] overlay self-check failed', error);
   }

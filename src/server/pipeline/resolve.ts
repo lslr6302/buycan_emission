@@ -8,6 +8,7 @@ import {
 } from '../../shared/scoring';
 import type {
   AbstentionReason,
+  BrandRecord,
   Candidate,
   GateRejection,
   ProductRef,
@@ -62,8 +63,12 @@ export async function resolveProduct(
 
   // 2. Brand linking and the decomposed provenance verdict for what the user
   //    is looking at. This renders even when we have no alternative to offer.
-  const brand = product.brand ? await repo.findBrand(product.brand) : null;
-  const provenance = verdictFor(brand, product.brand);
+  // The brand is the single most valuable field: without it the curated
+  // brand-to-brand match table is unreachable and the verdict degrades to
+  // "unknown". So when the page did not give us one, recover it from the
+  // title, which almost always opens with the brand.
+  const { brand, brandName } = await linkBrand(product, repo, request.fromSearch === true);
+  const provenance = verdictFor(brand, brandName);
   const ownStatus = ownStatusFor(provenance);
 
   // 3. Already Canadian-owned? Then there is nothing to switch to, and
@@ -97,7 +102,7 @@ export async function resolveProduct(
   }
 
   // 4. Verified path.
-  const verifiedItems = await findVerified(product, spec, repo);
+  const verifiedItems = await findVerified(product, spec, repo, brandName);
   let candidates = verifiedItems.map((item) =>
     toCandidate(item, product, spec, 'verified', item.gtin && item.gtin === product.gtin ? 'gtin_exact' : 'equivalent', null),
   );
@@ -173,6 +178,56 @@ export async function resolveProduct(
 
 // ---------------------------------------------------------------------------
 
+/**
+ * Resolves the page's brand, falling back to leading n-grams of the title.
+ *
+ * Longest first, so "Head & Shoulders" is tried before "Head" - a one-word
+ * fragment is exactly the kind of thing that fuzzy-matches the wrong
+ * company, and a confidently wrong owner is worse than an honest unknown.
+ */
+async function linkBrand(
+  product: ProductRef,
+  repo: Repository,
+  fromSearch: boolean,
+): Promise<{ brand: BrandRecord | null; brandName: string | null }> {
+  if (product.brand) {
+    const found = await repo.findBrand(product.brand);
+    if (found) return { brand: found, brandName: product.brand };
+  }
+
+  // On a search page the "title" is whatever the user typed, so treating it
+  // as a brand is actively harmful: "laundry detergent" fuzzy-matched the
+  // clothing label "Local Laundry", which is Canadian-owned, and the whole
+  // lookup short-circuited to "you are already buying Canadian".
+  if (fromSearch) return { brand: null, brandName: null };
+
+  for (const candidate of brandCandidatesFromTitle(product.title)) {
+    const found = await repo.findBrand(candidate);
+    if (found) return { brand: found, brandName: found.displayName };
+  }
+
+  return { brand: null, brandName: product.brand };
+}
+
+/** Leading 4-, 3- and 2-word prefixes of the title, longest first. */
+export function brandCandidatesFromTitle(title: string): string[] {
+  const words = title
+    .split(/[\s,|–—]+/)
+    .map((w) => w.trim())
+    .filter(Boolean)
+    .slice(0, 4);
+
+  const out: string[] = [];
+  for (let n = words.length; n >= 2; n--) out.push(words.slice(0, n).join(' '));
+
+  // A single leading word only when it is substantial enough to identify a
+  // brand on its own: "Dove", "Tide", "Colgate" - never "The" or "Pro".
+  const first = words[0];
+  if (first && first.length >= 4) out.push(first);
+
+  return out;
+}
+
 async function loadSpec(
   key: string,
   product: ProductRef,
@@ -191,6 +246,8 @@ async function findVerified(
   product: ProductRef,
   spec: ProductSpec | null,
   repo: Repository,
+  /** The linked brand, which may have been recovered from the title. */
+  brandName: string | null,
 ): Promise<CatalogueItem[]> {
   // Exact barcode match first. It is the strongest claim the system can make.
   if (product.gtin) {
@@ -202,7 +259,10 @@ async function findVerified(
     category: spec?.category ?? null,
     hard: spec?.hard ?? {},
     text: product.title,
-    brand: product.brand,
+    // The LINKED brand, not the raw page field. A brand recovered from the
+    // title is the only way into the curated match table on sites that do
+    // not publish one, and passing the raw null here wasted that recovery.
+    brand: brandName ?? product.brand,
     limit: VERIFIED_POOL,
   });
 }

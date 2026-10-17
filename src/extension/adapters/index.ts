@@ -23,7 +23,17 @@ export const genericAdapter: SiteAdapter = {
     }
     // The honest product-page test: does the page claim to be one?
     if (findProductNode(jsonLdNodesFromDocument(document))) return 'product';
+
+    // Search before URL shape, because a search page can sit under a path
+    // that also looks product-ish.
     if (genericSearchQuery()) return 'search';
+
+    // URL shape as a fallback. Single-page apps inject their structured
+    // data after the first render, so checking only for JSON-LD means a
+    // product page looks like "none" purely because we arrived early -
+    // which is exactly what happens when you click a search result.
+    if (PRODUCT_PATH.test(location.pathname)) return 'product';
+
     return 'none';
   },
 
@@ -31,6 +41,13 @@ export const genericAdapter: SiteAdapter = {
 
   product: null,
 };
+
+/**
+ * Path shapes retailers use for a single product. Deliberately narrow:
+ * a false "product" here costs one failed extraction, but a false negative
+ * means we never look at the page at all.
+ */
+const PRODUCT_PATH = /\/(ip|dp|product|products|item|itm|pd|p)\/[^/]+/i;
 
 /** The query parameters essentially every storefront search uses. */
 const SEARCH_PARAMS = ['q', 'k', 's', 'query', 'search', 'keyword', 'keywords', 'term'];

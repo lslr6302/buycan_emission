@@ -187,12 +187,21 @@ chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) =>
         case 'report': {
           if (tabId !== undefined) {
             const existing = tabStates.get(tabId);
+
+            // Carry the result forward only when this is the SAME page.
+            // A tab keeps its id across navigations, so preserving it
+            // unconditionally left the previous product's verdict sitting
+            // above the new page's diagnostics - the popup would say
+            // "Doritos, foreign-owned" while describing a Walmart shampoo
+            // page it had just failed to read.
+            const samePage = existing?.url === message.report.url;
+
             tabStates.set(tabId, {
               url: message.report.url,
               site: message.report.site,
               kind: message.report.pageKind,
-              resolve: existing?.resolve,
-              cart: existing?.cart,
+              resolve: samePage ? existing?.resolve : undefined,
+              cart: samePage ? existing?.cart : undefined,
               report: message.report,
               updatedAt: Date.now(),
             });
@@ -228,7 +237,9 @@ chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) =>
           if (tabId !== undefined) {
             tabStates.set(tabId, {
               ...tabStates.get(tabId),
-              url: '',
+              // Keep the page's url, so the follow-up report from the
+              // content script is recognised as the same page.
+              url: tabStates.get(tabId)?.url ?? '',
               site: message.site,
               kind: 'search',
               resolve: data,
@@ -244,7 +255,7 @@ chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) =>
           if (tabId !== undefined) {
             tabStates.set(tabId, {
               ...tabStates.get(tabId),
-              url: '',
+              url: tabStates.get(tabId)?.url ?? '',
               site: message.site,
               kind: 'cart',
               cart: data,
@@ -315,6 +326,23 @@ chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) =>
 });
 
 chrome.tabs.onRemoved.addListener((tabId) => tabStates.delete(tabId));
+
+/**
+ * Drop a tab's state the moment it navigates.
+ *
+ * The same-page check in the report handler covers the usual case, but a
+ * page we never run on sends no report at all - so without this, switching
+ * from a product page to anything unsupported would leave the old verdict
+ * on screen in the popup, attributed to a page that never produced it.
+ */
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  if (!changeInfo.url) return;
+  const existing = tabStates.get(tabId);
+  if (existing && existing.url !== changeInfo.url) {
+    tabStates.delete(tabId);
+    setBadge(tabId, 'idle');
+  }
+});
 
 /**
  * Drops every cached response left over from a previous build.

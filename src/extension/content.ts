@@ -1,7 +1,7 @@
 import { extractFromDocument } from '../shared/extract';
 import { normalizeSite } from '../shared/normalize';
 import { isStrongMatch } from '../shared/scoring';
-import type { CartLine } from '../shared/types';
+import type { CartLine, ProductRef } from '../shared/types';
 import { resolveAdapter } from './adapters';
 import {
   DEFAULT_SETTINGS,
@@ -87,12 +87,32 @@ async function settings(): Promise<Settings> {
 
 // --- product pages ---------------------------------------------------------
 
+/**
+ * Extraction, retried while the page hydrates.
+ *
+ * Single-page apps inject their structured data and render their price
+ * after the first paint, so one early attempt reports "nothing here" on a
+ * page that is about to be perfectly readable - which is what happens when
+ * you click through from a search result rather than loading the URL
+ * directly. Backs off quickly and gives up rather than polling forever.
+ */
+async function extractWithRetry(): Promise<ProductRef | null> {
+  const delays = [0, 300, 700, 1200, 2000];
+  for (const delay of delays) {
+    if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay));
+    const found = extractFromDocument(document, { site, url: location.href }, adapter.product ?? null);
+    if (found) {
+      if (delay > 0) log(`extracted after ${delay}ms (page was still hydrating)`);
+      return found;
+    }
+    // The URL changed under us; the navigation handler owns it now.
+    if (location.href !== currentUrl) return null;
+  }
+  return null;
+}
+
 async function runProduct(): Promise<void> {
-  const product = extractFromDocument(
-    document,
-    { site, url: location.href },
-    adapter.product ?? null,
-  );
+  const product = await extractWithRetry();
 
   if (!product) {
     log('product page, but nothing extractable (no JSON-LD, microdata, OG price, or adapter match)');
@@ -265,10 +285,30 @@ async function runCart(): Promise<void> {
 
 function scheduleCart(): void {
   clearTimeout(cartTimer);
-  cartTimer = setTimeout(() => void runCart(), 400);
+  cartTimer = setTimeout(() => void guard('runCart', runCart), 400);
+}
+
+/**
+ * Runs an async step and reports failures as a labelled console error.
+ *
+ * An unhandled rejection in a content script surfaces as a bare minified
+ * stack in chrome://extensions, which says nothing about which step broke -
+ * and the extension then silently does nothing on that page.
+ */
+async function guard(label: string, fn: () => Promise<void>): Promise<void> {
+  try {
+    await fn();
+  } catch (error) {
+    const detail =
+      error instanceof Error ? `${error.message}\n${error.stack ?? ''}` : String(error);
+    console.error(`[buycan] ${label} failed on ${location.href}`, detail);
+    report({ error: `${label} failed: ${detail.split('\n')[0]}` });
+  }
 }
 
 // --- entry -----------------------------------------------------------------
+
+let cartObserver: MutationObserver | undefined;
 
 function start(): void {
   const kind = adapter.pageKind();
@@ -279,23 +319,150 @@ function start(): void {
   }
 
   if (kind === 'product') {
-    void runProduct();
+    void guard('runProduct', runProduct);
     return;
   }
 
   if (kind === 'search') {
-    void runSearch();
+    void guard('runSearch', runSearch);
     return;
   }
 
   scheduleCart();
   // The cart is re-rendered asynchronously on every quantity change, so a
   // one-shot read would miss most of the session.
-  new MutationObserver(scheduleCart).observe(document.body, { childList: true, subtree: true });
+  cartObserver = new MutationObserver(scheduleCart);
+  cartObserver.observe(document.body, { childList: true, subtree: true });
+}
+
+/** Undo everything the previous page set up, before looking at the new one. */
+function teardown(): void {
+  cartObserver?.disconnect();
+  cartObserver = undefined;
+  clearTimeout(cartTimer);
+  lastCartSignature = '';
+  removeOverlay();
+}
+
+/**
+ * Re-run on client-side navigation.
+ *
+ * Walmart and Amazon both swap products without a page load, so the content
+ * script runs exactly once per tab. Without this the panel from the previous
+ * product simply stays on screen - a Doritos page showing Head & Shoulders
+ * alternatives, which is worse than showing nothing at all.
+ *
+ * The overlay is torn down the instant the URL changes, before the new
+ * lookup finishes, so a stale verdict is never left sitting under a new
+ * product.
+ */
+/**
+ * Params retailers rewrite into the URL for their own tracking. Amazon in
+ * particular mutates these constantly on a single product page, and
+ * comparing raw hrefs made every rewrite look like a navigation - the
+ * overlay was torn down and rebuilt eleven times on one page.
+ */
+const TRACKING_PARAMS =
+  /^(ref_?|_encoding|th|psc|pd_rd_\w+|pf_rd_\w+|content-id|qid|sr|sprefix|crid|dib\w*|linkCode|tag|utm_\w+|gclid|fbclid|athbdg|smid)$/i;
+
+/** The part of the URL that actually identifies which product we are on. */
+function pageIdentity(href: string): string {
+  try {
+    const url = new URL(href);
+    const params = [...url.searchParams.entries()]
+      .filter(([key]) => !TRACKING_PARAMS.test(key))
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, value]) => `${key}=${value}`)
+      .join('&');
+    return `${url.origin}${url.pathname}${params ? `?${params}` : ''}`;
+  } catch {
+    return href;
+  }
+}
+
+let currentUrl = location.href;
+let currentIdentity = pageIdentity(location.href);
+
+/** A cheap fingerprint of what the page is currently showing. */
+function pageSignature(): string {
+  const heading = document.querySelector('h1')?.textContent?.trim().slice(0, 80) ?? '';
+  return `${document.title.slice(0, 80)}|${heading}`;
+}
+
+function onNavigated(): void {
+  if (location.href === currentUrl) return;
+  currentUrl = location.href;
+
+  // Same product, just a rewritten tracking URL. Rebuilding here would
+  // throw away a perfectly good panel and re-query the API for nothing.
+  const identity = pageIdentity(location.href);
+  if (identity === currentIdentity) return;
+  currentIdentity = identity;
+
+  log('navigated, re-running');
+
+  // Clear immediately: a stale panel under a new product is worse than no
+  // panel at all, and the new lookup takes a moment.
+  const before = pageSignature();
+  teardown();
+
+  // On a single-page app the URL changes before the new product renders, so
+  // extracting straight away reads the OLD page and produces a result that
+  // looks exactly like the bug we just fixed. Wait for the content to
+  // actually change, then run.
+  const deadline = Date.now() + 4000;
+  const poll = setInterval(() => {
+    const changed = pageSignature() !== before;
+    if (changed || Date.now() > deadline) {
+      clearInterval(poll);
+      if (!changed) log('page content never changed after navigation; reading anyway');
+      startWhenIdle();
+    }
+  }, 150);
+}
+
+function watchNavigation(): void {
+  // The Navigation API reports SPA route changes directly where available.
+  const nav = (window as unknown as { navigation?: EventTarget }).navigation;
+  if (nav && typeof nav.addEventListener === 'function') {
+    nav.addEventListener('navigate', () => setTimeout(onNavigated, 150));
+  }
+
+  // History moves the Navigation API does not cover, plus older browsers.
+  window.addEventListener('popstate', () => setTimeout(onNavigated, 150));
+
+  // Backstop. A content script lives in an isolated world, so patching
+  // history.pushState here would not intercept the page's own calls -
+  // polling is the only thing guaranteed to notice every route change.
+  setInterval(onNavigated, 700);
+}
+
+/**
+ * Run when the browser is idle, never in the critical path.
+ *
+ * Extraction reads whatever the page gives us, and some of that is large.
+ * Doing that work synchronously on load once froze a tab badly enough to
+ * make the browser UI unresponsive; the timeout still guarantees we run on
+ * a busy page.
+ */
+function startWhenIdle(): void {
+  const run = () => {
+    try {
+      start();
+    } catch (error) {
+      console.warn('[buycan] startup failed', error);
+    }
+  };
+  if (typeof requestIdleCallback === 'function') requestIdleCallback(run, { timeout: 3000 });
+  else setTimeout(run, 0);
 }
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', start, { once: true });
+  document.addEventListener('DOMContentLoaded', () => {
+    startWhenIdle();
+    watchNavigation();
+  }, { once: true });
 } else {
-  start();
+  startWhenIdle();
+  watchNavigation();
 }

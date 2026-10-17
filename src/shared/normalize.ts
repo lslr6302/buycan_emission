@@ -97,14 +97,36 @@ export function jaccard(a: Set<string>, b: Set<string>): number {
 export function parsePrice(raw: string | null | undefined): number | null {
   if (!raw) return null;
   const cleaned = raw.replace(/\s| /g, '');
-  const match = cleaned.match(/(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?)/);
+
+  // Grab the whole number first. An earlier version capped the leading run
+  // at three digits unless a thousands separator followed, so "1234.50" read
+  // as 123 and "250000.00" as 250 - wrong by three orders of magnitude, and
+  // silent.
+  const match = cleaned.match(/\d[\d.,]*/);
   if (!match) return null;
-  let num = match[1];
-  // Decide which separator is decimal by looking at the trailing group.
+
+  let num = match[0].replace(/[.,]+$/, '');
   const lastComma = num.lastIndexOf(',');
   const lastDot = num.lastIndexOf('.');
-  if (lastComma > lastDot) num = num.replace(/\./g, '').replace(',', '.');
-  else num = num.replace(/,/g, '');
+
+  if (lastComma >= 0 && lastDot >= 0) {
+    // Both present: whichever comes last is the decimal separator.
+    if (lastComma > lastDot) num = num.replace(/\./g, '').replace(',', '.');
+    else num = num.replace(/,/g, '');
+  } else {
+    const sep = lastComma >= 0 ? ',' : lastDot >= 0 ? '.' : null;
+    if (sep) {
+      const parts = num.split(sep);
+      const trailing = parts[parts.length - 1]!;
+      // One separator with 1-2 trailing digits is a decimal point;
+      // anything else (1,234 / 1.234.567) is thousands grouping.
+      const isDecimal = parts.length === 2 && trailing.length <= 2;
+      num = isDecimal
+        ? `${parts[0]}.${trailing}`
+        : parts.join('');
+    }
+  }
+
   const value = Number(num);
   return Number.isFinite(value) ? value : null;
 }

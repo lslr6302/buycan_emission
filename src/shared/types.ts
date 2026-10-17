@@ -166,6 +166,11 @@ export interface ResolveRequest {
   weights?: Weights;
   /** Skip the AI fallback. Used by the eval harness for reproducible runs. */
   verifiedOnly?: boolean;
+  /**
+   * The "product" was synthesised from a search box, so its title is a query
+   * and not a listing. Brand recovery must not run on it.
+   */
+  fromSearch?: boolean;
   destinationRegion?: string | null;
 }
 

@@ -67,6 +67,42 @@ const QUALITY_FILTER = `b.website is not null and cardinality(b.status_tags) > 0
  */
 const FUZZY_BRAND_THRESHOLD = 0.6;
 
+/**
+ * Our internal categories mapped onto the ones the brands table uses.
+ *
+ * Without this the free-text search ranges over all 1404 brands, and a
+ * search for "heads and shoulders" returns an insurance company because the
+ * loose OR query matched "head" inside "head office". A wrong answer that
+ * confident is worse than no answer at all.
+ */
+const CATEGORY_MAP: Record<string, string[]> = {
+  personal_care_hair: ['Personal Care'],
+  personal_care_body_wash: ['Personal Care'],
+  personal_care_oral: ['Personal Care'],
+  personal_care_deodorant: ['Personal Care'],
+  personal_care_lotion: ['Personal Care'],
+  supplements_vitamin_d: ['Personal Care', 'Groceries'],
+  snacks_chips: ['Groceries', 'Food & Drink'],
+  pantry_coffee: ['Groceries', 'Food & Drink'],
+  pantry_condiments: ['Groceries', 'Food & Drink'],
+  home_cleaning_laundry: ['Household'],
+  apparel_basics_tee: ['Clothing'],
+  insulated_drinkware: ['Home & Garden', 'Shopping'],
+  electronics_peripherals: ['Technology'],
+};
+
+/**
+ * Never returned for a physical-product search, whatever the words match.
+ * Nobody shopping for shampoo wants a bank.
+ */
+const SERVICE_CATEGORIES = [
+  'Financial Services',
+  'Business Services',
+  'Travel',
+  'Automotive',
+  'Entertainment',
+];
+
 export class TigerRepository implements Repository {
   readonly name = 'tigerdata';
 
@@ -180,7 +216,7 @@ export class TigerRepository implements Repository {
       const viaMatches = await this.alternativesForBrand(brand, query.limit);
       if (viaMatches.length > 0) return viaMatches;
     }
-    return this.alternativesByText(query.text, query.limit);
+    return this.alternativesByText(query.text, query.limit, query.category);
   }
 
   private async alternativesForBrand(brand: string, limit: number): Promise<CatalogueItem[]> {
@@ -239,13 +275,17 @@ export class TigerRepository implements Repository {
    *      in a single brand description, which matches nothing, ever. Ranking
    *      is what keeps OR from returning noise.
    */
-  private async alternativesByText(text: string, limit: number): Promise<CatalogueItem[]> {
-    const strict = await this.textSearch(text, limit, 'websearch_to_tsquery');
+  private async alternativesByText(
+    text: string,
+    limit: number,
+    category: string | null = null,
+  ): Promise<CatalogueItem[]> {
+    const strict = await this.textSearch(text, limit, 'websearch_to_tsquery', category);
     if (strict.length > 0) return strict;
 
     const loose = orTsQuery(text);
     if (!loose) return [];
-    return this.textSearch(loose, limit, 'to_tsquery');
+    return this.textSearch(loose, limit, 'to_tsquery', category);
   }
 
   private async textSearch(
@@ -253,8 +293,17 @@ export class TigerRepository implements Repository {
     limit: number,
     // Not user input - one of two hardcoded function names.
     tsFn: 'websearch_to_tsquery' | 'to_tsquery',
+    category: string | null = null,
   ): Promise<CatalogueItem[]> {
     const loose = tsFn === 'to_tsquery';
+
+    // Confine the search to plausible shelves. With a known category that is
+    // an allow-list; without one, at least rule out the service industries.
+    const allowed = category ? CATEGORY_MAP[category] : undefined;
+    const categoryClause = allowed
+      ? `and b.category = any($4)`
+      : `and (b.category is null or b.category <> all($4))`;
+    const categoryParam = allowed ?? SERVICE_CATEGORIES;
 
     // The curated notes are searched by substring, which only makes sense for
     // a user's own short phrasing. A whole listing title would never appear
@@ -283,15 +332,21 @@ export class TigerRepository implements Repository {
          cross join q
          left join ownership_overrides o on o.brand_slug = b.slug
         where ${QUALITY_FILTER}
+          ${categoryClause}
           and (
             to_tsvector('english',
               b.name || ' ' || coalesce(b.description,'') || ' ' || coalesce(b.category,''))
               @@ q.tsq
             ${notesClause}
           )
+          -- A loose OR match on a single common word is noise, not a result.
+          and ($3::boolean = false or ts_rank(
+                to_tsvector('english',
+                  b.name || ' ' || coalesce(b.description,'') || ' ' || coalesce(b.category,'')),
+                q.tsq) >= 0.02)
         order by rank desc, (b.verification = 'Verified') desc, b.name
         limit $2`,
-      [query, limit],
+      [query, limit, loose, categoryParam],
     );
 
     // A loose OR match is weaker evidence than a strict one, and the score
