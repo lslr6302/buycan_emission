@@ -15,14 +15,14 @@ export type { SiteAdapter, PageKind } from './types';
 export const genericAdapter: SiteAdapter = {
   id: 'generic',
 
-  pageKind: () => {
+  pageKind: (doc = document) => {
     if (/\/(cart|checkout|panier|basket)(\/|$)/i.test(location.pathname)) {
       // A cart we have no adapter for. Saying 'none' keeps us quiet rather
       // than half-reading a page and reporting a wrong total.
       return 'none';
     }
     // The honest product-page test: does the page claim to be one?
-    if (findProductNode(jsonLdNodesFromDocument(document))) return 'product';
+    if (findProductNode(jsonLdNodesFromDocument(doc))) return 'product';
     if (genericSearchQuery()) return 'search';
     return 'none';
   },

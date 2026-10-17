@@ -30,7 +30,11 @@ export interface SiteAdapter {
    */
   detect?: () => boolean;
 
-  pageKind: () => PageKind;
+  /**
+   * Defaults to the live page. The content script may pass a freshly fetched
+   * copy instead, when a single-page app left the live DOM without markup.
+   */
+  pageKind: (doc?: Document) => PageKind;
 
   /**
    * What the user typed, on a search-results page. Their own words are

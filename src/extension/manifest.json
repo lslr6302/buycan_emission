@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "description": "Shows who really owns a brand and whether a verified Canadian alternative exists. Says \"unknown\" when it does not know.",
 
-  "permissions": ["storage", "offscreen"],
+  "permissions": ["storage", "offscreen", "scripting"],
 
   "host_permissions": [
     "http://localhost:8787/*",

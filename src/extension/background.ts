@@ -321,6 +321,24 @@ chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) =>
   return true; // Keep the channel open for the async reply.
 });
 
+/**
+ * Chrome only injects content scripts into pages loaded after install, so a
+ * freshly installed or reloaded extension did nothing on tabs already open
+ * until each was refreshed. Inject into them directly instead.
+ */
+chrome.runtime.onInstalled.addListener(() => {
+  void (async () => {
+    for (const script of chrome.runtime.getManifest().content_scripts ?? []) {
+      if (!script.matches || !script.js) continue;
+      const tabs = await chrome.tabs.query({ url: script.matches });
+      for (const tab of tabs) {
+        if (tab.id === undefined || tab.discarded) continue;
+        await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: script.js }).catch(() => undefined);
+      }
+    }
+  })();
+});
+
 chrome.tabs.onRemoved.addListener((tabId) => {
   tabQueues.delete(tabId);
   void chrome.storage.session.remove(`tab:${tabId}`);

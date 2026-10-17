@@ -2,7 +2,7 @@ import { extractFromDocument } from '../shared/extract';
 import { normalizeSite } from '../shared/normalize';
 import { isStrongMatch } from '../shared/scoring';
 import type { CartLine } from '../shared/types';
-import { resolveAdapter } from './adapters';
+import { type PageKind, resolveAdapter } from './adapters';
 import {
   DEFAULT_SETTINGS,
   type Message,
@@ -69,12 +69,8 @@ async function settings(): Promise<Settings> {
 
 // --- product pages ---------------------------------------------------------
 
-async function runProduct(id: number): Promise<void> {
-  const product = extractFromDocument(
-    document,
-    { site, url: location.href },
-    adapter.product ?? null,
-  );
+async function runProduct(id: number, doc: Document): Promise<void> {
+  const product = extractFromDocument(doc, { site, url: location.href }, adapter.product ?? null);
 
   if (!product) {
     report({ pageKind: 'product', error: 'no product could be extracted from this page' });
@@ -238,16 +234,18 @@ function scheduleCart(): void {
 
 // --- entry -----------------------------------------------------------------
 
-function start(): void {
+async function start(): Promise<void> {
   const id = runId;
-  const kind = adapter.pageKind();
+  const { doc, kind } = await readPage(id);
+  if (stale(id)) return;
+
   if (kind === 'none') {
     report({ pageKind: 'none' });
     return;
   }
 
   if (kind === 'product') {
-    void runProduct(id);
+    void runProduct(id, doc);
     return;
   }
 
@@ -263,6 +261,56 @@ function start(): void {
   cartObserver.observe(document.body, { childList: true, subtree: true });
 }
 
+// --- reading the page ---------------------------------------------------------
+
+/** Set after the first in-site navigation; a fresh page load never needs the fallbacks. */
+let navigated = false;
+/** Extra looks at the live page while a single-page app finishes rendering. */
+const RENDER_RETRIES_MS = [800, 1500];
+
+/**
+ * The page to read, and what kind it is.
+ *
+ * On a real page load, the live DOM. After an in-site navigation, single-page
+ * apps (Walmart among them) often swap the visible content but never render
+ * the schema.org markup the server-rendered page carries, so the live DOM no
+ * longer reads as a product. Give it a moment, then fetch the same URL - the
+ * server version, with the shopper's cookies - and read that instead.
+ */
+async function readPage(id: number): Promise<{ doc: Document; kind: PageKind }> {
+  const readable = (doc: Document, kind: PageKind) =>
+    kind !== 'none' && (kind !== 'product' || extractFromDocument(doc, { site, url: location.href }, adapter.product ?? null) !== null);
+
+  let kind = adapter.pageKind(document);
+  if (!navigated || readable(document, kind)) return { doc: document, kind };
+
+  for (const wait of RENDER_RETRIES_MS) {
+    await new Promise((resolve) => setTimeout(resolve, wait));
+    if (stale(id)) return { doc: document, kind };
+    kind = adapter.pageKind(document);
+    if (readable(document, kind)) return { doc: document, kind };
+  }
+
+  const fresh = await fetchPage();
+  if (fresh && !stale(id)) {
+    const freshKind = adapter.pageKind(fresh);
+    if (freshKind !== 'none') return { doc: fresh, kind: freshKind };
+  }
+  return { doc: document, kind };
+}
+
+async function fetchPage(): Promise<Document | null> {
+  try {
+    const response = await fetch(location.href, { credentials: 'include', headers: { accept: 'text/html' } });
+    if (!response.ok) return null;
+    return new DOMParser().parseFromString(await response.text(), 'text/html');
+  } catch {
+    return null;
+  }
+}
+
+// --- navigation --------------------------------------------------------------
+
 /**
  * Walmart, Amazon's newer pages and most modern storefronts are single-page
  * apps: going from results to a product swaps the URL without a page load,
@@ -272,29 +320,36 @@ function start(): void {
  */
 let lastUrl = location.href;
 const NAVIGATION_POLL_MS = 1000;
-/** Give the app time to render the new page (and its JSON-LD) before reading it. */
+/** Give the app time to render the new page before the first look. */
 const SETTLE_MS = 1200;
 
 function onNavigate(): void {
   runId++;
+  navigated = true;
   clearTimeout(cartTimer);
   cartObserver?.disconnect();
   cartObserver = null;
   lastCartSignature = '';
   removeOverlay();
   setTimeout(() => {
-    if (location.href === lastUrl) start();
+    if (location.href === lastUrl) void start();
   }, SETTLE_MS);
 }
 
-setInterval(() => {
+const navigationTimer = setInterval(() => {
+  // After the extension is reloaded, this copy is orphaned (its runtime is
+  // gone) while the freshly injected one takes over. Stop quietly.
+  if (!chrome.runtime?.id) {
+    clearInterval(navigationTimer);
+    return;
+  }
   if (location.href === lastUrl) return;
   lastUrl = location.href;
   onNavigate();
 }, NAVIGATION_POLL_MS);
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', start, { once: true });
+  document.addEventListener('DOMContentLoaded', () => void start(), { once: true });
 } else {
-  start();
+  void start();
 }
