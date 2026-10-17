@@ -160,6 +160,37 @@ function render(): void {
 
   status.textContent = `${escapeHtml(resolved.provenance.displayName)} · ${escapeHtml(resolved.provenance.summary)}`;
 
+  // A dismissal is the one suppression the user can undo, so it gets a
+  // button here rather than a sentence pointing at Settings.
+  if (tabState.report?.overlay === 'suppressed_dismissed') {
+    result.innerHTML = `
+      <div class="abstain">
+        <strong>Overlay hidden on ${escapeHtml(tabState.site)}.</strong>
+        You dismissed it here. It comes back on its own in 7 days.
+        <button id="undismiss" type="button" style="margin-top:9px">Show it again now</button>
+      </div>`;
+    document.getElementById('undismiss')?.addEventListener('click', () => {
+      void send({ type: 'undismiss', site: tabState?.site ?? '' }).then(() => {
+        const btn = document.getElementById('undismiss') as HTMLButtonElement | null;
+        if (btn) {
+          btn.textContent = 'Restored — reload the page';
+          btn.disabled = true;
+        }
+      });
+    });
+    return;
+  }
+
+  if (resolved.alreadyCanadian) {
+    result.innerHTML = `
+      <div class="card">
+        <div class="card-title">Already Canadian-owned</div>
+        <div class="muted">${escapeHtml(resolved.provenance.summary)}</div>
+        <div class="muted">No alternatives suggested — there is nothing to switch to.</div>
+      </div>`;
+    return;
+  }
+
   // The abstention path. This is the whole reason the popup exists.
   if (resolved.abstained) {
     const rejected = resolved.diagnostics.aiCandidatesRejected;

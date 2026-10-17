@@ -1,6 +1,6 @@
 import { normalizeBrand } from '../../shared/normalize';
-import type { BrandRecord, CfiaClass, Confidence, ProductSpec, Sourced } from '../../shared/types';
-import { unknown } from '../../shared/types';
+import { clamp01 } from '../../shared/normalize';
+import type { BrandRecord, Confidence, ProductSpec, Sourced } from '../../shared/types';
 import type {
   AlternativeQuery,
   CatalogueItem,
@@ -9,58 +9,80 @@ import type {
 } from './repository';
 
 /**
- * TigerData (Postgres) implementation, mapped onto the real Tiger Cloud schema.
+ * TigerData (Postgres) implementation, written against the live schema.
  *
- * The dataset is BRAND-level, not product-level:
+ * IMPORTANT - this dataset is BRAND-level, not product-level:
  *
- *   brands               Canadian brands. Ownership facts are status_tags
- *                        ("Canadian-owned", "Not made in Canada", ...) with one
- *                        `sources` list per row and a `verification` level.
- *   us_brands            Brands people want to replace (trycanadian list).
- *   matches              Curated us_brand -> Canadian brand pairs.
- *   ownership_overrides  Team-researched ultimate owners. Beats status_tags.
+ *   us_brands (1250)   the foreign brand on the page
+ *   matches   (2431)   us_slug -> brand_slug, with coverage + verification
+ *   brands    (1404)   the Canadian alternative, with status_tags + sources
+ *   ownership_overrides (5)  foreign owners of Canadian-looking brands
  *
- * Consequences the rest of the pipeline should know about:
- *   - There are no products, prices, GTINs or retailers. A candidate is a
- *     Canadian BRAND, its URL is the brand website, and price is null (scored
- *     neutral). findByGtin and findCanadianRetailers have nothing to read.
- *   - Sources are per-row, not per-field, so every tag-derived field cites
- *     the row's first source. That is a real limitation of the dataset.
- *   - There is no spec_cache table; specs are cached in process memory rather
- *     than creating tables in a shared database.
+ * There are no SKUs, prices, barcodes or embeddings. So:
  *
- * Takes a `SqlExecutor` rather than importing a driver, so this file does not
- * depend on `pg` directly; config.ts constructs the pool.
+ *   - price scoring is inert (every candidate price is null -> neutral)
+ *   - the GTIN retailer-swap path cannot fire
+ *   - equivalence comes from the dataset's own `coverage` and `match_verified`
+ *     columns rather than from attribute overlap, and is returned as
+ *     `similarity` so the pipeline uses it instead of comparing titles
+ *
+ * That last point matters: a Canadian alternative is a *different product*,
+ * so token overlap between "Dove Body Wash" and "Crate 61 Organics" is ~0.
+ * Curated coverage is a far better signal than anything we could compute.
  */
 
-/** Matches node-postgres' Pool.query, deliberately. */
 export interface SqlExecutor {
   query(text: string, params?: unknown[]): Promise<{ rows: Record<string, unknown>[] }>;
 }
 
-/** Below this, a fuzzy name hit is more likely a different company than a typo. */
-const FUZZY_MIN_SIMILARITY = 0.6;
+/** Exact tag strings as they appear in brands.status_tags. */
+const TAG = {
+  owned: 'Canadian-owned',
+  notOwned: 'Not Canadian-owned',
+  founded: 'Canadian-founded',
+  notFounded: 'Not Canadian-founded',
+  hq: 'HQ in Canada',
+  notHq: 'HQ not in Canada',
+  made: 'Made in Canada',
+  notMade: 'Not made in Canada',
+  partlyMade: 'Partially made in Canada',
+  notPartlyMade: 'Not partially made in Canada',
+  productOf: 'Product of Canada',
+  notProductOf: 'Not a Product of Canada',
+} as const;
 
-const US_KEY_PREFIX = 'us:';
+/**
+ * Quality floor for a row to be shown. The matches table carries a long tail
+ * of stub rows - no website, no status tags, unverified - which are worse
+ * than nothing, because a link we cannot resolve is exactly the failure the
+ * project exists to avoid.
+ */
+const QUALITY_FILTER = `b.website is not null and cardinality(b.status_tags) > 0`;
+
+/**
+ * Minimum trigram similarity for a fuzzy brand match. pg_trgm's default of
+ * 0.3 is far too loose for short brand names - "Dove" reaches it against
+ * "Dove Men+Care" - and a wrong brand produces a confidently wrong verdict,
+ * which is worse than no answer at all.
+ */
+const FUZZY_BRAND_THRESHOLD = 0.6;
 
 export class TigerRepository implements Repository {
   readonly name = 'tigerdata';
 
-  private specCache = new Map<string, ProductSpec>();
-
   constructor(private readonly sql: SqlExecutor) {}
 
   async init(): Promise<void> {
-    await this.sql.query('select 1 from brands limit 1');
+    await this.sql.query('select 1');
   }
 
   async close(): Promise<void> {
-    // Pool lifecycle belongs to whoever constructed it.
+    // The pool belongs to whoever constructed it.
   }
 
   async healthy(): Promise<boolean> {
     try {
-      await this.sql.query('select 1');
+      await this.sql.query('select 1 from brands limit 1');
       return true;
     } catch {
       return false;
@@ -68,261 +90,458 @@ export class TigerRepository implements Repository {
   }
 
   /**
-   * Canadian brands first, then the US list. Exact name match beats fuzzy, and
-   * the fuzzy arm is held to a high similarity bar: linking a product to the
-   * wrong company is worse than linking it to none.
+   * A brand on a page can be either side of this dataset: a Canadian brand
+   * (in `brands`) or a foreign one someone wants an alternative to (in
+   * `us_brands`). Check Canadian first - it carries far more evidence.
    */
   async findBrand(rawBrand: string): Promise<BrandRecord | null> {
-    const hit = await this.lookupBrand(rawBrand);
-    if (!hit) return null;
-    return hit.kind === 'ca' ? this.canadianBrand(hit.slug) : this.usBrand(hit.slug);
+    const name = rawBrand.trim();
+    if (name.length < 2) return null;
+
+    // Order matters, and getting it wrong is subtle. An exact hit on either
+    // table must beat a fuzzy hit on the other: "Dove" trigram-matches the
+    // stub row "Dove Men+Care" in the Canadian table at 0.36, which would
+    // otherwise outrank the exact "Dove" in us_brands and report a
+    // Unilever brand as an unverified Canadian one.
+    const exactCanadian = await this.sql.query(
+      `select b.*, o.owner_name, o.owner_country, o.note as owner_note,
+              o.source_url as owner_source, o.team_confirmed
+         from brands b
+         left join ownership_overrides o on o.brand_slug = b.slug
+        where lower(b.name) = lower($1)
+        order by cardinality(b.status_tags) desc
+        limit 1`,
+      [name],
+    );
+    if (exactCanadian.rows[0]) return this.canadianBrandRecord(exactCanadian.rows[0]);
+
+    const exactForeign = await this.sql.query(
+      `select * from us_brands where lower(name) = lower($1) limit 1`,
+      [name],
+    );
+    if (exactForeign.rows[0]) return this.foreignBrandRecord(exactForeign.rows[0]);
+
+    // Fuzzy, and only over rows carrying actual evidence. A stub with no
+    // status tags cannot answer any question we care about, so matching it
+    // is strictly worse than returning "unknown".
+    const fuzzyCanadian = await this.sql.query(
+      `select b.*, o.owner_name, o.owner_country, o.note as owner_note,
+              o.source_url as owner_source, o.team_confirmed,
+              similarity(lower(b.name), lower($1)) as sim
+         from brands b
+         left join ownership_overrides o on o.brand_slug = b.slug
+        where lower(b.name) % lower($1)
+          and cardinality(b.status_tags) > 0
+          and similarity(lower(b.name), lower($1)) >= $2
+        order by sim desc
+        limit 1`,
+      [name, FUZZY_BRAND_THRESHOLD],
+    );
+    if (fuzzyCanadian.rows[0]) return this.canadianBrandRecord(fuzzyCanadian.rows[0]);
+
+    const fuzzyForeign = await this.sql.query(
+      `select *, similarity(lower(name), lower($1)) as sim
+         from us_brands
+        where lower(name) % lower($1)
+          and similarity(lower(name), lower($1)) >= $2
+        order by sim desc
+        limit 1`,
+      [name, FUZZY_BRAND_THRESHOLD],
+    );
+    if (fuzzyForeign.rows[0]) return this.foreignBrandRecord(fuzzyForeign.rows[0]);
+
+    return null;
   }
 
   async findBrandsByKeys(keys: string[]): Promise<BrandRecord[]> {
-    const out: BrandRecord[] = [];
-    for (const key of keys) {
-      const record = key.startsWith(US_KEY_PREFIX)
-        ? await this.usBrand(key.slice(US_KEY_PREFIX.length))
-        : await this.canadianBrand(key);
-      if (record) out.push(record);
-    }
-    return out;
+    if (keys.length === 0) return [];
+    const { rows } = await this.sql.query(
+      `select b.*, o.owner_name, o.owner_country, o.note as owner_note,
+              o.source_url as owner_source, o.team_confirmed
+         from brands b
+         left join ownership_overrides o on o.brand_slug = b.slug
+        where b.slug = any($1)`,
+      [keys],
+    );
+    return rows.map((r) => this.canadianBrandRecord(r));
   }
 
   /**
-   * The verified path: the product's brand is linked to a US brand, and the
-   * curated matches for it are the alternatives. Without a linked US brand
-   * there is nothing curated to offer, so this returns nothing rather than
-   * guessing from the title.
+   * Two retrieval paths:
+   *
+   *   1. A brand was read off the page -> walk us_brands -> matches -> brands.
+   *      This is the curated path and the one that produces good answers.
+   *   2. No brand, e.g. a search-results page -> text search over Canadian
+   *      brands by name, description and category.
    */
   async findAlternatives(query: AlternativeQuery): Promise<CatalogueItem[]> {
-    if (!query.brand) return [];
-    const hit = await this.lookupBrand(query.brand);
-    if (!hit || hit.kind !== 'us') return [];
+    const brand = query.brand?.trim();
+    if (brand && brand.length >= 2) {
+      const viaMatches = await this.alternativesForBrand(brand, query.limit);
+      if (viaMatches.length > 0) return viaMatches;
+    }
+    return this.alternativesByText(query.text, query.limit);
+  }
+
+  private async alternativesForBrand(brand: string, limit: number): Promise<CatalogueItem[]> {
+    const { rows } = await this.sql.query(
+      `with target as (
+         select slug from us_brands
+          where lower(name) = lower($1) or lower(name) % lower($1)
+          order by (lower(name) = lower($1)) desc,
+                   similarity(lower(name), lower($1)) desc
+          limit 1
+       )
+       select b.*, m.coverage, m.match_verified, m.match_partial, m.notes,
+              m.canadian_product_name, m.us_product_name,
+              o.owner_name, o.owner_country, o.source_url as owner_source
+         from matches m
+         join target t on t.slug = m.us_slug
+         join brands b on b.slug = m.brand_slug
+         left join ownership_overrides o on o.brand_slug = b.slug
+        where ${QUALITY_FILTER}
+        order by m.match_verified desc,
+                 case m.coverage
+                   when 'Broad coverage' then 3
+                   when 'Partial coverage' then 2
+                   when 'Niche coverage' then 1
+                   else 0 end desc,
+                 b.verification = 'Verified' desc
+        limit $2`,
+      [brand, limit],
+    );
+    return rows.map((r) => this.toCatalogueItem(r));
+  }
+
+  /**
+   * Search-results pages, where we have the user's words but no brand.
+   *
+   * Full-text search, not trigram. Trigram similarity between a two-word
+   * query and a sentence-long description is near zero by construction -
+   * "shampoo" scored 0 against four brands whose descriptions are literally
+   * about shampoo. Stemming also earns its keep: "potato chips" finds a
+   * description reading "kettle-style potato chip".
+   *
+   * The curated `matches` notes are searched too, because they describe what
+   * a brand substitutes for in words the brand's own blurb may not use.
+   */
+  /**
+   * Search by words, used on search-results pages and whenever a brand could
+   * not be read off a product page.
+   *
+   * Two passes, because the two inputs are completely different shapes:
+   *
+   *   1. STRICT (`websearch_to_tsquery`, AND semantics) - right for what a
+   *      user types, like "shampoo" or "laundry detergent".
+   *   2. LOOSE (OR of the significant terms, ranked) - necessary for a real
+   *      listing title. "Redken All Soft Shampoo, For Dry/Brittle Hair,
+   *      Moisturizes & Provides" under AND requires every one of those words
+   *      in a single brand description, which matches nothing, ever. Ranking
+   *      is what keeps OR from returning noise.
+   */
+  private async alternativesByText(text: string, limit: number): Promise<CatalogueItem[]> {
+    const strict = await this.textSearch(text, limit, 'websearch_to_tsquery');
+    if (strict.length > 0) return strict;
+
+    const loose = orTsQuery(text);
+    if (!loose) return [];
+    return this.textSearch(loose, limit, 'to_tsquery');
+  }
+
+  private async textSearch(
+    query: string,
+    limit: number,
+    // Not user input - one of two hardcoded function names.
+    tsFn: 'websearch_to_tsquery' | 'to_tsquery',
+  ): Promise<CatalogueItem[]> {
+    const loose = tsFn === 'to_tsquery';
+
+    // The curated notes are searched by substring, which only makes sense for
+    // a user's own short phrasing. A whole listing title would never appear
+    // verbatim in a note, so that arm is omitted in loose mode rather than
+    // passed an impossible sentinel.
+    const notesClause = loose
+      ? ''
+      : `or exists (
+             select 1 from matches m
+              where m.brand_slug = b.slug
+                and (m.canadian_product_name ilike '%' || $1 || '%'
+                     or array_to_string(m.notes, ' ') ilike '%' || $1 || '%')
+           )`;
 
     const { rows } = await this.sql.query(
-      `select m.id, m.us_product_name, m.canadian_product_name, m.coverage,
-              m.match_verified, b.slug, b.name, b.website
-         from matches m
-         join brands b on b.slug = m.brand_slug
-        where m.us_slug = $1
-        order by m.match_verified desc,
-                 case m.coverage when 'Broad coverage' then 0
-                                 when 'Partial coverage' then 1
-                                 when 'Niche coverage' then 2 else 3 end,
-                 case b.verification when 'Verified' then 0
-                                     when 'Partially verified' then 1 else 2 end,
-                 b.name
+      `with q as (select ${tsFn}('english', $1) as tsq)
+       select b.*, null::text as coverage, false as match_verified, false as match_partial,
+              array[]::text[] as notes, '' as canadian_product_name, '' as us_product_name,
+              o.owner_name, o.owner_country, o.source_url as owner_source,
+              ts_rank(
+                to_tsvector('english',
+                  b.name || ' ' || coalesce(b.description,'') || ' ' || coalesce(b.category,'')),
+                q.tsq
+              ) as rank
+         from brands b
+         cross join q
+         left join ownership_overrides o on o.brand_slug = b.slug
+        where ${QUALITY_FILTER}
+          and (
+            to_tsvector('english',
+              b.name || ' ' || coalesce(b.description,'') || ' ' || coalesce(b.category,''))
+              @@ q.tsq
+            ${notesClause}
+          )
+        order by rank desc, (b.verification = 'Verified') desc, b.name
         limit $2`,
-      [hit.slug, query.limit],
+      [query, limit],
     );
 
+    // A loose OR match is weaker evidence than a strict one, and the score
+    // has to say so or a tangential brand looks as good as a real match.
     return rows.map((r) => {
-      const website = text(r.website);
-      return {
-        id: `match:${String(r.id)}`,
-        title: text(r.canadian_product_name) || String(r.name),
-        brand: String(r.name),
-        brandKey: String(r.slug),
-        url: website ?? '',
-        retailer: website ? hostnameOf(website) : String(r.name),
-        retailerCanadianOwned: null,
-        priceCad: null,
-        priceChecked: null,
-        // The match itself is the curated equivalence claim. The dataset's
-        // categories ("Personal Care") are not the spec vocabulary ("hair
-        // care"), and a mismatch there would zero the equivalence score.
-        category: null,
-        attrs: {},
-        massKg: null,
-        gtin: null,
-        shipsFrom: null,
-        similarity: null,
-      };
+      const item = this.toCatalogueItem(r);
+      const rank = Number(r['rank'] ?? 0);
+      const base = loose ? 0.45 : 0.6;
+      const lift = Math.min(0.3, rank * 4);
+      return { ...item, similarity: clamp01(base + lift) };
     });
   }
 
-  /** The dataset carries no barcodes. */
-  async findByGtin(_gtin: string): Promise<CatalogueItem[]> {
+  /** No barcode data in this dataset, so cross-store matching cannot run. */
+  async findByGtin(): Promise<CatalogueItem[]> {
     return [];
   }
 
-  /** The dataset has no retailer table. */
+  /** No retailer table yet. The retailer-swap fallback stays inert. */
   async findCanadianRetailers(): Promise<RetailerRecord[]> {
     return [];
   }
 
-  async getCachedSpec(key: string): Promise<ProductSpec | null> {
-    return this.specCache.get(key) ?? null;
+  /**
+   * No spec_cache table exists, and creating tables in someone else's
+   * database is not this layer's call. Caching degrades to "off".
+   */
+  async getCachedSpec(): Promise<ProductSpec | null> {
+    return null;
   }
 
-  async putCachedSpec(key: string, spec: ProductSpec): Promise<void> {
-    this.specCache.set(key, spec);
+  async putCachedSpec(): Promise<void> {
+    /* no-op */
   }
 
-  // --- lookups -----------------------------------------------------------
+  // --- row mapping ---------------------------------------------------------
 
-  private async lookupBrand(rawBrand: string): Promise<{ kind: 'ca' | 'us'; slug: string } | null> {
-    const raw = rawBrand.trim().toLowerCase();
-    const key = normalizeBrand(rawBrand);
-    if (!key) return null;
+  private canadianBrandRecord(row: Record<string, unknown>): BrandRecord {
+    const tags = toStringArray(row['status_tags']);
+    const confidence = verificationConfidence(String(row['verification'] ?? ''));
+    const source = primarySource(row) ?? (row['profile_url'] as string) ?? null;
 
-    const { rows } = await this.sql.query(
-      `select kind, slug, sim from (
-         select 'ca' as kind, slug, greatest(similarity(lower(name), $1), similarity(lower(name), $2)) as sim
-           from brands
-          where lower(name) in ($1, $2) or lower(name) % $2
-         union all
-         select 'us' as kind, slug, greatest(similarity(lower(name), $1), similarity(lower(name), $2)) as sim
-           from us_brands
-          where lower(name) in ($1, $2) or lower(name) % $2
-       ) hits
-       where sim >= $3
-       order by sim desc, kind asc
-       limit 1`,
-      [raw, key, FUZZY_MIN_SIMILARITY],
-    );
-    const row = rows[0];
-    return row ? { kind: row.kind as 'ca' | 'us', slug: String(row.slug) } : null;
+    const ownerName = (row['owner_name'] as string) ?? null;
+    const ownerCountry = (row['owner_country'] as string) ?? null;
+    const ownerSource = (row['owner_source'] as string) ?? null;
+
+    // An override always wins: it is the whole point of following the
+    // ultimate parent rather than the brand's own marketing.
+    const parent: Sourced<string> = ownerName
+      ? { value: ownerName, source: ownerSource, confidence: 'medium' }
+      : { value: null, source: null, confidence: 'low', reason: 'no parent recorded for this brand' };
+
+    const parentHq: Sourced<string> = ownerCountry
+      ? { value: ownerCountry, source: ownerSource, confidence: 'medium' }
+      : tagged(tags, TAG.owned, TAG.notOwned)
+        ? { value: 'CA', source, confidence }
+        : { value: null, source: null, confidence: 'low', reason: 'ownership not recorded' };
+
+    return {
+      key: String(row['slug'] ?? ''),
+      displayName: String(row['name'] ?? ''),
+      parent,
+      parentHq,
+      hqCountry: tagField(tags, TAG.hq, TAG.notHq, 'CA', source, confidence),
+      foundedIn: tagField(tags, TAG.founded, TAG.notFounded, 'CA', source, confidence),
+      mfgOrigin: manufacturing(tags, source, confidence),
+      cfiaClass: tags.includes(TAG.productOf)
+        ? 'Product of Canada'
+        : tags.includes(TAG.made)
+          ? 'Made in Canada'
+          : null,
+      lastReviewed: String(row['verification'] ?? 'Unverified'),
+    };
   }
 
-  private async canadianBrand(slug: string): Promise<BrandRecord | null> {
-    const { rows } = await this.sql.query(
-      `select b.slug, b.name, b.status_tags, b.verification, b.sources, b.profile_url,
-              o.owner_name, o.owner_country, o.source_url as owner_source
-         from brands b
-         left join ownership_overrides o on o.brand_slug = b.slug
-        where b.slug = $1`,
-      [slug],
-    );
-    return rows[0] ? toCanadianBrandRecord(rows[0]) : null;
+  /**
+   * A row in `us_brands` is, by this dataset's own construction, a foreign
+   * brand someone is seeking an alternative to. That is evidence, not proof,
+   * so it is recorded at medium confidence and cited to the profile URL
+   * rather than asserted outright.
+   */
+  private foreignBrandRecord(row: Record<string, unknown>): BrandRecord {
+    const source = (row['profile_url'] as string) ?? null;
+    const reason = 'listed as a foreign brand in the alternatives dataset; no ownership chain recorded';
+    return {
+      key: String(row['slug'] ?? ''),
+      displayName: String(row['name'] ?? ''),
+      parent: { value: null, source: null, confidence: 'low', reason },
+      parentHq: { value: 'US', source, confidence: 'medium' },
+      hqCountry: { value: 'US', source, confidence: 'medium' },
+      foundedIn: { value: null, source: null, confidence: 'low', reason },
+      mfgOrigin: { value: null, source: null, confidence: 'low', reason },
+      cfiaClass: null,
+      lastReviewed: 'from us_brands',
+    };
   }
 
-  private async usBrand(slug: string): Promise<BrandRecord | null> {
-    const { rows } = await this.sql.query(
-      `select slug, name, profile_url from us_brands where slug = $1`,
-      [slug],
-    );
-    return rows[0] ? toUsBrandRecord(rows[0]) : null;
+  private toCatalogueItem(row: Record<string, unknown>): CatalogueItem {
+    const tags = toStringArray(row['status_tags']);
+    const region = (row['region'] as string) ?? null;
+    const productName = String(row['canadian_product_name'] ?? '').trim();
+    const name = String(row['name'] ?? '');
+
+    return {
+      id: String(row['slug'] ?? ''),
+      // The curated product name when there is one, otherwise the brand.
+      title: productName || name,
+      brand: name,
+      brandKey: String(row['slug'] ?? ''),
+      url: String(row['website'] ?? ''),
+      retailer: name,
+      retailerCanadianOwned: tagged(tags, TAG.owned, TAG.notOwned),
+      priceCad: null,
+      priceChecked: null,
+      category: (row['category'] as string) ?? null,
+      attrs: {},
+      massKg: null,
+      gtin: null,
+      shipsFrom: region ? `CA-${region}` : null,
+      similarity: matchStrength(row),
+    };
   }
 }
 
-// --- row mapping -----------------------------------------------------------
+// ---------------------------------------------------------------------------
 
 /**
- * status_tags -> per-dimension facts. A tag answers its dimension; the absence
- * of a tag answers nothing. "Not X" tags are explicit negatives, which is why
- * those dimensions carry a non-CA marker rather than null.
+ * Equivalence, taken from the dataset's own judgement rather than computed.
+ * A curator who wrote "Broad coverage, verified" knows more about whether
+ * these two brands substitute for each other than any string comparison.
  */
-function toCanadianBrandRecord(row: Record<string, unknown>): BrandRecord {
-  const tags = new Set((row.status_tags as string[] | null) ?? []);
-  const source = firstSource(row.sources) ?? text(row.profile_url);
-  const confidence = confidenceFor(text(row.verification));
+function matchStrength(row: Record<string, unknown>): number {
+  // The text path already emits a calibrated 0..1 value; do not rescale it.
+  const textSim = row['text_sim'];
+  if (typeof textSim === 'number') return clamp01(textSim);
+  if (typeof textSim === 'string' && textSim !== '') return clamp01(Number(textSim));
 
-  const tagged = (yes: string, no: string, unknownReason: string): Sourced<string> => {
-    if (!source) return unknown<string>('value present but uncited');
-    if (tags.has(yes)) return { value: 'CA', source, confidence };
-    if (tags.has(no)) return { value: NOT_CANADA, source, confidence };
-    return unknown<string>(unknownReason);
-  };
+  const coverage = String(row['coverage'] ?? '');
+  const base =
+    coverage === 'Broad coverage'
+      ? 0.9
+      : coverage === 'Partial coverage'
+        ? 0.7
+        : coverage === 'Niche coverage'
+          ? 0.5
+          : 0.45;
 
-  // Ownership: a team-researched override beats the tags.
-  const ownerCountry = text(row.owner_country);
-  const ownerSource = text(row.owner_source);
-  let parent: Sourced<string>;
-  let parentHq: Sourced<string>;
-  if (ownerCountry && ownerSource) {
-    parent = { value: text(row.owner_name), source: ownerSource, confidence: 'medium' };
-    parentHq = { value: ownerCountry, source: ownerSource, confidence: 'medium' };
-  } else {
-    parent = unknown<string>('ultimate parent not recorded in the dataset');
-    parentHq = tagged('Canadian-owned', 'Not Canadian-owned', 'ownership unconfirmed in the dataset');
-  }
-
-  const madeInCanada = tags.has('Partially made in Canada')
-    ? unknown<string>('only partially made in Canada')
-    : tagged('Made in Canada', 'Not made in Canada', 'manufacturing origin not recorded');
-
-  return {
-    key: String(row.slug),
-    displayName: String(row.name),
-    parent,
-    parentHq,
-    hqCountry: tagged('HQ in Canada', 'HQ not in Canada', 'HQ not recorded'),
-    foundedIn: tagged('Canadian-founded', 'Not Canadian-founded', 'founding country not recorded'),
-    mfgOrigin: madeInCanada,
-    cfiaClass: tags.has('Product of Canada') ? ('Product of Canada' satisfies CfiaClass) : null,
-    lastReviewed: '',
-    // "HQ in Canada" without "Canadian-owned" is exactly what the dataset
-    // calls unconfirmed. Inferring ownership from HQ here would overclaim.
-    inferOwnershipFromHq: false,
-  };
+  const verified = row['match_verified'] === true;
+  const partial = row['match_partial'] === true;
+  return clamp01(base + (verified ? 0.08 : -0.12) - (partial ? 0.08 : 0));
 }
 
 /**
- * Being on the US-brands list is the one fact we have, cited by its profile
- * page. Everything else stays unknown.
+ * Words too generic to narrow anything down in a listing title. Marketing
+ * filler mostly, plus units - "300 ml" matches half the catalogue.
  */
-function toUsBrandRecord(row: Record<string, unknown>): BrandRecord {
-  const source = text(row.profile_url);
-  const none = (reason: string) => unknown<string>(reason);
-  return {
-    key: `${US_KEY_PREFIX}${String(row.slug)}`,
-    displayName: String(row.name),
-    parent: none('ultimate parent not recorded in the dataset'),
-    parentHq: source
-      ? { value: 'US', source, confidence: 'medium' }
-      : none('listed as a US brand, but uncited'),
-    hqCountry: none('HQ not recorded'),
-    foundedIn: none('founding country not recorded'),
-    mfgOrigin: none('manufacturing origin not recorded'),
-    cfiaClass: null,
-    lastReviewed: '',
-    inferOwnershipFromHq: false,
-  };
+const TITLE_NOISE = new Set([
+  'the', 'and', 'for', 'with', 'from', 'pack', 'size', 'count', 'new', 'free',
+  'oz', 'ml', 'fl', 'kg', 'lb', 'gram', 'grams', 'litre', 'liter',
+  'all', 'soft', 'daily', 'natural', 'original', 'classic', 'premium', 'plus',
+  'provides', 'moisturizes', 'moisturizing', 'formula', 'value', 'bottle',
+]);
+
+/**
+ * Turns a listing title into an OR tsquery of its distinctive terms.
+ * Sanitized to alphanumerics because to_tsquery parses its input as an
+ * expression and would throw on stray punctuation.
+ */
+function orTsQuery(text: string): string {
+  const tokens = text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter((t) => t.length > 2 && !TITLE_NOISE.has(t) && !/^\d+$/.test(t));
+  return [...new Set(tokens)].slice(0, 12).join(' | ');
 }
 
-/** Any value other than "CA" reads as a no in provenance.ts. */
-const NOT_CANADA = 'not CA';
+function toStringArray(value: unknown): string[] {
+  if (Array.isArray(value)) return value.filter((v): v is string => typeof v === 'string');
+  return [];
+}
 
-function confidenceFor(verification: string | null): Confidence {
+/** Returns true / false / null (not recorded) for a positive-negative tag pair. */
+function tagged(tags: string[], positive: string, negative: string): boolean | null {
+  if (tags.includes(positive)) return true;
+  if (tags.includes(negative)) return false;
+  return null;
+}
+
+function tagField(
+  tags: string[],
+  positive: string,
+  negative: string,
+  positiveValue: string,
+  source: string | null,
+  confidence: Confidence,
+): Sourced<string> {
+  const verdict = tagged(tags, positive, negative);
+  if (verdict === null) {
+    return { value: null, source: null, confidence: 'low', reason: `"${positive}" not recorded` };
+  }
+  if (!verdict) {
+    return { value: 'non-CA', source, confidence };
+  }
+  return { value: positiveValue, source, confidence };
+}
+
+/**
+ * Manufacturing has three states here, not two. "Partially made in Canada" is
+ * its own answer and collapsing it to yes or no would be the exact
+ * oversimplification this project exists to avoid.
+ */
+function manufacturing(tags: string[], source: string | null, confidence: Confidence): Sourced<string> {
+  if (tags.includes(TAG.made) || tags.includes(TAG.productOf)) {
+    return { value: 'CA', source, confidence };
+  }
+  if (tags.includes(TAG.partlyMade)) {
+    return { value: 'CA-partial', source, confidence };
+  }
+  if (tags.includes(TAG.notMade) || tags.includes(TAG.notPartlyMade)) {
+    return { value: 'non-CA', source, confidence };
+  }
+  return { value: null, source: null, confidence: 'low', reason: 'manufacturing not recorded' };
+}
+
+function verificationConfidence(verification: string): Confidence {
   if (verification === 'Verified') return 'high';
   if (verification === 'Partially verified') return 'medium';
   return 'low';
 }
 
-/** First cited URL, minus the tracking parameters the scrape left behind. */
-function firstSource(sources: unknown): string | null {
-  if (!Array.isArray(sources)) return null;
-  for (const entry of sources) {
-    const url = text((entry as { url?: unknown } | null)?.url);
-    if (url) return stripTracking(url);
+/** brands.sources is a jsonb array of { url, title }. */
+function primarySource(row: Record<string, unknown>): string | null {
+  const sources = row['sources'];
+  const list = typeof sources === 'string' ? safeParse(sources) : sources;
+  if (!Array.isArray(list)) return null;
+  for (const entry of list) {
+    if (entry && typeof entry === 'object' && typeof (entry as { url?: unknown }).url === 'string') {
+      return (entry as { url: string }).url;
+    }
   }
   return null;
 }
 
-function stripTracking(url: string): string {
+function safeParse(text: string): unknown {
   try {
-    const parsed = new URL(url);
-    for (const name of [...parsed.searchParams.keys()]) {
-      if (name.startsWith('utm_')) parsed.searchParams.delete(name);
-    }
-    return parsed.toString();
+    return JSON.parse(text);
   } catch {
-    return url;
+    return null;
   }
 }
 
-function hostnameOf(url: string): string {
-  try {
-    return new URL(url).hostname.replace(/^www\./, '');
-  } catch {
-    return url;
-  }
-}
-
-function text(value: unknown): string | null {
-  if (typeof value !== 'string') return null;
-  const trimmed = value.trim();
-  return trimmed === '' ? null : trimmed;
-}
+export { normalizeBrand };

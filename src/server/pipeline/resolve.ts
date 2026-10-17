@@ -20,7 +20,7 @@ import type {
 import type { AiClient } from '../ai/client';
 import type { CatalogueItem, Repository } from '../data/repository';
 import { runGates } from './gates';
-import { qualifiesAsCanadian, verdictFor } from './provenance';
+import { ownStatusFor, qualifiesAsCanadian, verdictFor } from './provenance';
 
 /**
  * The runtime pipeline for one product.
@@ -64,14 +64,45 @@ export async function resolveProduct(
   //    is looking at. This renders even when we have no alternative to offer.
   const brand = product.brand ? await repo.findBrand(product.brand) : null;
   const provenance = verdictFor(brand, product.brand);
+  const ownStatus = ownStatusFor(provenance);
 
-  // 3. Verified path.
+  // 3. Already Canadian-owned? Then there is nothing to switch to, and
+  //    suggesting a "better" Canadian option would be noise. Stop here and
+  //    let the UI confirm what they are already holding. Skipping retrieval
+  //    also saves a database round trip and any AI call on this path.
+  if (ownStatus === 'canadian') {
+    return {
+      key,
+      product,
+      spec,
+      provenance,
+      ownStatus,
+      alreadyCanadian: true,
+      candidates: [],
+      abstained: false,
+      abstentionReason: null,
+      abstentionMessage: null,
+      diagnostics: {
+        extractionTier: product.extraction.tier,
+        brandLinked: brand !== null,
+        verifiedCandidates: 0,
+        aiCandidates: 0,
+        aiCandidatesRejected: 0,
+        rejections: [],
+        elapsedMs: Date.now() - started,
+        dataSource: repo.name,
+        aiSource: ai.name,
+      },
+    };
+  }
+
+  // 4. Verified path.
   const verifiedItems = await findVerified(product, spec, repo);
   let candidates = verifiedItems.map((item) =>
     toCandidate(item, product, spec, 'verified', item.gtin && item.gtin === product.gtin ? 'gtin_exact' : 'equivalent', null),
   );
 
-  // 4. AI fallback - only when the database came up empty.
+  // 5. AI fallback - only when the database came up empty.
   if (candidates.length === 0 && !request.verifiedOnly) {
     const proposed = await ai.searchAlternative({ product, spec, limit: 4 }).catch(() => []);
     aiCandidatesSeen = proposed.length;
@@ -88,12 +119,12 @@ export async function resolveProduct(
     }
   }
 
-  // 5. Provenance filter. A candidate that is not actually Canadian is not an
+  // 6. Provenance filter. A candidate that is not actually Canadian is not an
   //    alternative, however well it matches on attributes.
   candidates = await attachProvenance(candidates, repo);
   candidates = candidates.filter((c) => qualifiesAsCanadian(c.provenance));
 
-  // 6. Rank deterministically, then veto the top few.
+  // 7. Rank deterministically, then veto the top few.
   candidates = rank(candidates, weights);
   if (deps.sanityVeto !== false && candidates.length > 0) {
     candidates = await applySanityVeto(candidates.slice(0, maxCandidates + 2), product, ai, rejections);
@@ -101,7 +132,7 @@ export async function resolveProduct(
   }
   candidates = candidates.slice(0, maxCandidates);
 
-  // 7. Retailer fallback. When there is no Canadian product, the lever moves
+  // 8. Retailer fallback. When there is no Canadian product, the lever moves
   //    from what you buy to where you buy it.
   if (candidates.length === 0) {
     const swaps = await retailerFallback(product, repo, weights);
@@ -118,6 +149,8 @@ export async function resolveProduct(
     product,
     spec,
     provenance,
+    ownStatus,
+    alreadyCanadian: false,
     candidates,
     abstained,
     abstentionReason,
@@ -182,10 +215,16 @@ function toCandidate(
   matchType: Candidate['matchType'],
   sourceUrl: string | null,
 ): Candidate {
-  const equivalence = equivalenceScore(
-    { gtin: product.gtin, title: product.title, spec },
-    { gtin: item.gtin, title: item.title, category: item.category, attrs: item.attrs },
-  );
+  // A repository that reports its own match quality knows better than we do.
+  // Curated "Broad coverage, verified" beats token overlap between a listing
+  // title and a different brand's name, which is near zero by construction.
+  const equivalence =
+    typeof item.similarity === 'number'
+      ? item.similarity
+      : equivalenceScore(
+          { gtin: product.gtin, title: product.title, spec },
+          { gtin: item.gtin, title: item.title, category: item.category, attrs: item.attrs },
+        );
 
   return {
     id: item.id,

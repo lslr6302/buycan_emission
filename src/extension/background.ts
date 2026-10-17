@@ -19,13 +19,23 @@ import {
  */
 
 /**
- * Bump when the response shape or the dataset changes. Without this, a stale
- * abstention cached before a data fix keeps being served for a day, and the
- * fix looks like it did not work.
+ * Stamped at bundle time, so every rebuild starts with a cold cache. The
+ * manual version constant this replaces was a standing trap: fix the server,
+ * reload the page, and still be served yesterday's answer with no indication
+ * why.
  */
-const CACHE_VERSION = 'v2';
+declare const __BUILD_ID__: string;
+const CACHE_VERSION = __BUILD_ID__;
 
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Abstentions get a much shorter life than answers. "We found nothing" is
+ * the response most likely to be invalidated by a data import or a retrieval
+ * fix, and the cheapest to recompute - caching it for a day mostly serves to
+ * hide progress.
+ */
+const ABSTENTION_TTL_MS = 5 * 60 * 1000;
 const MAX_CACHE_ENTRIES = 500;
 
 const tabStates = new Map<number, TabState>();
@@ -61,7 +71,8 @@ async function cacheGet(key: string): Promise<ResolveResponse | null> {
   const cache = (stored.cache ?? {}) as Record<string, CacheEntry>;
   const entry = cache[key];
   if (!entry) return null;
-  if (Date.now() - entry.at > CACHE_TTL_MS) return null;
+  const ttl = entry.data.abstained ? ABSTENTION_TTL_MS : CACHE_TTL_MS;
+  if (Date.now() - entry.at > ttl) return null;
   return entry.data;
 }
 
@@ -146,8 +157,12 @@ async function analyzeCart(site: string, lines: CartLine[]): Promise<CartAnalysi
  * demonstrated on stage, and a user who sees nothing cannot tell "no Canadian
  * alternative exists" apart from "the extension is broken".
  */
-function setBadge(tabId: number, state: 'match' | 'abstain' | 'idle', count = 0): void {
-  if (state === 'match') {
+function setBadge(tabId: number, state: 'match' | 'canadian' | 'abstain' | 'idle', count = 0): void {
+  if (state === 'canadian') {
+    void chrome.action.setBadgeText({ tabId, text: '✓' });
+    void chrome.action.setBadgeBackgroundColor({ tabId, color: '#15803D' });
+    void chrome.action.setTitle({ tabId, title: 'Already Canadian-owned' });
+  } else if (state === 'match') {
     void chrome.action.setBadgeText({ tabId, text: String(count) });
     void chrome.action.setBadgeBackgroundColor({ tabId, color: '#B5121B' });
     void chrome.action.setTitle({ tabId, title: `${count} Canadian alternative(s) found` });
@@ -199,7 +214,11 @@ chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) =>
               resolve: data,
               updatedAt: Date.now(),
             });
-            setBadge(tabId, data.abstained ? 'abstain' : 'match', data.candidates.length);
+            setBadge(
+              tabId,
+              data.alreadyCanadian ? 'canadian' : data.abstained ? 'abstain' : 'match',
+              data.candidates.length,
+            );
           }
           sendResponse({ ok: true, kind: 'resolve', data } satisfies Response);
           break;
@@ -242,13 +261,25 @@ chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) =>
           sendResponse({ ok: true, kind: 'tabState', data: state } satisfies Response);
           break;
         }
+        case 'undismiss': {
+          // Clear both the normalized and raw-host spellings; older builds
+          // wrote the raw hostname.
+          await chrome.storage.local.remove([
+            `dismissed:${message.site}`,
+            `dismissed:www.${message.site}`,
+          ]);
+          sendResponse({ ok: true, kind: 'tabState', data: null } satisfies Response);
+          break;
+        }
         case 'resetSite': {
-          // Clears a sticky dismissal and the response cache together. Both
-          // produce the same symptom - "it stopped appearing" - so they get
-          // one button rather than two.
+          // Full wipe of everything cached or remembered, keeping only the
+          // user's own settings. Dismissals and stale responses produce the
+          // same symptom - "it stopped appearing" - so one button clears both.
           const stored = await chrome.storage.local.get(null);
-          const keys = Object.keys(stored).filter((k) => k.startsWith('dismissed:'));
-          await chrome.storage.local.remove([...keys, 'cache']);
+          const doomed = Object.keys(stored).filter((k) => k !== 'settings');
+          if (doomed.length > 0) await chrome.storage.local.remove(doomed);
+          tabStates.clear();
+          console.info(`[buycan] cleared ${doomed.length} stored key(s); settings kept`);
           sendResponse({ ok: true, kind: 'tabState', data: null } satisfies Response);
           break;
         }
@@ -284,3 +315,34 @@ chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) =>
 });
 
 chrome.tabs.onRemoved.addListener((tabId) => tabStates.delete(tabId));
+
+/**
+ * Drops every cached response left over from a previous build.
+ *
+ * Without this, old entries linger in storage forever: unreachable, because
+ * keys are prefixed with the build id, but still occupying the quota. It
+ * also means "reload the extension" is a complete answer to "the cache is
+ * serving me something stale", with no button to find.
+ */
+async function purgeStaleCache(): Promise<void> {
+  try {
+    const stored = await chrome.storage.local.get('cache');
+    const cache = (stored.cache ?? {}) as Record<string, unknown>;
+    const keys = Object.keys(cache);
+    const fresh = keys.filter((k) => k.startsWith(`${CACHE_VERSION}:`));
+    if (fresh.length === keys.length) return;
+
+    const kept: Record<string, unknown> = {};
+    for (const key of fresh) kept[key] = cache[key];
+    await chrome.storage.local.set({ cache: kept });
+    console.info(
+      `[buycan] purged ${keys.length - fresh.length} cached response(s) from earlier builds`,
+    );
+  } catch (error) {
+    console.warn('[buycan] cache purge failed', error);
+  }
+}
+
+chrome.runtime.onInstalled.addListener(() => void purgeStaleCache());
+chrome.runtime.onStartup.addListener(() => void purgeStaleCache());
+void purgeStaleCache();

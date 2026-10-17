@@ -1,6 +1,6 @@
 import { canadianScore, coverageScore } from '../../shared/scoring';
 import { unknown } from '../../shared/types';
-import type { BrandRecord, ProvenanceVerdict, Sourced } from '../../shared/types';
+import type { BrandRecord, OwnStatus, ProvenanceVerdict, Sourced } from '../../shared/types';
 
 /**
  * Turns a brand record into the decomposed verdict the UI renders.
@@ -137,6 +137,30 @@ function summarize(verdict: ProvenanceVerdict, brand: BrandRecord): string {
     return 'Made in Canada, but ownership could not be established.';
   }
   return 'Not enough sourced evidence to say. Treated as unknown.';
+}
+
+/**
+ * Classify what the user is already looking at.
+ *
+ * Ownership is the deciding dimension, because it is the one that determines
+ * where the money goes. Canadian-founded-but-foreign-owned is `mixed`, not
+ * `canadian`: the maple leaf on the package is real history, and the profit
+ * still leaves the country. Collapsing those two is the exact mistake the
+ * competing apps make.
+ */
+export function ownStatusFor(verdict: ProvenanceVerdict): OwnStatus {
+  const d = verdict.dimensions;
+  const owned = d.canadianOwned.value;
+
+  if (owned === true) return 'canadian';
+
+  const someCanadianSignal =
+    d.canadianFounded.value === true ||
+    d.madeInCanada.value === true ||
+    d.hqInCanada.value === true;
+
+  if (owned === false) return someCanadianSignal ? 'mixed' : 'foreign';
+  return someCanadianSignal ? 'mixed' : 'unknown';
 }
 
 /** Does this verdict justify calling the product a Canadian alternative? */

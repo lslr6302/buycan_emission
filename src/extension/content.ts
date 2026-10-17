@@ -21,8 +21,33 @@ import { isDismissed, removeOverlay, renderCart, renderProduct, renderSearch } f
 const site = normalizeSite(location.hostname);
 const adapter = resolveAdapter(location.hostname);
 
-function send(message: Message): Promise<Response> {
-  return chrome.runtime.sendMessage(message) as Promise<Response>;
+/**
+ * Deliberately console.info, not a debug flag. When the overlay does not
+ * appear there are half a dozen possible reasons and no way to tell them
+ * apart from outside; this makes the page console say which one it was.
+ */
+function log(...args: unknown[]): void {
+  console.info('[buycan]', ...args);
+}
+
+/**
+ * Never throws. An unhandled rejection here is invisible: the page stays
+ * blank, no log appears, and every diagnostic still claims success. The
+ * usual cause is the service worker having failed to start, which produces
+ * "Could not establish connection. Receiving end does not exist."
+ */
+async function send(message: Message): Promise<Response> {
+  try {
+    const response = (await chrome.runtime.sendMessage(message)) as Response | undefined;
+    if (!response) {
+      return { ok: false, error: 'no response from the extension service worker' };
+    }
+    return response;
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    console.warn('[buycan] could not reach the service worker:', detail);
+    return { ok: false, error: `service worker unreachable: ${detail}` };
+  }
 }
 
 /**
@@ -70,9 +95,17 @@ async function runProduct(): Promise<void> {
   );
 
   if (!product) {
+    log('product page, but nothing extractable (no JSON-LD, microdata, OG price, or adapter match)');
     report({ pageKind: 'product', error: 'no product could be extracted from this page' });
     return; // Nothing readable here. Stay silent on the page itself.
   }
+
+  log('extracted', {
+    tier: product.extraction.tier,
+    brand: product.brand,
+    price: product.price?.amount ?? null,
+    title: product.title.slice(0, 60),
+  });
 
   report({
     pageKind: 'product',
@@ -86,7 +119,7 @@ async function runProduct(): Promise<void> {
   const response = await send({ type: 'resolve', product });
   if (!response.ok || response.kind !== 'resolve') {
     const detail = response.ok ? 'unexpected reply' : response.error;
-    console.debug('[buycan]', detail);
+    log('lookup failed:', detail);
     report({ pageKind: 'product', tier: product.extraction.tier, title: product.title, error: detail });
     return;
   }
@@ -100,15 +133,29 @@ async function runProduct(): Promise<void> {
     priceCad: product.price?.amount ?? null,
   };
 
+  log('resolved', {
+    ownStatus: response.data.ownStatus,
+    candidates: response.data.candidates.length,
+    abstained: response.data.abstained,
+  });
+
   if (response.data.abstained) {
+    log('not rendering: abstained -', response.data.abstentionReason);
     report({ ...base, overlay: 'suppressed_abstained' });
     return;
   }
   if (await isDismissed()) {
+    log('not rendering: dismissed on', site, '- clear it from the popup');
     report({ ...base, overlay: 'suppressed_dismissed' });
     return;
   }
 
+  // Already Canadian: always worth showing, and always worth showing open.
+  if (response.data.alreadyCanadian) {
+    renderProduct(response.data, true);
+    report({ ...base, overlay: 'shown' });
+    return;
+  }
   // Auto-expand only on a strong match. Anything weaker opens collapsed and
   // waits to be asked.
   renderProduct(response.data, isStrongMatch(response.data.candidates[0]));
@@ -225,6 +272,7 @@ function scheduleCart(): void {
 
 function start(): void {
   const kind = adapter.pageKind();
+  log(`adapter=${adapter.id} pageKind=${kind} url=${location.pathname.slice(0, 60)}`);
   if (kind === 'none') {
     report({ pageKind: 'none' });
     return;

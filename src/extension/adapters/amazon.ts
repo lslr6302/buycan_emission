@@ -30,17 +30,61 @@ function asinFromPage(): string | null {
   return input?.value?.toUpperCase() ?? null;
 }
 
-/** "Visit the Dove Store" / "Brand: Dove" -> "Dove" */
-function brandFromByline(): string | null {
-  const raw = firstText('#bylineInfo', '#brand', 'a#bylineInfo_feature_div');
-  if (!raw) return null;
-  return (
-    raw
-      .replace(/^Visit the\s+/i, '')
-      .replace(/\s+Store$/i, '')
-      .replace(/^Brand:\s*/i, '')
-      .trim() || null
+/**
+ * Brand, from whichever of Amazon's several presentations is on this page.
+ *
+ * The byline alone is not enough: plenty of listings render the brand as a
+ * logo image with no text node, and an unread brand costs us the curated
+ * brand-to-brand match entirely - which is the good path.
+ */
+function brandFromPage(): string | null {
+  const byline = cleanBrand(firstText('#bylineInfo', 'a#bylineInfo', '#brand', '#bylineInfo_feature_div'));
+  if (byline) return byline;
+
+  // The "Brand" row of the product-overview table. Stable and text-based.
+  const fromTable = brandFromLabelledRow();
+  if (fromTable) return fromTable;
+
+  // Byline rendered as a logo: the alt text usually carries the brand.
+  const logo = document.querySelector<HTMLImageElement>(
+    '#bylineInfo_feature_div img, #brandLogo img, a[id*="byline" i] img',
   );
+  const alt = cleanBrand(logo?.alt ?? null);
+  if (alt) return alt;
+
+  return null;
+}
+
+/** Scans label/value pairs for a row literally labelled "Brand". */
+function brandFromLabelledRow(): string | null {
+  const rows = document.querySelectorAll(
+    '#productOverview_feature_div tr, #productDetails_techSpec_section_1 tr, ' +
+      '#detailBullets_feature_div li, .a-normal.a-spacing-micro tr',
+  );
+  for (const row of rows) {
+    const text = row.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+    const match = text.match(/^Brand\s*:?\s*(.+)$/i);
+    if (match) {
+      const value = cleanBrand(match[1] ?? null);
+      if (value) return value;
+    }
+  }
+  return null;
+}
+
+/** "Visit the Dove Store" / "Brand: Dove" / "Redken Logo" -> "Dove" / "Redken" */
+function cleanBrand(raw: string | null): string | null {
+  if (!raw) return null;
+  const cleaned = raw
+    .replace(/^Visit the\s+/i, '')
+    .replace(/\s+Store$/i, '')
+    .replace(/^Brand\s*:?\s*/i, '')
+    .replace(/\s+(logo|brand)$/i, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  // Guard against scraping a whole paragraph out of a mislabelled row.
+  if (!cleaned || cleaned.length > 60) return null;
+  return cleaned;
 }
 
 export const amazonAdapter: SiteAdapter = {
@@ -90,7 +134,7 @@ export const amazonAdapter: SiteAdapter = {
       siteId: asinFromPage(),
       url: ctx.url,
       title,
-      brand: brandFromByline(),
+      brand: brandFromPage(),
       gtin: null, // Amazon does not expose barcodes; the ASIN is the only key.
       price: amount === null ? null : { amount, currency: 'CAD' },
       categoryHint: breadcrumbFromDom(document) ?? firstText('#wayfinding-breadcrumbs_feature_div'),

@@ -1,3 +1,4 @@
+import { normalizeSite } from '../shared/normalize';
 import type { Candidate, CartAnalysis, ResolveResponse, Sourced } from '../shared/types';
 
 /**
@@ -86,6 +87,16 @@ const STYLES = `
     border-top: 1px solid #e4e4e7; background: #fafafa;
   }
   .cart-line { display: flex; justify-content: space-between; gap: 8px; font-size: 11.5px; padding: 3px 0; }
+  /* Already-Canadian confirmation. A quiet green edge, not a celebration
+     banner - the point is reassurance, not a reward for shopping. */
+  .panel.success { border-color: #86efac; }
+  .panel.success .head { background: #f0fdf4; }
+  .panel.success .title { color: #15803d; }
+  @media (prefers-color-scheme: dark) {
+    .panel.success { border-color: #166534; }
+    .panel.success .head { background: #0f2a18; }
+    .panel.success .title { color: #86efac; }
+  }
 `;
 
 function escapeHtml(value: string): string {
@@ -94,14 +105,41 @@ function escapeHtml(value: string): string {
   );
 }
 
+/**
+ * Keyed on the normalized host so the popup, which only knows the normalized
+ * form, can clear the same entry the content script wrote.
+ */
 function dismissKey(): string {
-  return `dismissed:${location.hostname}`;
+  return `dismissed:${normalizeSite(location.hostname)}`;
 }
+
+/**
+ * Dismissals expire. A permanent one is a trap: the extension goes quiet
+ * forever, every diagnostic still reports success, and the only way back is
+ * a settings button the user has no reason to look for. A week is long
+ * enough to respect the "not now" and short enough to be self-healing.
+ */
+const DISMISS_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 export async function isDismissed(): Promise<boolean> {
   try {
-    const stored = await chrome.storage.local.get(dismissKey());
-    return Boolean(stored[dismissKey()]);
+    const key = dismissKey();
+    const stored = await chrome.storage.local.get([key, `dismissed:${location.hostname}`]);
+    const entry = stored[key] ?? stored[`dismissed:${location.hostname}`];
+    if (!entry) return false;
+
+    // Legacy `true` values predate the timestamp; treat them as expired so
+    // nobody stays silently opted out from an old build.
+    if (entry === true) {
+      await chrome.storage.local.remove([key, `dismissed:${location.hostname}`]);
+      return false;
+    }
+    const at = typeof entry === 'object' && entry !== null ? Number((entry as { at?: number }).at) : 0;
+    if (!Number.isFinite(at) || Date.now() - at > DISMISS_TTL_MS) {
+      await chrome.storage.local.remove([key, `dismissed:${location.hostname}`]);
+      return false;
+    }
+    return true;
   } catch {
     return false;
   }
@@ -134,11 +172,64 @@ function mount(): ShadowRoot {
   ].join(';');
 
   const shadow = host.attachShadow({ mode: 'open' });
-  const style = document.createElement('style');
-  style.textContent = STYLES;
-  shadow.append(style);
-  (document.body ?? document.documentElement).append(host);
+
+  // Prefer a constructed stylesheet. A dynamically inserted <style> can be
+  // refused on sites with a strict style-src CSP, and when that happens the
+  // panel is in the DOM but completely unstyled - which looks exactly like
+  // "nothing appeared".
+  let styled = false;
+  try {
+    const sheet = new CSSStyleSheet();
+    sheet.replaceSync(STYLES);
+    shadow.adoptedStyleSheets = [sheet];
+    styled = true;
+  } catch {
+    /* fall through */
+  }
+  if (!styled) {
+    const style = document.createElement('style');
+    style.textContent = STYLES;
+    shadow.append(style);
+  }
+
+  const parent = document.body ?? document.documentElement;
+  parent.append(host);
+
+  verifyMounted(host, styled);
   return shadow;
+}
+
+/**
+ * Confirms the host actually landed and kept its positioning. Silent failure
+ * here is the worst outcome: everything reports success while the user sees
+ * nothing, which is precisely the bug this is here to catch.
+ */
+function verifyMounted(host: HTMLElement, usedAdoptedSheet: boolean): void {
+  try {
+    if (!host.isConnected) {
+      console.warn('[buycan] overlay host was not attached to the document');
+      return;
+    }
+    const computed = getComputedStyle(host);
+    if (computed.position !== 'fixed') {
+      console.warn(
+        `[buycan] overlay host is position:${computed.position}, expected fixed. ` +
+          'The page or its CSP is overriding our inline style; the panel will be invisible.',
+      );
+      return;
+    }
+    const rect = host.getBoundingClientRect();
+    console.info(
+      `[buycan] overlay mounted (${Math.round(rect.width)}x${Math.round(rect.height)} at ` +
+        `${Math.round(rect.left)},${Math.round(rect.top)}; styles via ` +
+        `${usedAdoptedSheet ? 'adoptedStyleSheets' : '<style>'})`,
+    );
+    if (rect.width === 0 || rect.height === 0) {
+      console.warn('[buycan] overlay has zero size - its stylesheet did not apply.');
+    }
+  } catch (error) {
+    console.warn('[buycan] overlay self-check failed', error);
+  }
 }
 
 function wire(shadow: ShadowRoot): void {
@@ -149,7 +240,8 @@ function wire(shadow: ShadowRoot): void {
   });
   shadow.querySelector('.x')?.addEventListener('click', (event) => {
     event.stopPropagation();
-    void chrome.storage.local.set({ [dismissKey()]: true });
+    console.info('[buycan] dismissed on this site for 7 days - undo from the popup');
+    void chrome.storage.local.set({ [dismissKey()]: { at: Date.now() } });
     remove();
   });
 }
@@ -206,7 +298,62 @@ function candidateCard(candidate: Candidate, originalPrice: number | null): stri
   </div>`;
 }
 
+/**
+ * The product is already Canadian-owned. Confirm it and get out of the way -
+ * offering "alternatives" here would be noise, and would imply the thing
+ * they are looking at is a problem when it is the answer.
+ *
+ * Manufacturing is still stated plainly. Canadian-owned and made overseas is
+ * a real and common combination, and quietly implying otherwise under a
+ * maple leaf is the overclaiming this project exists to avoid.
+ */
+export function renderAlreadyCanadian(result: ResolveResponse): void {
+  const shadow = mount();
+  const p = result.provenance;
+  const made = p.dimensions.madeInCanada.value;
+
+  const madeNote =
+    made === true
+      ? 'Made in Canada too.'
+      : made === false
+        ? 'Canadian-owned, though not manufactured in Canada.'
+        : 'Manufacturing location unknown.';
+
+  const container = document.createElement('div');
+  container.innerHTML = `
+    <div class="panel open success">
+      <div class="head">
+        <span class="leaf">🍁</span>
+        <div class="head-text">
+          <div class="title">This one is Canadian</div>
+          <div class="sub">${escapeHtml(p.displayName)} · ${escapeHtml(madeNote)}</div>
+        </div>
+        <button class="x" title="Dismiss on this site">×</button>
+      </div>
+      <div class="body">
+        ${dimensionChips(p)}
+        <div class="why">${escapeHtml(p.summary)}</div>
+        ${
+          p.cfiaClass
+            ? `<div class="why dim">Labelled "${escapeHtml(p.cfiaClass)}" — a specific legal claim, not a slogan.</div>`
+            : ''
+        }
+        <div class="why dim">No alternatives suggested: you are already buying Canadian.</div>
+      </div>
+      <div class="foot">Every claim above links to its source. Hover a tag.</div>
+    </div>`;
+
+  shadow.append(container);
+  wire(shadow);
+}
+
 export function renderProduct(result: ResolveResponse, expanded: boolean): void {
+  // Already Canadian-owned: confirm rather than suggest.
+  if (result.alreadyCanadian) {
+    renderAlreadyCanadian(result);
+    return;
+  }
+
   // Nothing to offer means nothing on screen. The badge and the popup carry
   // the abstention; the page stays untouched.
   if (result.abstained) {

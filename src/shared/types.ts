@@ -175,11 +175,25 @@ export type AbstentionReason =
   | 'insufficient_product_data'
   | 'all_candidates_failed_validation';
 
+/**
+ * What the product in front of the user already is. Drives whether we offer
+ * alternatives at all - there is no point suggesting a Canadian option for
+ * something that is already Canadian-owned.
+ *
+ * `mixed` is deliberately its own state rather than being folded into
+ * `canadian`. A Canadian-founded brand with a foreign parent still sends the
+ * money abroad, so it gets the nuance AND the alternatives.
+ */
+export type OwnStatus = 'canadian' | 'mixed' | 'foreign' | 'unknown';
+
 export interface ResolveResponse {
   key: string;
   product: ProductRef;
   spec: ProductSpec | null;
   provenance: ProvenanceVerdict;
+  ownStatus: OwnStatus;
+  /** True when ownStatus is 'canadian'. No alternatives are retrieved. */
+  alreadyCanadian: boolean;
   candidates: Candidate[];
   /** True when we have nothing to offer. The overlay stays hidden. */
   abstained: boolean;
