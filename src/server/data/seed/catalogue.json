@@ -19,7 +19,12 @@
       "priceCad": 12.99,
       "priceChecked": null,
       "category": "personal_care_deodorant",
-      "attrs": { "form": "stick", "scented": false, "volume_g": 50, "aluminum_free": true },
+      "attrs": {
+        "form": "stick",
+        "scented": false,
+        "volume_g": 50,
+        "aluminum_free": true
+      },
       "massKg": 0.07,
       "gtin": null,
       "shipsFrom": "CA-ON"
@@ -36,7 +41,12 @@
       "priceCad": 13.95,
       "priceChecked": null,
       "category": "personal_care_deodorant",
-      "attrs": { "form": "stick", "scented": true, "volume_g": 85, "aluminum_free": true },
+      "attrs": {
+        "form": "stick",
+        "scented": true,
+        "volume_g": 85,
+        "aluminum_free": true
+      },
       "massKg": 0.11,
       "gtin": null,
       "shipsFrom": "CA-QC"
@@ -50,10 +60,14 @@
       "urlValidated": false,
       "retailer": "Rocky Mountain Soap Co.",
       "retailerCanadianOwned": true,
-      "priceCad": 16.50,
+      "priceCad": 16.5,
       "priceChecked": null,
       "category": "personal_care_body_wash",
-      "attrs": { "form": "liquid", "scented": true, "volume_ml": 250 },
+      "attrs": {
+        "form": "liquid",
+        "scented": true,
+        "volume_ml": 250
+      },
       "massKg": 0.3,
       "gtin": null,
       "shipsFrom": "CA-AB"
@@ -70,7 +84,11 @@
       "priceCad": 11.99,
       "priceChecked": null,
       "category": "personal_care_body_wash",
-      "attrs": { "form": "liquid", "scented": true, "volume_ml": 240 },
+      "attrs": {
+        "form": "liquid",
+        "scented": true,
+        "volume_ml": 240
+      },
       "massKg": 0.29,
       "gtin": null,
       "shipsFrom": "CA-ON"
@@ -84,10 +102,14 @@
       "urlValidated": false,
       "retailer": "Rocky Mountain Soap Co.",
       "retailerCanadianOwned": true,
-      "priceCad": 8.50,
+      "priceCad": 8.5,
       "priceChecked": null,
       "category": "personal_care_body_wash",
-      "attrs": { "form": "bar", "scented": true, "volume_g": 100 },
+      "attrs": {
+        "form": "bar",
+        "scented": true,
+        "volume_g": 100
+      },
       "massKg": 0.11,
       "gtin": null,
       "shipsFrom": "CA-AB",
@@ -105,7 +127,11 @@
       "priceCad": 4.49,
       "priceChecked": null,
       "category": "snacks_chips",
-      "attrs": { "style": "kettle", "flavour": "sea_salt", "volume_g": 170 },
+      "attrs": {
+        "style": "kettle",
+        "flavour": "sea_salt",
+        "volume_g": 170
+      },
       "massKg": 0.17,
       "gtin": null,
       "shipsFrom": "CA-NB"
@@ -122,7 +148,11 @@
       "priceCad": 4.99,
       "priceChecked": null,
       "category": "snacks_chips",
-      "attrs": { "style": "kettle", "flavour": "sea_salt", "volume_g": 150 },
+      "attrs": {
+        "style": "kettle",
+        "flavour": "sea_salt",
+        "volume_g": 150
+      },
       "massKg": 0.15,
       "gtin": null,
       "shipsFrom": "CA-BC"
@@ -139,7 +169,11 @@
       "priceCad": 4.49,
       "priceChecked": null,
       "category": "snacks_chips",
-      "attrs": { "style": "kettle", "flavour": "sweet_chili", "volume_g": 170 },
+      "attrs": {
+        "style": "kettle",
+        "flavour": "sweet_chili",
+        "volume_g": 170
+      },
       "massKg": 0.17,
       "gtin": null,
       "shipsFrom": "CA-NB"
@@ -156,7 +190,12 @@
       "priceCad": 29.99,
       "priceChecked": null,
       "category": "insulated_drinkware",
-      "attrs": { "type": "tumbler_with_lid", "insulated": true, "capacity_ml": 475, "material": "stainless_steel" },
+      "attrs": {
+        "type": "tumbler_with_lid",
+        "insulated": true,
+        "capacity_ml": 475,
+        "material": "stainless_steel"
+      },
       "massKg": 0.36,
       "gtin": null,
       "shipsFrom": "CA-QC",
@@ -171,10 +210,14 @@
       "urlValidated": false,
       "retailer": "Stanfield's",
       "retailerCanadianOwned": true,
-      "priceCad": 24.00,
+      "priceCad": 24.0,
       "priceChecked": null,
       "category": "apparel_basics_tee",
-      "attrs": { "material": "cotton", "fit": "regular", "neck": "crew" },
+      "attrs": {
+        "material": "cotton",
+        "fit": "regular",
+        "neck": "crew"
+      },
       "massKg": 0.2,
       "gtin": null,
       "shipsFrom": "CA-NS"
@@ -188,10 +231,14 @@
       "urlValidated": false,
       "retailer": "Province of Canada",
       "retailerCanadianOwned": true,
-      "priceCad": 45.00,
+      "priceCad": 45.0,
       "priceChecked": null,
       "category": "apparel_basics_tee",
-      "attrs": { "material": "cotton", "fit": "regular", "neck": "crew" },
+      "attrs": {
+        "material": "cotton",
+        "fit": "regular",
+        "neck": "crew"
+      },
       "massKg": 0.21,
       "gtin": null,
       "shipsFrom": "CA-ON",
@@ -209,7 +256,11 @@
       "priceCad": 9.99,
       "priceChecked": null,
       "category": "supplements_vitamin_d",
-      "attrs": { "form": "softgel", "iu": 1000, "count": 100 },
+      "attrs": {
+        "form": "softgel",
+        "iu": 1000,
+        "count": 100
+      },
       "massKg": 0.09,
       "gtin": null,
       "shipsFrom": "CA-ON"
@@ -226,11 +277,271 @@
       "priceCad": 15.99,
       "priceChecked": null,
       "category": "pantry_coffee",
-      "attrs": { "roast": "medium", "form": "whole_bean", "volume_g": 454 },
+      "attrs": {
+        "roast": "medium",
+        "form": "whole_bean",
+        "volume_g": 454
+      },
       "massKg": 0.45,
       "gtin": null,
       "shipsFrom": "CA-BC",
       "note": "Roasted in BC, ultimately owned in Italy. Surfacing it with that caveat attached is more honest than hiding it or badging it Canadian."
+    },
+    {
+      "id": "seed-greenbeaver-shampoo",
+      "title": "Green Beaver Shampoo, Lavender, 240 ml",
+      "brand": "The Green Beaver Company",
+      "brandKey": "green beaver",
+      "url": "https://greenbeaver.com/",
+      "urlValidated": false,
+      "retailer": "Green Beaver",
+      "retailerCanadianOwned": true,
+      "priceCad": 12.99,
+      "priceChecked": null,
+      "category": "personal_care_hair",
+      "attrs": {
+        "form": "liquid",
+        "type": "shampoo",
+        "volume_ml": 240,
+        "scented": true
+      },
+      "massKg": 0.29,
+      "gtin": null,
+      "shipsFrom": "CA-ON"
+    },
+    {
+      "id": "seed-attitude-shampoo",
+      "title": "ATTITUDE Super Leaves Nourishing Shampoo, 473 ml",
+      "brand": "ATTITUDE",
+      "brandKey": "attitude",
+      "url": "https://attitudeliving.com/",
+      "urlValidated": false,
+      "retailer": "ATTITUDE",
+      "retailerCanadianOwned": true,
+      "priceCad": 14.95,
+      "priceChecked": null,
+      "category": "personal_care_hair",
+      "attrs": {
+        "form": "liquid",
+        "type": "shampoo",
+        "volume_ml": 473,
+        "scented": true
+      },
+      "massKg": 0.55,
+      "gtin": null,
+      "shipsFrom": "CA-QC"
+    },
+    {
+      "id": "seed-carina-shampoo",
+      "title": "Carina Organics Daily Light Shampoo, Sweet Pea, 360 ml",
+      "brand": "Carina Organics",
+      "brandKey": "carina organics",
+      "url": "https://carinaorganics.com/",
+      "urlValidated": false,
+      "retailer": "Carina Organics",
+      "retailerCanadianOwned": true,
+      "priceCad": 13.49,
+      "priceChecked": null,
+      "category": "personal_care_hair",
+      "attrs": {
+        "form": "liquid",
+        "type": "shampoo",
+        "volume_ml": 360,
+        "scented": true
+      },
+      "massKg": 0.42,
+      "gtin": null,
+      "shipsFrom": "CA-BC"
+    },
+    {
+      "id": "seed-attitude-conditioner",
+      "title": "ATTITUDE Super Leaves Conditioner, 473 ml",
+      "brand": "ATTITUDE",
+      "brandKey": "attitude",
+      "url": "https://attitudeliving.com/",
+      "urlValidated": false,
+      "retailer": "ATTITUDE",
+      "retailerCanadianOwned": true,
+      "priceCad": 14.95,
+      "priceChecked": null,
+      "category": "personal_care_hair",
+      "attrs": {
+        "form": "liquid",
+        "type": "conditioner",
+        "volume_ml": 473,
+        "scented": true
+      },
+      "massKg": 0.55,
+      "gtin": null,
+      "shipsFrom": "CA-QC"
+    },
+    {
+      "id": "seed-greenbeaver-toothpaste",
+      "title": "Green Beaver Natural Toothpaste, Peppermint, 75 ml",
+      "brand": "The Green Beaver Company",
+      "brandKey": "green beaver",
+      "url": "https://greenbeaver.com/",
+      "urlValidated": false,
+      "retailer": "Green Beaver",
+      "retailerCanadianOwned": true,
+      "priceCad": 6.99,
+      "priceChecked": null,
+      "category": "personal_care_oral",
+      "attrs": {
+        "form": "paste",
+        "volume_ml": 75,
+        "fluoride_free": true
+      },
+      "massKg": 0.11,
+      "gtin": null,
+      "shipsFrom": "CA-ON"
+    },
+    {
+      "id": "seed-nelson-toothpaste",
+      "title": "Nelson Naturals Remineralizing Toothpaste, Peppermint, 60 ml",
+      "brand": "Nelson Naturals",
+      "brandKey": "nelson naturals",
+      "url": "https://nelsonnaturals.com/",
+      "urlValidated": false,
+      "retailer": "Nelson Naturals",
+      "retailerCanadianOwned": true,
+      "priceCad": 13.0,
+      "priceChecked": null,
+      "category": "personal_care_oral",
+      "attrs": {
+        "form": "paste",
+        "volume_ml": 60,
+        "fluoride_free": true
+      },
+      "massKg": 0.14,
+      "gtin": null,
+      "shipsFrom": "CA-BC"
+    },
+    {
+      "id": "seed-attitude-laundry",
+      "title": "ATTITUDE Laundry Detergent, Wildflowers, 2.1 L",
+      "brand": "ATTITUDE",
+      "brandKey": "attitude",
+      "url": "https://attitudeliving.com/",
+      "urlValidated": false,
+      "retailer": "ATTITUDE",
+      "retailerCanadianOwned": true,
+      "priceCad": 16.95,
+      "priceChecked": null,
+      "category": "home_cleaning_laundry",
+      "attrs": {
+        "form": "liquid",
+        "volume_ml": 2100,
+        "scented": true
+      },
+      "massKg": 2.2,
+      "gtin": null,
+      "shipsFrom": "CA-QC"
+    },
+    {
+      "id": "seed-natureclean-laundry",
+      "title": "Nature Clean Laundry Liquid, Fragrance Free, 2 L",
+      "brand": "Nature Clean",
+      "brandKey": "nature clean",
+      "url": "https://natureclean.ca/",
+      "urlValidated": false,
+      "retailer": "Nature Clean",
+      "retailerCanadianOwned": true,
+      "priceCad": 14.99,
+      "priceChecked": null,
+      "category": "home_cleaning_laundry",
+      "attrs": {
+        "form": "liquid",
+        "volume_ml": 2000,
+        "scented": false
+      },
+      "massKg": 2.1,
+      "gtin": null,
+      "shipsFrom": "CA-ON"
+    },
+    {
+      "id": "seed-rms-lotion",
+      "title": "Rocky Mountain Soap Co. Body Lotion, Unscented, 240 ml",
+      "brand": "Rocky Mountain Soap Company",
+      "brandKey": "rocky mountain soap",
+      "url": "https://www.rockymountainsoap.com/",
+      "urlValidated": false,
+      "retailer": "Rocky Mountain Soap Co.",
+      "retailerCanadianOwned": true,
+      "priceCad": 19.5,
+      "priceChecked": null,
+      "category": "personal_care_lotion",
+      "attrs": {
+        "form": "liquid",
+        "volume_ml": 240,
+        "scented": false
+      },
+      "massKg": 0.29,
+      "gtin": null,
+      "shipsFrom": "CA-AB"
+    },
+    {
+      "id": "seed-greenbeaver-lotion",
+      "title": "Green Beaver Body Lotion, Cucumber, 240 ml",
+      "brand": "The Green Beaver Company",
+      "brandKey": "green beaver",
+      "url": "https://greenbeaver.com/",
+      "urlValidated": false,
+      "retailer": "Green Beaver",
+      "retailerCanadianOwned": true,
+      "priceCad": 14.99,
+      "priceChecked": null,
+      "category": "personal_care_lotion",
+      "attrs": {
+        "form": "liquid",
+        "volume_ml": 240,
+        "scented": true
+      },
+      "massKg": 0.29,
+      "gtin": null,
+      "shipsFrom": "CA-ON"
+    },
+    {
+      "id": "seed-balzacs-coffee",
+      "title": "Balzac's Coffee Roasters Atwood Blend, Whole Bean, 340 g",
+      "brand": "Balzac's Coffee Roasters",
+      "brandKey": "balzacs",
+      "url": "https://balzacs.com/",
+      "urlValidated": false,
+      "retailer": "Balzac's",
+      "retailerCanadianOwned": true,
+      "priceCad": 17.0,
+      "priceChecked": null,
+      "category": "pantry_coffee",
+      "attrs": {
+        "roast": "medium",
+        "form": "whole_bean",
+        "volume_g": 340
+      },
+      "massKg": 0.34,
+      "gtin": null,
+      "shipsFrom": "CA-ON"
+    },
+    {
+      "id": "seed-levelground-coffee",
+      "title": "Level Ground Organic Dark Roast, Whole Bean, 300 g",
+      "brand": "Level Ground Trading",
+      "brandKey": "level ground",
+      "url": "https://levelground.com/",
+      "urlValidated": false,
+      "retailer": "Level Ground",
+      "retailerCanadianOwned": true,
+      "priceCad": 16.5,
+      "priceChecked": null,
+      "category": "pantry_coffee",
+      "attrs": {
+        "roast": "dark",
+        "form": "whole_bean",
+        "volume_g": 300
+      },
+      "massKg": 0.3,
+      "gtin": null,
+      "shipsFrom": "CA-BC"
     }
   ]
 }

@@ -108,6 +108,15 @@ async function resolve(product: ProductRef): Promise<ResolveResponse> {
   return data;
 }
 
+async function searchAlternatives(site: string, query: string): Promise<ResolveResponse> {
+  const settings = await getSettings();
+  return post<ResolveResponse>(
+    '/v1/search',
+    { site, query, weights: settings.weights, verifiedOnly: settings.verifiedOnly },
+    settings,
+  );
+}
+
 async function analyzeCart(site: string, lines: CartLine[]): Promise<CartAnalysis> {
   const settings = await getSettings();
   return post<CartAnalysis>(
@@ -186,6 +195,22 @@ chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) =>
             setBadge(tabId, data.abstained ? 'abstain' : 'match', data.candidates.length);
           }
           sendResponse({ ok: true, kind: 'resolve', data } satisfies Response);
+          break;
+        }
+        case 'search': {
+          const data = await searchAlternatives(message.site, message.query);
+          if (tabId !== undefined) {
+            tabStates.set(tabId, {
+              ...tabStates.get(tabId),
+              url: '',
+              site: message.site,
+              kind: 'search',
+              resolve: data,
+              updatedAt: Date.now(),
+            });
+            setBadge(tabId, data.abstained ? 'abstain' : 'match', data.candidates.length);
+          }
+          sendResponse({ ok: true, kind: 'search', data } satisfies Response);
           break;
         }
         case 'analyzeCart': {

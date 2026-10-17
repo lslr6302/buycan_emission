@@ -5,6 +5,7 @@ import type { CartAnalysis, CartLine, ProductRef, ResolveResponse, Weights } fro
 export type Message =
   | { type: 'report'; report: PageReport }
   | { type: 'resolve'; product: ProductRef }
+  | { type: 'search'; site: string; query: string }
   | { type: 'analyzeCart'; site: string; lines: CartLine[] }
   | { type: 'getTabState' }
   | { type: 'getSettings' }
@@ -12,6 +13,7 @@ export type Message =
 
 export type Response =
   | { ok: true; kind: 'resolve'; data: ResolveResponse }
+  | { ok: true; kind: 'search'; data: ResolveResponse }
   | { ok: true; kind: 'cart'; data: CartAnalysis }
   | { ok: true; kind: 'tabState'; data: TabState | null }
   | { ok: true; kind: 'settings'; data: Settings }
@@ -28,7 +30,7 @@ export interface PageReport {
   url: string;
   /** Which adapter claimed the page: amazon, shopify, generic. */
   adapterId: string;
-  pageKind: 'product' | 'cart' | 'none';
+  pageKind: 'product' | 'cart' | 'search' | 'none';
   /** Which extraction tier produced a usable product, if any. */
   tier: string | null;
   title: string | null;
@@ -36,6 +38,8 @@ export interface PageReport {
   gtin: string | null;
   priceCad: number | null;
   cartLines: number | null;
+  /** What the user typed, on a search-results page. */
+  searchQuery: string | null;
   /** Set when the lookup itself failed, e.g. the API is not running. */
   error: string | null;
 }
@@ -44,7 +48,7 @@ export interface PageReport {
 export interface TabState {
   url: string;
   site: string;
-  kind: 'product' | 'cart' | 'none';
+  kind: 'product' | 'cart' | 'search' | 'none';
   resolve?: ResolveResponse;
   cart?: CartAnalysis;
   report?: PageReport;

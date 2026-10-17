@@ -1,7 +1,10 @@
+.env
+__pycache__/
+*.pyc
+.venv/
 /notes_and_planning
 node_modules/
 dist/
 *.log
-.env
 .env.local
 .DS_Store

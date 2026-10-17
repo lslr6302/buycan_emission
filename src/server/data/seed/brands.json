@@ -10,11 +10,31 @@
     {
       "key": "frenchs",
       "displayName": "French's",
-      "parent": { "value": "McCormick & Company", "source": "https://www.mccormickcorporation.com/en/brands", "confidence": "high" },
-      "parentHq": { "value": "US", "source": "https://www.mccormickcorporation.com/", "confidence": "high" },
-      "hqCountry": { "value": "US", "source": "https://www.mccormickcorporation.com/", "confidence": "high" },
-      "foundedIn": { "value": "US", "source": "https://www.mccormickcorporation.com/en/brands", "confidence": "medium" },
-      "mfgOrigin": { "value": "CA", "source": "https://www.frenchs.ca/", "confidence": "medium" },
+      "parent": {
+        "value": "McCormick & Company",
+        "source": "https://www.mccormickcorporation.com/en/brands",
+        "confidence": "high"
+      },
+      "parentHq": {
+        "value": "US",
+        "source": "https://www.mccormickcorporation.com/",
+        "confidence": "high"
+      },
+      "hqCountry": {
+        "value": "US",
+        "source": "https://www.mccormickcorporation.com/",
+        "confidence": "high"
+      },
+      "foundedIn": {
+        "value": "US",
+        "source": "https://www.mccormickcorporation.com/en/brands",
+        "confidence": "medium"
+      },
+      "mfgOrigin": {
+        "value": "CA",
+        "source": "https://www.frenchs.ca/",
+        "confidence": "medium"
+      },
       "cfiaClass": "Prepared in Canada",
       "lastReviewed": "2026-10-17",
       "note": "The published failure case. Competing scanner apps attributed this to Recipe Unlimited. Ketchup is made in Toronto, ownership is American - both facts are true and the UI must show both."
@@ -22,11 +42,31 @@
     {
       "key": "miss vickies",
       "displayName": "Miss Vickie's",
-      "parent": { "value": "PepsiCo", "source": "https://www.pepsico.ca/our-brands", "confidence": "high" },
-      "parentHq": { "value": "US", "source": "https://www.pepsico.com/", "confidence": "high" },
-      "hqCountry": { "value": "US", "source": "https://www.pepsico.ca/", "confidence": "medium" },
-      "foundedIn": { "value": "CA", "source": "https://www.missvickies.ca/", "confidence": "high" },
-      "mfgOrigin": { "value": "CA", "source": "https://www.missvickies.ca/", "confidence": "medium" },
+      "parent": {
+        "value": "PepsiCo",
+        "source": "https://www.pepsico.ca/our-brands",
+        "confidence": "high"
+      },
+      "parentHq": {
+        "value": "US",
+        "source": "https://www.pepsico.com/",
+        "confidence": "high"
+      },
+      "hqCountry": {
+        "value": "US",
+        "source": "https://www.pepsico.ca/",
+        "confidence": "medium"
+      },
+      "foundedIn": {
+        "value": "CA",
+        "source": "https://www.missvickies.ca/",
+        "confidence": "high"
+      },
+      "mfgOrigin": {
+        "value": "CA",
+        "source": "https://www.missvickies.ca/",
+        "confidence": "medium"
+      },
       "cfiaClass": "Made in Canada",
       "lastReviewed": "2026-10-17",
       "note": "Canadian-founded, foreign-owned, made in Canada. Exactly why 'Canadian' cannot be one boolean."
@@ -34,11 +74,31 @@
     {
       "key": "kicking horse coffee",
       "displayName": "Kicking Horse Coffee",
-      "parent": { "value": "Luigi Lavazza S.p.A.", "source": "https://www.lavazzagroup.com/en/", "confidence": "high" },
-      "parentHq": { "value": "IT", "source": "https://www.lavazzagroup.com/en/", "confidence": "high" },
-      "hqCountry": { "value": "CA", "source": "https://kickinghorsecoffee.com/pages/contact", "confidence": "high" },
-      "foundedIn": { "value": "CA", "source": "https://kickinghorsecoffee.com/pages/our-story", "confidence": "high" },
-      "mfgOrigin": { "value": "CA", "source": "https://kickinghorsecoffee.com/pages/our-story", "confidence": "medium" },
+      "parent": {
+        "value": "Luigi Lavazza S.p.A.",
+        "source": "https://www.lavazzagroup.com/en/",
+        "confidence": "high"
+      },
+      "parentHq": {
+        "value": "IT",
+        "source": "https://www.lavazzagroup.com/en/",
+        "confidence": "high"
+      },
+      "hqCountry": {
+        "value": "CA",
+        "source": "https://kickinghorsecoffee.com/pages/contact",
+        "confidence": "high"
+      },
+      "foundedIn": {
+        "value": "CA",
+        "source": "https://kickinghorsecoffee.com/pages/our-story",
+        "confidence": "high"
+      },
+      "mfgOrigin": {
+        "value": "CA",
+        "source": "https://kickinghorsecoffee.com/pages/our-story",
+        "confidence": "medium"
+      },
       "cfiaClass": "Made in Canada",
       "lastReviewed": "2026-10-17",
       "note": "Roasted in Invermere BC, majority-owned in Turin. A maple-leaf brand with a foreign ultimate parent."
@@ -46,66 +106,190 @@
     {
       "key": "heinz",
       "displayName": "Heinz",
-      "parent": { "value": "The Kraft Heinz Company", "source": "https://www.kraftheinzcompany.com/brands.html", "confidence": "high" },
-      "parentHq": { "value": "US", "source": "https://www.kraftheinzcompany.com/", "confidence": "high" },
-      "hqCountry": { "value": "US", "source": "https://www.kraftheinzcompany.com/", "confidence": "high" },
-      "foundedIn": { "value": "US", "source": "https://www.kraftheinzcompany.com/", "confidence": "high" },
-      "mfgOrigin": { "value": null, "source": null, "confidence": "low", "reason": "varies by SKU and plant; no per-product evidence" },
+      "parent": {
+        "value": "The Kraft Heinz Company",
+        "source": "https://www.kraftheinzcompany.com/brands.html",
+        "confidence": "high"
+      },
+      "parentHq": {
+        "value": "US",
+        "source": "https://www.kraftheinzcompany.com/",
+        "confidence": "high"
+      },
+      "hqCountry": {
+        "value": "US",
+        "source": "https://www.kraftheinzcompany.com/",
+        "confidence": "high"
+      },
+      "foundedIn": {
+        "value": "US",
+        "source": "https://www.kraftheinzcompany.com/",
+        "confidence": "high"
+      },
+      "mfgOrigin": {
+        "value": null,
+        "source": null,
+        "confidence": "low",
+        "reason": "varies by SKU and plant; no per-product evidence"
+      },
       "cfiaClass": null,
       "lastReviewed": "2026-10-17"
     },
     {
       "key": "dove",
       "displayName": "Dove",
-      "parent": { "value": "Unilever PLC", "source": "https://www.unilever.com/brands/beauty-wellbeing/dove/", "confidence": "high" },
-      "parentHq": { "value": "GB", "source": "https://www.unilever.com/", "confidence": "high" },
-      "hqCountry": { "value": "GB", "source": "https://www.unilever.com/", "confidence": "high" },
-      "foundedIn": { "value": "US", "source": "https://www.unilever.com/brands/beauty-wellbeing/dove/", "confidence": "medium" },
-      "mfgOrigin": { "value": null, "source": null, "confidence": "low", "reason": "no per-product manufacturing evidence found" },
+      "parent": {
+        "value": "Unilever PLC",
+        "source": "https://www.unilever.com/brands/beauty-wellbeing/dove/",
+        "confidence": "high"
+      },
+      "parentHq": {
+        "value": "GB",
+        "source": "https://www.unilever.com/",
+        "confidence": "high"
+      },
+      "hqCountry": {
+        "value": "GB",
+        "source": "https://www.unilever.com/",
+        "confidence": "high"
+      },
+      "foundedIn": {
+        "value": "US",
+        "source": "https://www.unilever.com/brands/beauty-wellbeing/dove/",
+        "confidence": "medium"
+      },
+      "mfgOrigin": {
+        "value": null,
+        "source": null,
+        "confidence": "low",
+        "reason": "no per-product manufacturing evidence found"
+      },
       "cfiaClass": null,
       "lastReviewed": "2026-10-17"
     },
     {
       "key": "old spice",
       "displayName": "Old Spice",
-      "parent": { "value": "The Procter & Gamble Company", "source": "https://us.pg.com/brands/", "confidence": "high" },
-      "parentHq": { "value": "US", "source": "https://us.pg.com/", "confidence": "high" },
-      "hqCountry": { "value": "US", "source": "https://us.pg.com/", "confidence": "high" },
-      "foundedIn": { "value": "US", "source": "https://us.pg.com/brands/", "confidence": "high" },
-      "mfgOrigin": { "value": null, "source": null, "confidence": "low", "reason": "no per-product manufacturing evidence found" },
+      "parent": {
+        "value": "The Procter & Gamble Company",
+        "source": "https://us.pg.com/brands/",
+        "confidence": "high"
+      },
+      "parentHq": {
+        "value": "US",
+        "source": "https://us.pg.com/",
+        "confidence": "high"
+      },
+      "hqCountry": {
+        "value": "US",
+        "source": "https://us.pg.com/",
+        "confidence": "high"
+      },
+      "foundedIn": {
+        "value": "US",
+        "source": "https://us.pg.com/brands/",
+        "confidence": "high"
+      },
+      "mfgOrigin": {
+        "value": null,
+        "source": null,
+        "confidence": "low",
+        "reason": "no per-product manufacturing evidence found"
+      },
       "cfiaClass": null,
       "lastReviewed": "2026-10-17"
     },
     {
       "key": "lays",
       "displayName": "Lay's",
-      "parent": { "value": "PepsiCo", "source": "https://www.pepsico.ca/our-brands", "confidence": "high" },
-      "parentHq": { "value": "US", "source": "https://www.pepsico.com/", "confidence": "high" },
-      "hqCountry": { "value": "US", "source": "https://www.pepsico.com/", "confidence": "high" },
-      "foundedIn": { "value": "US", "source": "https://www.pepsico.com/", "confidence": "high" },
-      "mfgOrigin": { "value": null, "source": null, "confidence": "low", "reason": "no per-product manufacturing evidence found" },
+      "parent": {
+        "value": "PepsiCo",
+        "source": "https://www.pepsico.ca/our-brands",
+        "confidence": "high"
+      },
+      "parentHq": {
+        "value": "US",
+        "source": "https://www.pepsico.com/",
+        "confidence": "high"
+      },
+      "hqCountry": {
+        "value": "US",
+        "source": "https://www.pepsico.com/",
+        "confidence": "high"
+      },
+      "foundedIn": {
+        "value": "US",
+        "source": "https://www.pepsico.com/",
+        "confidence": "high"
+      },
+      "mfgOrigin": {
+        "value": null,
+        "source": null,
+        "confidence": "low",
+        "reason": "no per-product manufacturing evidence found"
+      },
       "cfiaClass": null,
       "lastReviewed": "2026-10-17"
     },
     {
       "key": "hydro flask",
       "displayName": "Hydro Flask",
-      "parent": { "value": "Helen of Troy Limited", "source": "https://www.helenoftroy.com/our-brands/", "confidence": "high" },
-      "parentHq": { "value": "US", "source": "https://www.helenoftroy.com/", "confidence": "medium" },
-      "hqCountry": { "value": "US", "source": "https://www.hydroflask.com/", "confidence": "high" },
-      "foundedIn": { "value": "US", "source": "https://www.hydroflask.com/", "confidence": "high" },
-      "mfgOrigin": { "value": "CN", "source": "https://www.hydroflask.com/", "confidence": "low" },
+      "parent": {
+        "value": "Helen of Troy Limited",
+        "source": "https://www.helenoftroy.com/our-brands/",
+        "confidence": "high"
+      },
+      "parentHq": {
+        "value": "US",
+        "source": "https://www.helenoftroy.com/",
+        "confidence": "medium"
+      },
+      "hqCountry": {
+        "value": "US",
+        "source": "https://www.hydroflask.com/",
+        "confidence": "high"
+      },
+      "foundedIn": {
+        "value": "US",
+        "source": "https://www.hydroflask.com/",
+        "confidence": "high"
+      },
+      "mfgOrigin": {
+        "value": "CN",
+        "source": "https://www.hydroflask.com/",
+        "confidence": "low"
+      },
       "cfiaClass": null,
       "lastReviewed": "2026-10-17"
     },
     {
       "key": "logitech",
       "displayName": "Logitech",
-      "parent": { "value": "Logitech International S.A.", "source": "https://ir.logitech.com/", "confidence": "high" },
-      "parentHq": { "value": "CH", "source": "https://ir.logitech.com/", "confidence": "high" },
-      "hqCountry": { "value": "CH", "source": "https://ir.logitech.com/", "confidence": "high" },
-      "foundedIn": { "value": "CH", "source": "https://ir.logitech.com/", "confidence": "high" },
-      "mfgOrigin": { "value": "CN", "source": "https://www.logitech.com/", "confidence": "low" },
+      "parent": {
+        "value": "Logitech International S.A.",
+        "source": "https://ir.logitech.com/",
+        "confidence": "high"
+      },
+      "parentHq": {
+        "value": "CH",
+        "source": "https://ir.logitech.com/",
+        "confidence": "high"
+      },
+      "hqCountry": {
+        "value": "CH",
+        "source": "https://ir.logitech.com/",
+        "confidence": "high"
+      },
+      "foundedIn": {
+        "value": "CH",
+        "source": "https://ir.logitech.com/",
+        "confidence": "high"
+      },
+      "mfgOrigin": {
+        "value": "CN",
+        "source": "https://www.logitech.com/",
+        "confidence": "low"
+      },
       "cfiaClass": null,
       "lastReviewed": "2026-10-17",
       "note": "The abstention demo. No Canadian peripherals manufacturing exists, so the only honest product answer is 'none' and the lever moves to the retailer."
@@ -113,11 +297,33 @@
     {
       "key": "green beaver",
       "displayName": "The Green Beaver Company",
-      "parent": { "value": null, "source": null, "confidence": "low", "reason": "privately held; no parent found in structured sources" },
-      "parentHq": { "value": null, "source": null, "confidence": "low", "reason": "no parent identified" },
-      "hqCountry": { "value": "CA", "source": "https://greenbeaver.com/pages/about-us", "confidence": "high" },
-      "foundedIn": { "value": "CA", "source": "https://greenbeaver.com/pages/about-us", "confidence": "high" },
-      "mfgOrigin": { "value": "CA", "source": "https://greenbeaver.com/pages/about-us", "confidence": "medium" },
+      "parent": {
+        "value": null,
+        "source": null,
+        "confidence": "low",
+        "reason": "privately held; no parent found in structured sources"
+      },
+      "parentHq": {
+        "value": null,
+        "source": null,
+        "confidence": "low",
+        "reason": "no parent identified"
+      },
+      "hqCountry": {
+        "value": "CA",
+        "source": "https://greenbeaver.com/pages/about-us",
+        "confidence": "high"
+      },
+      "foundedIn": {
+        "value": "CA",
+        "source": "https://greenbeaver.com/pages/about-us",
+        "confidence": "high"
+      },
+      "mfgOrigin": {
+        "value": "CA",
+        "source": "https://greenbeaver.com/pages/about-us",
+        "confidence": "medium"
+      },
       "cfiaClass": "Made in Canada",
       "lastReviewed": "2026-10-17",
       "note": "Illustrates the coverage gap the writeup has to admit: a private Canadian SMB, invisible to Wikidata, GLEIF and EDGAR alike."
@@ -125,66 +331,198 @@
     {
       "key": "rocky mountain soap",
       "displayName": "Rocky Mountain Soap Company",
-      "parent": { "value": null, "source": null, "confidence": "low", "reason": "privately held; no parent found in structured sources" },
-      "parentHq": { "value": null, "source": null, "confidence": "low", "reason": "no parent identified" },
-      "hqCountry": { "value": "CA", "source": "https://www.rockymountainsoap.com/pages/our-story", "confidence": "high" },
-      "foundedIn": { "value": "CA", "source": "https://www.rockymountainsoap.com/pages/our-story", "confidence": "high" },
-      "mfgOrigin": { "value": "CA", "source": "https://www.rockymountainsoap.com/pages/our-story", "confidence": "medium" },
+      "parent": {
+        "value": null,
+        "source": null,
+        "confidence": "low",
+        "reason": "privately held; no parent found in structured sources"
+      },
+      "parentHq": {
+        "value": null,
+        "source": null,
+        "confidence": "low",
+        "reason": "no parent identified"
+      },
+      "hqCountry": {
+        "value": "CA",
+        "source": "https://www.rockymountainsoap.com/pages/our-story",
+        "confidence": "high"
+      },
+      "foundedIn": {
+        "value": "CA",
+        "source": "https://www.rockymountainsoap.com/pages/our-story",
+        "confidence": "high"
+      },
+      "mfgOrigin": {
+        "value": "CA",
+        "source": "https://www.rockymountainsoap.com/pages/our-story",
+        "confidence": "medium"
+      },
       "cfiaClass": "Made in Canada",
       "lastReviewed": "2026-10-17"
     },
     {
       "key": "attitude",
       "displayName": "ATTITUDE",
-      "parent": { "value": null, "source": null, "confidence": "low", "reason": "privately held; no parent found in structured sources" },
-      "parentHq": { "value": null, "source": null, "confidence": "low", "reason": "no parent identified" },
-      "hqCountry": { "value": "CA", "source": "https://attitudeliving.com/pages/about-us", "confidence": "high" },
-      "foundedIn": { "value": "CA", "source": "https://attitudeliving.com/pages/about-us", "confidence": "high" },
-      "mfgOrigin": { "value": "CA", "source": "https://attitudeliving.com/pages/about-us", "confidence": "low" },
+      "parent": {
+        "value": null,
+        "source": null,
+        "confidence": "low",
+        "reason": "privately held; no parent found in structured sources"
+      },
+      "parentHq": {
+        "value": null,
+        "source": null,
+        "confidence": "low",
+        "reason": "no parent identified"
+      },
+      "hqCountry": {
+        "value": "CA",
+        "source": "https://attitudeliving.com/pages/about-us",
+        "confidence": "high"
+      },
+      "foundedIn": {
+        "value": "CA",
+        "source": "https://attitudeliving.com/pages/about-us",
+        "confidence": "high"
+      },
+      "mfgOrigin": {
+        "value": "CA",
+        "source": "https://attitudeliving.com/pages/about-us",
+        "confidence": "low"
+      },
       "cfiaClass": null,
       "lastReviewed": "2026-10-17"
     },
     {
       "key": "covered bridge",
       "displayName": "Covered Bridge Potato Chips",
-      "parent": { "value": null, "source": null, "confidence": "low", "reason": "privately held; no parent found in structured sources" },
-      "parentHq": { "value": null, "source": null, "confidence": "low", "reason": "no parent identified" },
-      "hqCountry": { "value": "CA", "source": "https://coveredbridgechips.com/pages/our-story", "confidence": "high" },
-      "foundedIn": { "value": "CA", "source": "https://coveredbridgechips.com/pages/our-story", "confidence": "high" },
-      "mfgOrigin": { "value": "CA", "source": "https://coveredbridgechips.com/pages/our-story", "confidence": "high" },
+      "parent": {
+        "value": null,
+        "source": null,
+        "confidence": "low",
+        "reason": "privately held; no parent found in structured sources"
+      },
+      "parentHq": {
+        "value": null,
+        "source": null,
+        "confidence": "low",
+        "reason": "no parent identified"
+      },
+      "hqCountry": {
+        "value": "CA",
+        "source": "https://coveredbridgechips.com/pages/our-story",
+        "confidence": "high"
+      },
+      "foundedIn": {
+        "value": "CA",
+        "source": "https://coveredbridgechips.com/pages/our-story",
+        "confidence": "high"
+      },
+      "mfgOrigin": {
+        "value": "CA",
+        "source": "https://coveredbridgechips.com/pages/our-story",
+        "confidence": "high"
+      },
       "cfiaClass": "Product of Canada",
       "lastReviewed": "2026-10-17"
     },
     {
       "key": "hardbite",
       "displayName": "Hardbite Chips",
-      "parent": { "value": null, "source": null, "confidence": "low", "reason": "privately held; no parent found in structured sources" },
-      "parentHq": { "value": null, "source": null, "confidence": "low", "reason": "no parent identified" },
-      "hqCountry": { "value": "CA", "source": "https://hardbitechips.com/pages/about", "confidence": "high" },
-      "foundedIn": { "value": "CA", "source": "https://hardbitechips.com/pages/about", "confidence": "high" },
-      "mfgOrigin": { "value": "CA", "source": "https://hardbitechips.com/pages/about", "confidence": "high" },
+      "parent": {
+        "value": null,
+        "source": null,
+        "confidence": "low",
+        "reason": "privately held; no parent found in structured sources"
+      },
+      "parentHq": {
+        "value": null,
+        "source": null,
+        "confidence": "low",
+        "reason": "no parent identified"
+      },
+      "hqCountry": {
+        "value": "CA",
+        "source": "https://hardbitechips.com/pages/about",
+        "confidence": "high"
+      },
+      "foundedIn": {
+        "value": "CA",
+        "source": "https://hardbitechips.com/pages/about",
+        "confidence": "high"
+      },
+      "mfgOrigin": {
+        "value": "CA",
+        "source": "https://hardbitechips.com/pages/about",
+        "confidence": "high"
+      },
       "cfiaClass": "Product of Canada",
       "lastReviewed": "2026-10-17"
     },
     {
       "key": "stanfields",
       "displayName": "Stanfield's",
-      "parent": { "value": null, "source": null, "confidence": "low", "reason": "privately held; no parent found in structured sources" },
-      "parentHq": { "value": null, "source": null, "confidence": "low", "reason": "no parent identified" },
-      "hqCountry": { "value": "CA", "source": "https://www.stanfields.com/pages/our-story", "confidence": "high" },
-      "foundedIn": { "value": "CA", "source": "https://www.stanfields.com/pages/our-story", "confidence": "high" },
-      "mfgOrigin": { "value": "CA", "source": "https://www.stanfields.com/pages/made-in-canada", "confidence": "medium" },
+      "parent": {
+        "value": null,
+        "source": null,
+        "confidence": "low",
+        "reason": "privately held; no parent found in structured sources"
+      },
+      "parentHq": {
+        "value": null,
+        "source": null,
+        "confidence": "low",
+        "reason": "no parent identified"
+      },
+      "hqCountry": {
+        "value": "CA",
+        "source": "https://www.stanfields.com/pages/our-story",
+        "confidence": "high"
+      },
+      "foundedIn": {
+        "value": "CA",
+        "source": "https://www.stanfields.com/pages/our-story",
+        "confidence": "high"
+      },
+      "mfgOrigin": {
+        "value": "CA",
+        "source": "https://www.stanfields.com/pages/made-in-canada",
+        "confidence": "medium"
+      },
       "cfiaClass": "Made in Canada",
       "lastReviewed": "2026-10-17"
     },
     {
       "key": "trudeau",
       "displayName": "Trudeau Corporation",
-      "parent": { "value": null, "source": null, "confidence": "low", "reason": "privately held; no parent found in structured sources" },
-      "parentHq": { "value": null, "source": null, "confidence": "low", "reason": "no parent identified" },
-      "hqCountry": { "value": "CA", "source": "https://www.trudeaucorp.com/en/about-us", "confidence": "high" },
-      "foundedIn": { "value": "CA", "source": "https://www.trudeaucorp.com/en/about-us", "confidence": "high" },
-      "mfgOrigin": { "value": "CN", "source": "https://www.trudeaucorp.com/en/about-us", "confidence": "low" },
+      "parent": {
+        "value": null,
+        "source": null,
+        "confidence": "low",
+        "reason": "privately held; no parent found in structured sources"
+      },
+      "parentHq": {
+        "value": null,
+        "source": null,
+        "confidence": "low",
+        "reason": "no parent identified"
+      },
+      "hqCountry": {
+        "value": "CA",
+        "source": "https://www.trudeaucorp.com/en/about-us",
+        "confidence": "high"
+      },
+      "foundedIn": {
+        "value": "CA",
+        "source": "https://www.trudeaucorp.com/en/about-us",
+        "confidence": "high"
+      },
+      "mfgOrigin": {
+        "value": "CN",
+        "source": "https://www.trudeaucorp.com/en/about-us",
+        "confidence": "low"
+      },
       "cfiaClass": null,
       "lastReviewed": "2026-10-17",
       "note": "Canadian-owned, Canadian HQ, overseas manufacturing. Principle 5 in one record: the carbon saving here is near zero and the UI must say so."
@@ -192,23 +530,422 @@
     {
       "key": "province of canada",
       "displayName": "Province of Canada",
-      "parent": { "value": null, "source": null, "confidence": "low", "reason": "privately held; no parent found in structured sources" },
-      "parentHq": { "value": null, "source": null, "confidence": "low", "reason": "no parent identified" },
-      "hqCountry": { "value": "CA", "source": "https://provinceofcanada.com/pages/about", "confidence": "high" },
-      "foundedIn": { "value": "CA", "source": "https://provinceofcanada.com/pages/about", "confidence": "high" },
-      "mfgOrigin": { "value": "CA", "source": "https://provinceofcanada.com/pages/made-in-canada", "confidence": "high" },
+      "parent": {
+        "value": null,
+        "source": null,
+        "confidence": "low",
+        "reason": "privately held; no parent found in structured sources"
+      },
+      "parentHq": {
+        "value": null,
+        "source": null,
+        "confidence": "low",
+        "reason": "no parent identified"
+      },
+      "hqCountry": {
+        "value": "CA",
+        "source": "https://provinceofcanada.com/pages/about",
+        "confidence": "high"
+      },
+      "foundedIn": {
+        "value": "CA",
+        "source": "https://provinceofcanada.com/pages/about",
+        "confidence": "high"
+      },
+      "mfgOrigin": {
+        "value": "CA",
+        "source": "https://provinceofcanada.com/pages/made-in-canada",
+        "confidence": "high"
+      },
       "cfiaClass": "Made in Canada",
       "lastReviewed": "2026-10-17"
     },
     {
       "key": "jamieson",
       "displayName": "Jamieson Vitamins",
-      "parent": { "value": "Jamieson Wellness Inc.", "source": "https://www.jamiesonwellness.com/", "confidence": "high" },
-      "parentHq": { "value": "CA", "source": "https://www.jamiesonwellness.com/", "confidence": "high" },
-      "hqCountry": { "value": "CA", "source": "https://www.jamiesonwellness.com/", "confidence": "high" },
-      "foundedIn": { "value": "CA", "source": "https://www.jamiesonvitamins.com/pages/our-story", "confidence": "high" },
-      "mfgOrigin": { "value": "CA", "source": "https://www.jamiesonwellness.com/", "confidence": "medium" },
+      "parent": {
+        "value": "Jamieson Wellness Inc.",
+        "source": "https://www.jamiesonwellness.com/",
+        "confidence": "high"
+      },
+      "parentHq": {
+        "value": "CA",
+        "source": "https://www.jamiesonwellness.com/",
+        "confidence": "high"
+      },
+      "hqCountry": {
+        "value": "CA",
+        "source": "https://www.jamiesonwellness.com/",
+        "confidence": "high"
+      },
+      "foundedIn": {
+        "value": "CA",
+        "source": "https://www.jamiesonvitamins.com/pages/our-story",
+        "confidence": "high"
+      },
+      "mfgOrigin": {
+        "value": "CA",
+        "source": "https://www.jamiesonwellness.com/",
+        "confidence": "medium"
+      },
       "cfiaClass": "Made in Canada",
+      "lastReviewed": "2026-10-17"
+    },
+    {
+      "key": "carina organics",
+      "displayName": "Carina Organics",
+      "parent": {
+        "value": null,
+        "source": null,
+        "confidence": "low",
+        "reason": "privately held; no parent found in structured sources"
+      },
+      "parentHq": {
+        "value": null,
+        "source": null,
+        "confidence": "low",
+        "reason": "no parent identified"
+      },
+      "hqCountry": {
+        "value": "CA",
+        "source": "https://carinaorganics.com/pages/about-us",
+        "confidence": "high"
+      },
+      "foundedIn": {
+        "value": "CA",
+        "source": "https://carinaorganics.com/pages/about-us",
+        "confidence": "high"
+      },
+      "mfgOrigin": {
+        "value": "CA",
+        "source": "https://carinaorganics.com/pages/about-us",
+        "confidence": "medium"
+      },
+      "cfiaClass": "Made in Canada",
+      "lastReviewed": "2026-10-17"
+    },
+    {
+      "key": "nelson naturals",
+      "displayName": "Nelson Naturals",
+      "parent": {
+        "value": null,
+        "source": null,
+        "confidence": "low",
+        "reason": "privately held; no parent found in structured sources"
+      },
+      "parentHq": {
+        "value": null,
+        "source": null,
+        "confidence": "low",
+        "reason": "no parent identified"
+      },
+      "hqCountry": {
+        "value": "CA",
+        "source": "https://nelsonnaturals.com/pages/our-story",
+        "confidence": "high"
+      },
+      "foundedIn": {
+        "value": "CA",
+        "source": "https://nelsonnaturals.com/pages/our-story",
+        "confidence": "high"
+      },
+      "mfgOrigin": {
+        "value": "CA",
+        "source": "https://nelsonnaturals.com/pages/our-story",
+        "confidence": "medium"
+      },
+      "cfiaClass": "Made in Canada",
+      "lastReviewed": "2026-10-17"
+    },
+    {
+      "key": "nature clean",
+      "displayName": "Nature Clean",
+      "parent": {
+        "value": null,
+        "source": null,
+        "confidence": "low",
+        "reason": "privately held; no parent found in structured sources"
+      },
+      "parentHq": {
+        "value": null,
+        "source": null,
+        "confidence": "low",
+        "reason": "no parent identified"
+      },
+      "hqCountry": {
+        "value": "CA",
+        "source": "https://natureclean.ca/pages/about-us",
+        "confidence": "high"
+      },
+      "foundedIn": {
+        "value": "CA",
+        "source": "https://natureclean.ca/pages/about-us",
+        "confidence": "high"
+      },
+      "mfgOrigin": {
+        "value": "CA",
+        "source": "https://natureclean.ca/pages/about-us",
+        "confidence": "medium"
+      },
+      "cfiaClass": "Made in Canada",
+      "lastReviewed": "2026-10-17"
+    },
+    {
+      "key": "balzacs",
+      "displayName": "Balzac's Coffee Roasters",
+      "parent": {
+        "value": null,
+        "source": null,
+        "confidence": "low",
+        "reason": "privately held; no parent found in structured sources"
+      },
+      "parentHq": {
+        "value": null,
+        "source": null,
+        "confidence": "low",
+        "reason": "no parent identified"
+      },
+      "hqCountry": {
+        "value": "CA",
+        "source": "https://balzacs.com/pages/about",
+        "confidence": "high"
+      },
+      "foundedIn": {
+        "value": "CA",
+        "source": "https://balzacs.com/pages/about",
+        "confidence": "high"
+      },
+      "mfgOrigin": {
+        "value": "CA",
+        "source": "https://balzacs.com/pages/about",
+        "confidence": "medium"
+      },
+      "cfiaClass": "Made in Canada",
+      "lastReviewed": "2026-10-17"
+    },
+    {
+      "key": "level ground",
+      "displayName": "Level Ground Trading",
+      "parent": {
+        "value": null,
+        "source": null,
+        "confidence": "low",
+        "reason": "privately held; no parent found in structured sources"
+      },
+      "parentHq": {
+        "value": null,
+        "source": null,
+        "confidence": "low",
+        "reason": "no parent identified"
+      },
+      "hqCountry": {
+        "value": "CA",
+        "source": "https://levelground.com/pages/about-us",
+        "confidence": "high"
+      },
+      "foundedIn": {
+        "value": "CA",
+        "source": "https://levelground.com/pages/about-us",
+        "confidence": "high"
+      },
+      "mfgOrigin": {
+        "value": "CA",
+        "source": "https://levelground.com/pages/about-us",
+        "confidence": "medium"
+      },
+      "cfiaClass": "Made in Canada",
+      "lastReviewed": "2026-10-17"
+    },
+    {
+      "key": "head and shoulders",
+      "displayName": "Head & Shoulders",
+      "parent": {
+        "value": "The Procter & Gamble Company",
+        "source": "https://us.pg.com/brands/",
+        "confidence": "high"
+      },
+      "parentHq": {
+        "value": "US",
+        "source": "https://us.pg.com/brands/",
+        "confidence": "high"
+      },
+      "hqCountry": {
+        "value": "US",
+        "source": "https://us.pg.com/brands/",
+        "confidence": "high"
+      },
+      "foundedIn": {
+        "value": "US",
+        "source": "https://us.pg.com/brands/",
+        "confidence": "medium"
+      },
+      "mfgOrigin": {
+        "value": null,
+        "source": null,
+        "confidence": "low",
+        "reason": "no per-product manufacturing evidence found"
+      },
+      "cfiaClass": null,
+      "lastReviewed": "2026-10-17"
+    },
+    {
+      "key": "pantene",
+      "displayName": "Pantene",
+      "parent": {
+        "value": "The Procter & Gamble Company",
+        "source": "https://us.pg.com/brands/",
+        "confidence": "high"
+      },
+      "parentHq": {
+        "value": "US",
+        "source": "https://us.pg.com/brands/",
+        "confidence": "high"
+      },
+      "hqCountry": {
+        "value": "US",
+        "source": "https://us.pg.com/brands/",
+        "confidence": "high"
+      },
+      "foundedIn": {
+        "value": "US",
+        "source": "https://us.pg.com/brands/",
+        "confidence": "medium"
+      },
+      "mfgOrigin": {
+        "value": null,
+        "source": null,
+        "confidence": "low",
+        "reason": "no per-product manufacturing evidence found"
+      },
+      "cfiaClass": null,
+      "lastReviewed": "2026-10-17"
+    },
+    {
+      "key": "colgate",
+      "displayName": "Colgate",
+      "parent": {
+        "value": "Colgate-Palmolive Company",
+        "source": "https://www.colgatepalmolive.com/en-us/brands",
+        "confidence": "high"
+      },
+      "parentHq": {
+        "value": "US",
+        "source": "https://www.colgatepalmolive.com/en-us/brands",
+        "confidence": "high"
+      },
+      "hqCountry": {
+        "value": "US",
+        "source": "https://www.colgatepalmolive.com/en-us/brands",
+        "confidence": "high"
+      },
+      "foundedIn": {
+        "value": "US",
+        "source": "https://www.colgatepalmolive.com/en-us/brands",
+        "confidence": "medium"
+      },
+      "mfgOrigin": {
+        "value": null,
+        "source": null,
+        "confidence": "low",
+        "reason": "no per-product manufacturing evidence found"
+      },
+      "cfiaClass": null,
+      "lastReviewed": "2026-10-17"
+    },
+    {
+      "key": "crest",
+      "displayName": "Crest",
+      "parent": {
+        "value": "The Procter & Gamble Company",
+        "source": "https://us.pg.com/brands/",
+        "confidence": "high"
+      },
+      "parentHq": {
+        "value": "US",
+        "source": "https://us.pg.com/brands/",
+        "confidence": "high"
+      },
+      "hqCountry": {
+        "value": "US",
+        "source": "https://us.pg.com/brands/",
+        "confidence": "high"
+      },
+      "foundedIn": {
+        "value": "US",
+        "source": "https://us.pg.com/brands/",
+        "confidence": "medium"
+      },
+      "mfgOrigin": {
+        "value": null,
+        "source": null,
+        "confidence": "low",
+        "reason": "no per-product manufacturing evidence found"
+      },
+      "cfiaClass": null,
+      "lastReviewed": "2026-10-17"
+    },
+    {
+      "key": "tide",
+      "displayName": "Tide",
+      "parent": {
+        "value": "The Procter & Gamble Company",
+        "source": "https://us.pg.com/brands/",
+        "confidence": "high"
+      },
+      "parentHq": {
+        "value": "US",
+        "source": "https://us.pg.com/brands/",
+        "confidence": "high"
+      },
+      "hqCountry": {
+        "value": "US",
+        "source": "https://us.pg.com/brands/",
+        "confidence": "high"
+      },
+      "foundedIn": {
+        "value": "US",
+        "source": "https://us.pg.com/brands/",
+        "confidence": "medium"
+      },
+      "mfgOrigin": {
+        "value": null,
+        "source": null,
+        "confidence": "low",
+        "reason": "no per-product manufacturing evidence found"
+      },
+      "cfiaClass": null,
+      "lastReviewed": "2026-10-17"
+    },
+    {
+      "key": "herbal essences",
+      "displayName": "Herbal Essences",
+      "parent": {
+        "value": "The Procter & Gamble Company",
+        "source": "https://us.pg.com/brands/",
+        "confidence": "high"
+      },
+      "parentHq": {
+        "value": "US",
+        "source": "https://us.pg.com/brands/",
+        "confidence": "high"
+      },
+      "hqCountry": {
+        "value": "US",
+        "source": "https://us.pg.com/brands/",
+        "confidence": "high"
+      },
+      "foundedIn": {
+        "value": "US",
+        "source": "https://us.pg.com/brands/",
+        "confidence": "medium"
+      },
+      "mfgOrigin": {
+        "value": null,
+        "source": null,
+        "confidence": "low",
+        "reason": "no per-product manufacturing evidence found"
+      },
+      "cfiaClass": null,
       "lastReviewed": "2026-10-17"
     }
   ]

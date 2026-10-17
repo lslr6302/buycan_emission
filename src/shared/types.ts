@@ -192,6 +192,8 @@ export interface ResolveDiagnostics {
   rejections: GateRejection[];
   elapsedMs: number;
   dataSource: string;
+  /** Which AI backend answered. "mock" means the fallback is a stub. */
+  aiSource: string;
 }
 
 export interface GateRejection {

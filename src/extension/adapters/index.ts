@@ -22,11 +22,43 @@ export const genericAdapter: SiteAdapter = {
       return 'none';
     }
     // The honest product-page test: does the page claim to be one?
-    return findProductNode(jsonLdNodesFromDocument(document)) ? 'product' : 'none';
+    if (findProductNode(jsonLdNodesFromDocument(document))) return 'product';
+    if (genericSearchQuery()) return 'search';
+    return 'none';
   },
+
+  searchQuery: () => genericSearchQuery(),
 
   product: null,
 };
+
+/** The query parameters essentially every storefront search uses. */
+const SEARCH_PARAMS = ['q', 'k', 's', 'query', 'search', 'keyword', 'keywords', 'term'];
+
+function genericSearchQuery(): string | null {
+  const looksLikeSearch = /\/(search|results|catalogsearch|recherche)(\/|$)/i.test(
+    location.pathname,
+  );
+  const params = new URLSearchParams(location.search);
+
+  for (const name of SEARCH_PARAMS) {
+    const value = params.get(name)?.trim();
+    // A bare `?s=` on a non-search path is usually a sort or size parameter,
+    // so short values only count when the path already says "search".
+    if (value && value.length >= 2 && (looksLikeSearch || name === 'q' || name === 'query')) {
+      return value;
+    }
+  }
+
+  if (looksLikeSearch) {
+    const box = document.querySelector<HTMLInputElement>(
+      'input[type="search"], input[name="q"], input[name="query"]',
+    );
+    const typed = box?.value?.trim();
+    if (typed && typed.length >= 2) return typed;
+  }
+  return null;
+}
 
 /**
  * Hostname-matched adapters run first, then capability-detected ones, then

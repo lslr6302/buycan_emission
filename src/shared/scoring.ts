@@ -149,9 +149,26 @@ export function componentsFor(args: {
   };
 }
 
-/** Threshold for auto-expanding the overlay. Below this we stay collapsed. */
-export const STRONG_MATCH_EQUIVALENCE = 0.8;
+/**
+ * Whether to open the overlay unprompted, rather than sitting collapsed.
+ *
+ * Not a threshold on the blended score, which was the first attempt and was
+ * wrong twice over: a score mixes in price, so a good Canadian match at a
+ * premium got silently suppressed, and equivalence alone never reaches 0.8
+ * for a cross-brand swap - a Canadian shampoo is a *different product*, not a
+ * near-duplicate, so the panel never opened at all.
+ *
+ * Interrupting someone is justified by two things together: we are confident
+ * the alternative is actually Canadian, and it is actually comparable. Price
+ * is the user's call, not a reason to stay quiet.
+ */
+export const EXPAND_MIN_CANADIAN = 0.8;
+export const EXPAND_MIN_EQUIVALENCE = 0.4;
 
 export function isStrongMatch(candidate: Candidate | undefined): boolean {
-  return !!candidate && candidate.components.equivalence >= STRONG_MATCH_EQUIVALENCE;
+  if (!candidate) return false;
+  return (
+    candidate.components.canadian >= EXPAND_MIN_CANADIAN &&
+    candidate.components.equivalence >= EXPAND_MIN_EQUIVALENCE
+  );
 }

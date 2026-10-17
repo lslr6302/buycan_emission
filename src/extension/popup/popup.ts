@@ -72,6 +72,7 @@ function renderDiagnostics(): void {
   if (report.gtin) rows.push(['GTIN', report.gtin]);
   if (report.priceCad !== null) rows.push(['Price', `$${report.priceCad.toFixed(2)}`]);
   if (report.cartLines !== null) rows.push(['Cart lines', String(report.cartLines)]);
+  if (report.searchQuery) rows.push(['Search', report.searchQuery.slice(0, 50)]);
 
   const table = `<table class="diag">${rows
     .map(([k, v]) => `<tr><td>${k}</td><td>${escapeHtml(v)}</td></tr>`)
@@ -95,6 +96,16 @@ function explain(report: PageReport): string {
 
   if (report.pageKind === 'none') {
     return '<div class="muted" style="margin-top:8px">Not recognized as a product or cart page. Generic detection needs schema.org Product markup; this site may need its own adapter.</div>';
+  }
+
+  if (report.pageKind === 'search' && !report.searchQuery) {
+    return '<div class="muted" style="margin-top:8px">Search page detected but the query could not be read. This site needs a <code>searchQuery</code> in its adapter.</div>';
+  }
+
+  if (report.pageKind === 'search') {
+    return `<div class="muted" style="margin-top:8px">Searched for <code>${escapeHtml(
+      report.searchQuery ?? '',
+    )}</code>. Matches come from the catalogue, not from this page's results.</div>`;
   }
 
   if (report.pageKind === 'cart' && report.cartLines === 0) {

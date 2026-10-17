@@ -121,7 +121,9 @@ export async function resolveProduct(
     candidates,
     abstained,
     abstentionReason,
-    abstentionMessage: abstained ? abstentionMessage(abstentionReason!, product, provenance) : null,
+    abstentionMessage: abstained
+      ? abstentionMessage(abstentionReason!, product, provenance) + stubNote(ai.name, aiCandidatesSeen)
+      : null,
     diagnostics: {
       extractionTier: product.extraction.tier,
       brandLinked: brand !== null,
@@ -131,6 +133,7 @@ export async function resolveProduct(
       rejections,
       elapsedMs: Date.now() - started,
       dataSource: repo.name,
+      aiSource: ai.name,
     },
   };
 }
@@ -391,6 +394,19 @@ function abstentionMessage(
     default:
       return `No alternative to show for ${brand}.`;
   }
+}
+
+/**
+ * While the AI fallback is a stub it rejects everything by construction, so an
+ * abstention there says nothing about whether a Canadian alternative exists.
+ * Saying so beats letting someone conclude the matcher is broken.
+ */
+function stubNote(aiName: string, aiCandidatesSeen: number): string {
+  if (aiName !== 'mock' || aiCandidatesSeen === 0) return '';
+  return (
+    ' (Note: the AI fallback is still a stub - it returns fixtures that fail validation by design, ' +
+    'so this abstention reflects the placeholder backend, not a real search.)'
+  );
 }
 
 export function normalizeWeights(weights: Weights | undefined): Weights {

@@ -50,8 +50,25 @@ export const amazonAdapter: SiteAdapter = {
   pageKind: () => {
     const path = location.pathname;
     if (/\/gp\/cart\/|\/cart\b/.test(path)) return 'cart';
-    if (/\/(dp|gp\/product)\//.test(path)) return 'product';
+    if (/\/(dp|gp\/product|gp\/aw\/d)\//.test(path)) return 'product';
+    if (/^\/s\b/.test(path) || location.search.includes('k=')) return 'search';
+
+    // URL shapes change and vary by locale. If the page is serving a product
+    // title and an ASIN, it is a product page whatever the path looks like.
+    if (document.querySelector('#productTitle, input#ASIN, input[name="ASIN"]')) return 'product';
+
+    // Likewise, a results grid is a search page even on /b/ or /gp/bestsellers.
+    if (document.querySelector('.s-search-results, [data-component-type="s-search-result"]')) {
+      return 'search';
+    }
     return 'none';
+  },
+
+  searchQuery: () => {
+    const fromUrl = new URLSearchParams(location.search).get('k');
+    if (fromUrl) return fromUrl.trim() || null;
+    const box = document.querySelector<HTMLInputElement>('#twotabsearchtextbox');
+    return box?.value?.trim() || null;
   },
 
   product: (_doc, ctx): ProductRef | null => {

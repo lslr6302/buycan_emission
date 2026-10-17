@@ -10,7 +10,7 @@ import {
   type Response,
   type Settings,
 } from './messages';
-import { isDismissed, removeOverlay, renderCart, renderProduct } from './overlay';
+import { isDismissed, removeOverlay, renderCart, renderProduct, renderSearch } from './overlay';
 
 /**
  * Content script. Resolves which site we are on, extracts, asks the worker,
@@ -44,6 +44,7 @@ function report(patch: Partial<PageReport>): void {
     gtin: null,
     priceCad: null,
     cartLines: null,
+    searchQuery: null,
     error: null,
   };
   void send({ type: 'report', report: { ...base, ...patch } }).catch(() => undefined);
@@ -122,6 +123,37 @@ async function readCart(): Promise<CartLine[]> {
   }
 }
 
+// --- search results pages --------------------------------------------------
+
+/**
+ * The user typed what they want. That is cleaner input than any listing
+ * title, so a search page is the single best place to offer an alternative -
+ * and it is the moment the original pitch describes: search for a product,
+ * get shown the Canadian option before you have committed to a brand.
+ */
+async function runSearch(): Promise<void> {
+  const query = adapter.searchQuery?.() ?? null;
+  if (!query) {
+    report({ pageKind: 'search', error: 'could not read the search query from this page' });
+    return;
+  }
+
+  report({ pageKind: 'search', searchQuery: query, tier: 'adapter' });
+
+  const response = await send({ type: 'search', site, query });
+  if (!response.ok || response.kind !== 'search') {
+    report({
+      pageKind: 'search',
+      searchQuery: query,
+      error: response.ok ? 'unexpected reply' : response.error,
+    });
+    return;
+  }
+
+  if (await isDismissed()) return;
+  renderSearch(response.data, query);
+}
+
 let cartTimer: ReturnType<typeof setTimeout> | undefined;
 let lastCartSignature = '';
 
@@ -170,6 +202,11 @@ function start(): void {
 
   if (kind === 'product') {
     void runProduct();
+    return;
+  }
+
+  if (kind === 'search') {
+    void runSearch();
     return;
   }
 

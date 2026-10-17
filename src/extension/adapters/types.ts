@@ -1,7 +1,7 @@
 import type { DocumentExtractor } from '../../shared/extract';
 import type { CartLine } from '../../shared/types';
 
-export type PageKind = 'product' | 'cart' | 'none';
+export type PageKind = 'product' | 'cart' | 'search' | 'none';
 
 /**
  * THE SITE SEAM.
@@ -31,6 +31,13 @@ export interface SiteAdapter {
   detect?: () => boolean;
 
   pageKind: () => PageKind;
+
+  /**
+   * What the user typed, on a search-results page. Their own words are
+   * cleaner input than any listing title, so this is the best signal the
+   * extension ever gets.
+   */
+  searchQuery?: () => string | null;
 
   /** Tier-4 extraction. Null means the generic ladder handles this site. */
   product?: DocumentExtractor | null;

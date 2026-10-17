@@ -70,12 +70,19 @@ curl localhost:8787/v1/health
 | AI candidate validation gates | done, tested |
 | Cart aggregation | done |
 | Overlay + popup | done, needs real-page testing |
-| **Ownership/catalogue data** | **placeholder seed — not demo-ready** |
+| **Ownership/catalogue data** | **placeholder seed, 25 items / 11 categories — not demo-ready** |
 | **Gemini integration** | **stub — throws NotImplemented** |
 
 The seed data under `src/server/data/seed/` is unverified placeholder and every
 catalogue URL is a brand homepage, not a real product link. It exists so the
 pipeline runs. It is not safe to show a judge.
+
+**A product in a category with no seed items will abstain.** Covered so far:
+hair care, oral care, body wash, deodorant, lotion, laundry, chips, coffee,
+tee shirts, drinkware, vitamins. Anything else falls through to the AI
+fallback — which is still a stub that rejects its own fixtures by design, so
+that abstention says nothing about whether an alternative exists. The popup
+and the abstention message both say when that is what happened.
 
 ---
 

@@ -47,6 +47,13 @@ const resolveSchema = z.object({
   destinationRegion: z.string().nullable().optional(),
 });
 
+const searchSchema = z.object({
+  site: z.string(),
+  query: z.string().min(2).max(300),
+  weights: weightsSchema.optional(),
+  verifiedOnly: z.boolean().optional(),
+});
+
 const cartSchema = z.object({
   site: z.string(),
   lines: z
@@ -101,6 +108,47 @@ async function main(): Promise<void> {
     }
   });
 
+  /**
+   * Search-results pages. The user typed what they want, which is cleaner
+   * input than any listing title, so we synthesise a product from the query
+   * and run the ordinary pipeline over it. No separate code path to keep in
+   * sync, and the same abstention rules apply.
+   */
+  app.post('/v1/search', async (req, res) => {
+    const parsed = searchSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: 'invalid_request', detail: parsed.error.flatten() });
+      return;
+    }
+    const { site, query, weights, verifiedOnly } = parsed.data;
+    try {
+      res.json(
+        await resolveProduct(
+          {
+            product: {
+              site,
+              siteId: null,
+              url: '',
+              title: query,
+              brand: null,
+              gtin: null,
+              price: null,
+              categoryHint: null,
+              imageUrl: null,
+              massKg: null,
+              extraction: { tier: 'adapter', confidence: 'low' },
+            },
+            weights,
+            verifiedOnly,
+          },
+          deps,
+        ),
+      );
+    } catch (error) {
+      fail(res, error, 'search');
+    }
+  });
+
   app.post('/v1/cart/analyze', async (req, res) => {
     const parsed = cartSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -120,6 +168,22 @@ async function main(): Promise<void> {
     if (repo.name.startsWith('mock')) {
       console.log('  NOTE: seed data is placeholder and unverified. Not demo-ready.');
     }
+  });
+
+  // Almost always a server left running in another terminal. A stack trace is
+  // a bad way to learn that.
+  server.on('error', (error: NodeJS.ErrnoException) => {
+    if (error.code === 'EADDRINUSE') {
+      console.error(
+        `\nPort ${config.port} is already in use — the API is probably running in another terminal.\n` +
+          `  Use it:    curl localhost:${config.port}/v1/health\n` +
+          `  Replace:   npx kill-port ${config.port}   (or close that terminal)\n` +
+          `  Elsewhere: PORT=8788 npm run server\n`,
+      );
+      process.exit(1);
+    }
+    console.error(error);
+    process.exit(1);
   });
 
   const shutdown = async () => {

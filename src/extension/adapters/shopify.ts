@@ -51,8 +51,11 @@ export const shopifyAdapter: SiteAdapter = {
     const path = location.pathname;
     if (/\/cart(\/|$)/.test(path)) return 'cart';
     if (/\/products\//.test(path)) return 'product';
+    if (/\/search(\/|$)/.test(path)) return 'search';
     return 'none';
   },
+
+  searchQuery: () => new URLSearchParams(location.search).get('q')?.trim() || null,
 
   product: null, // Shopify publishes JSON-LD; the generic ladder handles it.
 

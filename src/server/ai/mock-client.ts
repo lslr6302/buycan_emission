@@ -29,6 +29,12 @@ export class MockAiClient implements AiClient {
 
     const form = detectForm(title);
     if (form) hard['form'] = form;
+
+    // Product type is a HARD constraint, not a soft one. Shampoo and
+    // conditioner share a form, a volume and most of their title tokens, so
+    // without this a conditioner scores well as an alternative to shampoo.
+    const type = detectType(title);
+    if (type) hard['type'] = type;
     if (/insulated|vacuum|thermal/.test(title)) hard['insulated'] = true;
 
     const ml = detectMillilitres(title);
@@ -68,11 +74,21 @@ export class MockAiClient implements AiClient {
   }
 
   async sanityCheck(original: ProductRef, candidateTitle: string): Promise<SanityVerdict> {
-    const a = detectForm(normalizeTitle(original.title));
-    const b = detectForm(normalizeTitle(candidateTitle));
-    if (a && b && a !== b) {
-      return { acceptable: false, reason: `form mismatch: ${a} vs ${b}` };
+    const left = normalizeTitle(original.title);
+    const right = normalizeTitle(candidateTitle);
+
+    const typeA = detectType(left);
+    const typeB = detectType(right);
+    if (typeA && typeB && typeA !== typeB) {
+      return { acceptable: false, reason: `product type mismatch: ${typeA} vs ${typeB}` };
     }
+
+    const formA = detectForm(left);
+    const formB = detectForm(right);
+    if (formA && formB && formA !== formB) {
+      return { acceptable: false, reason: `form mismatch: ${formA} vs ${formB}` };
+    }
+
     return { acceptable: true, reason: 'no disqualifying difference detected' };
   }
 }
@@ -80,7 +96,10 @@ export class MockAiClient implements AiClient {
 const CATEGORY_KEYWORDS: Array<[RegExp, string]> = [
   [/deodorant|antiperspirant/, 'personal_care_deodorant'],
   [/body wash|shower gel|bar soap|soap/, 'personal_care_body_wash'],
-  [/shampoo|conditioner/, 'personal_care_hair'],
+  [/shampoo|conditioner|hair mask|dry shampoo/, 'personal_care_hair'],
+  [/toothpaste|mouthwash|floss|oral care/, 'personal_care_oral'],
+  [/body lotion|moisturizer|hand cream|body cream/, 'personal_care_lotion'],
+  [/laundry detergent|laundry soap|fabric softener/, 'home_cleaning_laundry'],
   [/chips|crisps/, 'snacks_chips'],
   [/coffee|espresso|roast/, 'pantry_coffee'],
   [/ketchup|mustard|condiment|sauce/, 'pantry_condiments'],
@@ -107,10 +126,26 @@ function detectForm(title: string): string | null {
   if (/\bstick\b/.test(title)) return 'stick';
   if (/\bspray\b|aerosol/.test(title)) return 'spray';
   if (/\broll[- ]?on\b/.test(title)) return 'roll_on';
-  if (/liquid|wash|gel|lotion/.test(title)) return 'liquid';
+  if (/toothpaste|\bpaste\b/.test(title)) return 'paste';
+  if (/liquid|wash|gel|lotion|shampoo|conditioner/.test(title)) return 'liquid';
   if (/whole bean|beans?\b/.test(title)) return 'whole_bean';
   if (/ground\b/.test(title)) return 'ground';
   if (/softgel|capsule|tablet/.test(title)) return 'softgel';
+  return null;
+}
+
+/**
+ * Narrow product type, emitted only when the title is unambiguous.
+ *
+ * This is the attribute that keeps a conditioner from being offered as an
+ * alternative to shampoo: they share a form, a volume and most of their title
+ * tokens, so nothing else in the pipeline separates them.
+ */
+function detectType(title: string): string | null {
+  if (/\bconditioner\b/.test(title)) return 'conditioner';
+  if (/\bshampoo\b/.test(title)) return 'shampoo';
+  if (/\btoothpaste\b/.test(title)) return 'toothpaste';
+  if (/\bmouthwash\b/.test(title)) return 'mouthwash';
   return null;
 }
 

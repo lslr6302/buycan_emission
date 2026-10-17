@@ -229,6 +229,45 @@ export function renderProduct(result: ResolveResponse, expanded: boolean): void 
   wire(shadow);
 }
 
+/**
+ * Search-results pages. Shown before the user has committed to a brand, which
+ * is the cheapest possible moment to change their mind - no cart to edit, no
+ * decision to undo.
+ */
+export function renderSearch(result: ResolveResponse, query: string): void {
+  if (result.abstained || result.candidates.length === 0) {
+    remove();
+    return;
+  }
+
+  const shadow = mount(true);
+  const count = result.candidates.length;
+
+  const container = document.createElement('div');
+  container.innerHTML = `
+    <div class="panel open">
+      <div class="head">
+        <span class="leaf">🍁</span>
+        <div class="head-text">
+          <div class="title">${count} Canadian option${count === 1 ? '' : 's'} for "${escapeHtml(
+            query.slice(0, 40),
+          )}"</div>
+          <div class="sub">Before you pick a brand</div>
+        </div>
+        <button class="x" title="Dismiss on this site">×</button>
+      </div>
+      <div class="body">
+        ${result.candidates.map((c) => candidateCard(c, null)).join('')}
+      </div>
+      <div class="foot">
+        Matched on your search terms, ranked by a fixed formula. Adjust the weights in the popup.
+      </div>
+    </div>`;
+
+  shadow.append(container);
+  wire(shadow);
+}
+
 export function renderCart(analysis: CartAnalysis): void {
   if (analysis.lines.length === 0) {
     remove();
