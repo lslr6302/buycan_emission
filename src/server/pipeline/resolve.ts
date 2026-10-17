@@ -19,6 +19,7 @@ import type {
   Weights,
 } from '../../shared/types';
 import type { AiClient } from '../ai/client';
+import type { AiStore, StoredAlternative, StoredAlternativeInput } from '../data/ai-store';
 import type { CatalogueItem, Repository } from '../data/repository';
 import { runGates } from './gates';
 import { findProductLink, priceCeiling, requiredNouns, searchTermsFor } from './storefront';
@@ -28,7 +29,8 @@ import { ownStatusFor, qualifiesAsCanadian, verdictFor } from './provenance';
  * The runtime pipeline for one product.
  *
  *   spec -> brand -> provenance -> verified retrieval
- *        -> AI fallback (gated) -> retailer fallback -> score -> abstain?
+ *        -> stored AI discoveries -> AI fallback (gated, then stored)
+ *        -> retailer fallback -> score -> abstain?
  *
  * Order matters and is not an accident. The verified dataset always runs
  * first; the AI only sees products the database could not answer for.
@@ -41,6 +43,10 @@ export interface PipelineDeps {
   maxCandidates?: number;
   /** Disable the yes/no veto (it costs one AI call per top candidate). */
   sanityVeto?: boolean;
+  /** Second database: remembered AI discoveries. Omit to never store them. */
+  aiStore?: AiStore;
+  /** Used by the gates to fetch candidate pages. Injected in tests. */
+  fetchImpl?: typeof fetch;
 }
 
 const VERIFIED_POOL = 30;
@@ -94,6 +100,7 @@ export async function resolveProduct(
         verifiedCandidates: 0,
         aiCandidates: 0,
         aiCandidatesRejected: 0,
+        aiStoreHits: 0,
         rejections: [],
         elapsedMs: Date.now() - started,
         dataSource: repo.name,
@@ -108,20 +115,37 @@ export async function resolveProduct(
     toCandidate(item, product, spec, 'verified', item.gtin && item.gtin === product.gtin ? 'gtin_exact' : 'equivalent', null),
   );
 
-  // 5. AI fallback - only when the database came up empty.
+  // 5. AI fallback - only when the database came up empty. Earlier AI
+  //    discoveries for this product are tried first; the model is only asked
+  //    when there are none. Either way they stay origin 'ai'.
+  const brandKey = normalizeBrand(product.brand) || null;
+  let aiStoreHits = 0;
+  const freshAiIds = new Set<string>();
+
+  if (candidates.length === 0 && !request.verifiedOnly && deps.aiStore) {
+    const stored = await deps.aiStore
+      .find({ productKey: key, brandKey, category: spec?.category ?? null, limit: 4 })
+      .catch((error) => {
+        console.error('[ai-store] find failed:', error instanceof Error ? error.message : error);
+        return [];
+      });
+    aiStoreHits = stored.length;
+    candidates = stored.map((entry) => toCandidateFromStore(entry, product, spec));
+  }
+
   if (candidates.length === 0 && !request.verifiedOnly) {
     const proposed = await ai.searchAlternative({ product, spec, limit: 4 }).catch(() => []);
     aiCandidatesSeen = proposed.length;
 
     for (const proposal of proposed) {
-      const result = await runGates(proposal);
+      const result = await runGates(proposal, { fetchImpl: deps.fetchImpl });
       if (!result.passed) {
         if (result.rejection) rejections.push(result.rejection);
         continue;
       }
-      candidates.push(
-        toCandidateFromAi(proposal, result.verified!, product, spec),
-      );
+      const candidate = toCandidateFromAi(proposal, result.verified!, product, spec);
+      freshAiIds.add(candidate.id);
+      candidates.push(candidate);
     }
   }
 
@@ -152,6 +176,17 @@ export async function resolveProduct(
   }
 
   candidates = rank(candidates, weights);
+
+  // Only fresh discoveries that survived every gate, the provenance filter
+  // and the veto are worth remembering.
+  if (deps.aiStore && freshAiIds.size > 0) {
+    const keep = candidates.filter((c) => freshAiIds.has(c.id));
+    await deps.aiStore
+      .save(keep.map((c) => toStoredInput(c, product, key, brandKey, spec, ai.name)))
+      .catch((error) => {
+        console.error('[ai-store] save failed:', error instanceof Error ? error.message : error);
+      });
+  }
 
   // 8. Retailer fallback. When there is no Canadian product, the lever moves
   //    from what you buy to where you buy it.
@@ -184,6 +219,7 @@ export async function resolveProduct(
       verifiedCandidates: verifiedItems.length,
       aiCandidates: aiCandidatesSeen,
       aiCandidatesRejected: rejections.length,
+      aiStoreHits,
       rejections,
       elapsedMs: Date.now() - started,
       dataSource: repo.name,
@@ -368,6 +404,75 @@ function toCandidateFromAi(
     score: 0,
     sourceUrl: proposal.sourceUrl,
     rationale: proposal.claim,
+  };
+}
+
+/**
+ * A previous AI discovery. Its facts were re-read from the retailer page when
+ * it was stored; provenance is looked up afresh by attachProvenance.
+ */
+function toCandidateFromStore(
+  entry: StoredAlternative,
+  product: ProductRef,
+  spec: ProductSpec | null,
+): Candidate {
+  const equivalence = equivalenceScore(
+    { gtin: product.gtin, title: product.title, spec },
+    { gtin: entry.gtin, title: entry.title, category: null, attrs: {} },
+  );
+
+  return {
+    id: `ai-store:${entry.id}`,
+    origin: 'ai',
+    matchType: 'equivalent',
+    title: entry.title,
+    brand: entry.brand,
+    url: entry.url,
+    linkKind: 'product',
+    retailer: entry.retailer,
+    retailerCanadianOwned: null,
+    priceCad: entry.priceCad,
+    priceChecked: entry.verifiedAt.slice(0, 10),
+    gtin: entry.gtin,
+    massKg: entry.massKg,
+    shipsFrom: null,
+    provenance: placeholderProvenance(entry.brand),
+    components: {
+      equivalence,
+      canadian: 0.5,
+      price: priceScore(product.price?.amount ?? null, entry.priceCad),
+    },
+    score: 0,
+    sourceUrl: entry.sourceUrl,
+    rationale: entry.claim,
+  };
+}
+
+function toStoredInput(
+  candidate: Candidate,
+  product: ProductRef,
+  key: string,
+  brandKey: string | null,
+  spec: ProductSpec | null,
+  aiBackend: string,
+): StoredAlternativeInput {
+  return {
+    productKey: key,
+    originalBrandKey: brandKey,
+    originalTitle: product.title,
+    originalSite: product.site,
+    category: spec?.category ?? null,
+    url: candidate.url,
+    title: candidate.title,
+    brand: candidate.brand,
+    retailer: candidate.retailer,
+    priceCad: candidate.priceCad,
+    gtin: candidate.gtin,
+    massKg: candidate.massKg,
+    // The gates refuse any candidate without one, so this is always set here.
+    sourceUrl: candidate.sourceUrl ?? candidate.url,
+    claim: candidate.rationale,
+    aiBackend,
   };
 }
 

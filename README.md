@@ -120,6 +120,36 @@ What the dataset does not have, and what that means:
 - Brand linking is exact-or-high-similarity (`pg_trgm` ≥ 0.6) on purpose:
   `"Starbucks Coffee"` misses rather than risking a link to the wrong company.
 
+### 1b. AI discoveries → second database
+
+**Files:** `src/server/data/ai-store.ts` (interface + in-memory),
+`src/server/data/tiger-ai-store.ts` (Postgres)
+
+When the curated data has nothing and the AI fallback finds an alternative
+that passes every gate, the provenance filter and the sanity veto, it is saved
+to `ai_fallback.alternatives`. Later lookups check there **before** calling the
+model:
+
+```
+curated data  →  stored AI discoveries  →  new AI search (saved if it survives)
+```
+
+- A separate schema, created on startup if missing, so the curated tables stay
+  read-only. Set `AI_STORE_URL` to put it on a different Tiger service.
+- Reused for the exact same product, or the same brand in the same category.
+- Stored finds stay `origin: 'ai'` forever and are shown with the AI tag;
+  promoting one to the curated data is a human decision.
+- Ownership is not stored; it is re-checked against the curated data on every
+  lookup, so a correction there applies immediately.
+- Entries expire after 30 days (`AI_STORE_TTL_DAYS`), then the model re-runs.
+- `AI_STORE=memory` keeps it in-process; `AI_STORE=none` disables it.
+  `verifiedOnly` requests skip it entirely.
+
+```sql
+select original_title, title, url, hit_count, verified_at
+  from ai_fallback.alternatives order by verified_at desc;
+```
+
 ### 2. AI → Gemini
 
 **File:** `src/server/ai/gemini-client.ts`

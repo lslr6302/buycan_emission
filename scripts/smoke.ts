@@ -9,8 +9,12 @@
 import { extractFromHtml, isUsable, mergeProducts, pickPrice } from '../src/shared/extract';
 import { gtinCheckDigitValid, normalizeGtin, parsePrice, productKey } from '../src/shared/normalize';
 import { DEFAULT_WEIGHTS, priceScore, rank, totalScore } from '../src/shared/scoring';
+import type { AiClient } from '../src/server/ai/client';
+import { MemoryAiStore } from '../src/server/data/ai-store';
+import { MockRepository } from '../src/server/data/mock-repository';
 import { runGates } from '../src/server/pipeline/gates';
-import type { Candidate } from '../src/shared/types';
+import { type PipelineDeps, resolveProduct } from '../src/server/pipeline/resolve';
+import type { Candidate, ProductRef } from '../src/shared/types';
 
 let passed = 0;
 let failed = 0;
@@ -218,6 +222,63 @@ const base = { title: 'T', brand: 'B', retailer: 'R', priceCad: 1, claim: 'c' };
     { fetchImpl: dead },
   );
   check('rejects a dead link', !unreachable.passed && unreachable.rejection?.gate === 'url_unreachable');
+
+  // --- AI store ------------------------------------------------------------
+
+  console.log('\nAI store (a discovery is remembered, and reused without the model)');
+
+  // The seed brands, with an empty catalogue so the verified path always
+  // comes up empty and the fallback is reached.
+  const seed = new MockRepository();
+  await seed.init();
+  const emptyCatalogue = Object.assign(Object.create(seed) as MockRepository, {
+    findAlternatives: async () => [],
+    findByGtin: async () => [],
+  });
+
+  let searches = 0;
+  const fakeAi: AiClient = {
+    name: 'fake',
+    healthy: async () => true,
+    extractSpec: async () => ({ category: 'deodorant', hard: {}, soft: {}, originRegion: null }),
+    searchAlternative: async () => {
+      searches++;
+      return [{
+        title: 'Green Beaver Natural Deodorant',
+        brand: 'The Green Beaver Company',
+        url: 'https://greenbeaver.ca/products/deodorant',
+        retailer: 'greenbeaver.ca',
+        priceCad: 12.99,
+        sourceUrl: 'https://greenbeaver.ca/about',
+        claim: 'Canadian-made natural deodorant.',
+      }];
+    },
+    sanityCheck: async () => ({ acceptable: true, reason: 'ok' }),
+  };
+
+  const aiStore = new MemoryAiStore();
+  const deps: PipelineDeps = { repo: emptyCatalogue, ai: fakeAi, aiStore, fetchImpl: stubFetch };
+  const original = (title: string): ProductRef => ({
+    site: 'amazon.ca', siteId: null, url: 'https://amazon.ca/x', title, brand: 'Speed Stick',
+    gtin: null, price: { amount: 9.99, currency: 'CAD' }, categoryHint: null, imageUrl: null,
+    massKg: null, extraction: { tier: 'jsonld', confidence: 'high' },
+  });
+
+  const first = await resolveProduct({ product: original('Speed Stick Deodorant 85 g') }, deps);
+  check('first lookup asks the model', searches === 1);
+  check('first lookup shows the AI find', first.candidates[0]?.origin === 'ai', first.abstentionMessage ?? '');
+  check('AI find is stored', (await aiStore.find({ productKey: first.key, brandKey: null, category: null, limit: 5 })).length === 1);
+
+  const second = await resolveProduct({ product: original('Speed Stick Deodorant 85 g') }, deps);
+  check('repeat lookup does not ask the model', searches === 1);
+  check('repeat lookup reuses the stored find', second.diagnostics.aiStoreHits === 1 && second.candidates.length === 1);
+  check('stored find is still labelled ai', second.candidates[0]?.origin === 'ai');
+
+  const sibling = await resolveProduct({ product: original('Speed Stick Deodorant Twin Pack') }, deps);
+  check('same brand + category reuses it too', searches === 1 && sibling.diagnostics.aiStoreHits === 1);
+
+  const strict = await resolveProduct({ product: original('Speed Stick Deodorant 85 g'), verifiedOnly: true }, deps);
+  check('verifiedOnly ignores the AI store', strict.diagnostics.aiStoreHits === 0 && strict.candidates.length === 0);
 
   console.log(`\n${passed} passed, ${failed} failed\n`);
   process.exit(failed > 0 ? 1 : 0);
