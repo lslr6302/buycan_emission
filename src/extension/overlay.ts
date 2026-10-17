@@ -283,6 +283,13 @@ function candidateCard(candidate: Candidate, originalPrice: number | null): stri
     ? `<span class="dim"> · price checked ${escapeHtml(candidate.priceChecked)}</span>`
     : '<span class="dim"> · price unverified</span>';
 
+  // Say plainly when the link only reaches a homepage. Implying it is a
+  // product page is the small dishonesty that costs trust in the rest.
+  const linkNote =
+    candidate.linkKind === 'brand'
+      ? '<span class="dim"> · brand site, find the product there</span>'
+      : '';
+
   const source = candidate.sourceUrl
     ? ` · <a href="${escapeHtml(candidate.sourceUrl)}" target="_blank" rel="noopener">source</a>`
     : '';
@@ -295,7 +302,7 @@ function candidateCard(candidate: Candidate, originalPrice: number | null): stri
       <div class="price">${price}${delta}</div>
     </div>
     <div class="why">${tag}${escapeHtml(candidate.rationale)}</div>
-    <div class="why dim">${escapeHtml(candidate.retailer)}${checked}${source}</div>
+    <div class="why dim">${escapeHtml(candidate.retailer)}${checked}${linkNote}${source}</div>
   </div>`;
 }
 

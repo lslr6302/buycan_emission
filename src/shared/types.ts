@@ -151,6 +151,12 @@ export interface Candidate {
   components: ScoreComponents;
   /** Recomputed client-side whenever the weight sliders move. */
   score: number;
+  /**
+   * Whether `url` reaches an actual product or only the brand's homepage.
+   * Shown in the UI: dropping someone on a homepage is a worse experience
+   * and should look like one, not be passed off as a product link.
+   */
+  linkKind: 'product' | 'brand';
   /** Mandatory for AI-origin candidates. */
   sourceUrl: string | null;
   /** Human-readable reason this was surfaced, shown under the card. */

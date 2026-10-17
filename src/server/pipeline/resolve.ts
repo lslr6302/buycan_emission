@@ -21,6 +21,7 @@ import type {
 import type { AiClient } from '../ai/client';
 import type { CatalogueItem, Repository } from '../data/repository';
 import { runGates } from './gates';
+import { findProductLink, priceCeiling, requiredNouns, searchTermsFor } from './storefront';
 import { ownStatusFor, qualifiesAsCanadian, verdictFor } from './provenance';
 
 /**
@@ -136,6 +137,21 @@ export async function resolveProduct(
     candidates = rank(candidates, weights);
   }
   candidates = candidates.slice(0, maxCandidates);
+
+  // Only now, on the handful we will actually show, turn each brand
+  // homepage into a real product link. Doing this before ranking would mean
+  // a network request per candidate across a pool of thirty.
+  candidates = await attachProductLinks(candidates, product, spec);
+
+  // Enforce the ceiling wherever the price came from. A candidate several
+  // times the price of what the shopper is holding is a different purchase,
+  // not a dearer version of the same one.
+  const ceiling = product.price ? priceCeiling(product.price.amount) : null;
+  if (ceiling !== null) {
+    candidates = candidates.filter((c) => c.priceCad === null || c.priceCad <= ceiling);
+  }
+
+  candidates = rank(candidates, weights);
 
   // 8. Retailer fallback. When there is no Canadian product, the lever moves
   //    from what you buy to where you buy it.
@@ -301,6 +317,7 @@ function toCandidate(
     massKg: item.massKg,
     shipsFrom: item.shipsFrom,
     provenance: placeholderProvenance(item.brand),
+    linkKind: 'brand',
     components: {
       equivalence,
       // Provenance is filled in by attachProvenance once the candidate's own
@@ -342,6 +359,7 @@ function toCandidateFromAi(
     massKg: verified.massKg,
     shipsFrom: null,
     provenance: placeholderProvenance(verified.brand ?? proposal.brand),
+    linkKind: 'product',
     components: {
       equivalence,
       canadian: 0.5,
@@ -443,6 +461,55 @@ function domainOf(url: string): string {
   } catch {
     return '';
   }
+}
+
+/**
+ * Replaces homepage links with deep links, and backfills the prices the
+ * ownership dataset does not carry. Runs candidates in parallel; any that
+ * fails keeps its homepage link rather than disappearing.
+ */
+async function attachProductLinks(
+  candidates: Candidate[],
+  product: ProductRef,
+  spec: ProductSpec | null,
+): Promise<Candidate[]> {
+  const terms = searchTermsFor(product.title, product.brand, spec?.category ?? null);
+  if (!terms.trim()) return candidates;
+
+  const specType = typeof spec?.hard['type'] === 'string' ? (spec.hard['type'] as string) : null;
+  const mustBe = requiredNouns(spec?.category ?? null, specType);
+
+  return Promise.all(
+    candidates.map(async (candidate) => {
+      try {
+        const found = await findProductLink(
+          candidate.url,
+          terms,
+          mustBe,
+          product.price?.amount ?? null,
+        );
+        if (!found) return candidate;
+
+        return {
+          ...candidate,
+          url: found.url,
+          title: found.title,
+          linkKind: 'product' as const,
+          priceCad: found.priceCad ?? candidate.priceCad,
+          priceChecked:
+            found.priceCad !== null ? new Date().toISOString().slice(0, 10) : candidate.priceChecked,
+          retailer: candidate.brand ?? candidate.retailer,
+          components: {
+            ...candidate.components,
+            // A real price makes the price weighting mean something again.
+            price: priceScore(product.price?.amount ?? null, found.priceCad),
+          },
+        };
+      } catch {
+        return candidate; // A homepage link beats no candidate.
+      }
+    }),
+  );
 }
 
 function pickAbstentionReason(
