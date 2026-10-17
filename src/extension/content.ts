@@ -21,6 +21,13 @@ import { isDismissed, removeOverlay, renderCart, renderProduct, renderSearch } f
 const site = normalizeSite(location.hostname);
 const adapter = resolveAdapter(location.hostname);
 
+/**
+ * Bumped on every in-site navigation. A lookup that finishes after the
+ * shopper has moved on must not paint the previous page's result.
+ */
+let runId = 0;
+const stale = (id: number) => id !== runId;
+
 function send(message: Message): Promise<Response> {
   return chrome.runtime.sendMessage(message) as Promise<Response>;
 }
@@ -62,7 +69,7 @@ async function settings(): Promise<Settings> {
 
 // --- product pages ---------------------------------------------------------
 
-async function runProduct(): Promise<void> {
+async function runProduct(id: number): Promise<void> {
   const product = extractFromDocument(
     document,
     { site, url: location.href },
@@ -84,6 +91,7 @@ async function runProduct(): Promise<void> {
   });
 
   const response = await send({ type: 'resolve', product });
+  if (stale(id)) return;
   if (!response.ok || response.kind !== 'resolve') {
     const detail = response.ok ? 'unexpected reply' : response.error;
     console.debug('[buycan]', detail);
@@ -108,6 +116,7 @@ async function runProduct(): Promise<void> {
     report({ ...base, overlay: 'suppressed_dismissed' });
     return;
   }
+  if (stale(id)) return;
 
   // Auto-expand only on a strong match. Anything weaker opens collapsed and
   // waits to be asked.
@@ -149,7 +158,7 @@ async function readCart(): Promise<CartLine[]> {
  * and it is the moment the original pitch describes: search for a product,
  * get shown the Canadian option before you have committed to a brand.
  */
-async function runSearch(): Promise<void> {
+async function runSearch(id: number): Promise<void> {
   const query = adapter.searchQuery?.() ?? null;
   if (!query) {
     report({ pageKind: 'search', error: 'could not read the search query from this page' });
@@ -159,6 +168,7 @@ async function runSearch(): Promise<void> {
   report({ pageKind: 'search', searchQuery: query, tier: 'adapter' });
 
   const response = await send({ type: 'search', site, query });
+  if (stale(id)) return;
   if (!response.ok || response.kind !== 'search') {
     report({
       pageKind: 'search',
@@ -176,15 +186,18 @@ async function runSearch(): Promise<void> {
     report({ pageKind: 'search', searchQuery: query, overlay: 'suppressed_dismissed' });
     return;
   }
+  if (stale(id)) return;
   renderSearch(response.data, query);
   report({ pageKind: 'search', searchQuery: query, tier: 'adapter', overlay: 'shown' });
 }
 
 let cartTimer: ReturnType<typeof setTimeout> | undefined;
+let cartObserver: MutationObserver | null = null;
 let lastCartSignature = '';
 
-async function runCart(): Promise<void> {
+async function runCart(id: number): Promise<void> {
   const lines = await readCart();
+  if (stale(id)) return;
   if (lines.length === 0) {
     report({ pageKind: 'cart', cartLines: 0, error: 'no cart lines could be read' });
     removeOverlay();
@@ -199,6 +212,7 @@ async function runCart(): Promise<void> {
   report({ pageKind: 'cart', cartLines: lines.length, tier: 'adapter' });
 
   const response = await send({ type: 'analyzeCart', site, lines });
+  if (stale(id)) return;
   if (!response.ok || response.kind !== 'cart') {
     report({
       pageKind: 'cart',
@@ -218,12 +232,14 @@ async function runCart(): Promise<void> {
 
 function scheduleCart(): void {
   clearTimeout(cartTimer);
-  cartTimer = setTimeout(() => void runCart(), 400);
+  const id = runId;
+  cartTimer = setTimeout(() => void runCart(id), 400);
 }
 
 // --- entry -----------------------------------------------------------------
 
 function start(): void {
+  const id = runId;
   const kind = adapter.pageKind();
   if (kind === 'none') {
     report({ pageKind: 'none' });
@@ -231,20 +247,51 @@ function start(): void {
   }
 
   if (kind === 'product') {
-    void runProduct();
+    void runProduct(id);
     return;
   }
 
   if (kind === 'search') {
-    void runSearch();
+    void runSearch(id);
     return;
   }
 
   scheduleCart();
   // The cart is re-rendered asynchronously on every quantity change, so a
   // one-shot read would miss most of the session.
-  new MutationObserver(scheduleCart).observe(document.body, { childList: true, subtree: true });
+  cartObserver = new MutationObserver(scheduleCart);
+  cartObserver.observe(document.body, { childList: true, subtree: true });
 }
+
+/**
+ * Walmart, Amazon's newer pages and most modern storefronts are single-page
+ * apps: going from results to a product swaps the URL without a page load,
+ * so the content script never runs again on its own. Watch the URL and start
+ * over when it changes. Polling, because a content script cannot hook the
+ * page's own history.pushState.
+ */
+let lastUrl = location.href;
+const NAVIGATION_POLL_MS = 1000;
+/** Give the app time to render the new page (and its JSON-LD) before reading it. */
+const SETTLE_MS = 1200;
+
+function onNavigate(): void {
+  runId++;
+  clearTimeout(cartTimer);
+  cartObserver?.disconnect();
+  cartObserver = null;
+  lastCartSignature = '';
+  removeOverlay();
+  setTimeout(() => {
+    if (location.href === lastUrl) start();
+  }, SETTLE_MS);
+}
+
+setInterval(() => {
+  if (location.href === lastUrl) return;
+  lastUrl = location.href;
+  onNavigate();
+}, NAVIGATION_POLL_MS);
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', start, { once: true });

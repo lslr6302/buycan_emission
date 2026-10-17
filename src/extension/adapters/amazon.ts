@@ -15,24 +15,28 @@ import type { SiteAdapter } from './types';
  * This is one site among several. It is not the design centre.
  */
 
-function firstText(...selectors: string[]): string | null {
+/**
+ * Every read takes the document explicitly: the same extractor runs on the
+ * live tab and on pages the extension fetches to verify an AI candidate.
+ */
+function firstText(doc: Document, ...selectors: string[]): string | null {
   for (const selector of selectors) {
-    const text = document.querySelector(selector)?.textContent?.replace(/\s+/g, ' ').trim();
+    const text = doc.querySelector(selector)?.textContent?.replace(/\s+/g, ' ').trim();
     if (text) return text;
   }
   return null;
 }
 
-function asinFromPage(): string | null {
-  const fromUrl = location.pathname.match(/\/(?:dp|gp\/product)\/([A-Z0-9]{10})/i);
+function asinFromPage(doc: Document, url: string): string | null {
+  const fromUrl = url.match(/\/(?:dp|gp\/product)\/([A-Z0-9]{10})/i);
   if (fromUrl) return fromUrl[1]!.toUpperCase();
-  const input = document.querySelector<HTMLInputElement>('input#ASIN, input[name="ASIN"]');
-  return input?.value?.toUpperCase() ?? null;
+  const input = doc.querySelector<HTMLInputElement>('input#ASIN, input[name="ASIN"]');
+  return input?.getAttribute('value')?.toUpperCase() ?? null;
 }
 
 /** "Visit the Dove Store" / "Brand: Dove" -> "Dove" */
-function brandFromByline(): string | null {
-  const raw = firstText('#bylineInfo', '#brand', 'a#bylineInfo_feature_div');
+function brandFromByline(doc: Document): string | null {
+  const raw = firstText(doc, '#bylineInfo', '#brand', 'a#bylineInfo_feature_div');
   if (!raw) return null;
   return (
     raw
@@ -71,12 +75,13 @@ export const amazonAdapter: SiteAdapter = {
     return box?.value?.trim() || null;
   },
 
-  product: (_doc, ctx): ProductRef | null => {
-    const title = firstText('#productTitle', '#title span');
+  product: (doc, ctx): ProductRef | null => {
+    const title = firstText(doc, '#productTitle', '#title span');
     if (!title) return null;
 
     const amount = parsePrice(
       firstText(
+        doc,
         '#corePrice_feature_div .a-offscreen',
         '#corePriceDisplay_desktop_feature_div .a-offscreen',
         '.priceToPay .a-offscreen',
@@ -87,15 +92,15 @@ export const amazonAdapter: SiteAdapter = {
 
     return {
       site: ctx.site,
-      siteId: asinFromPage(),
+      siteId: asinFromPage(doc, ctx.url),
       url: ctx.url,
       title,
-      brand: brandFromByline(),
+      brand: brandFromByline(doc),
       gtin: null, // Amazon does not expose barcodes; the ASIN is the only key.
       price: amount === null ? null : { amount, currency: 'CAD' },
-      categoryHint: breadcrumbFromDom(document) ?? firstText('#wayfinding-breadcrumbs_feature_div'),
+      categoryHint: breadcrumbFromDom(doc) ?? firstText(doc, '#wayfinding-breadcrumbs_feature_div'),
       imageUrl:
-        document.querySelector<HTMLImageElement>('#landingImage, #imgTagWrapperId img')?.src ?? null,
+        doc.querySelector<HTMLImageElement>('#landingImage, #imgTagWrapperId img')?.getAttribute('src') ?? null,
       massKg: null,
       extraction: { tier: 'adapter', confidence: 'medium' },
     };

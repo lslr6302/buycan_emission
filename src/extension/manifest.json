@@ -4,10 +4,19 @@
   "version": "0.1.0",
   "description": "Shows who really owns a brand and whether a verified Canadian alternative exists. Says \"unknown\" when it does not know.",
 
-  "permissions": ["storage"],
+  "permissions": ["storage", "offscreen"],
 
   "host_permissions": [
-    "http://localhost:8787/*"
+    "http://localhost:8787/*",
+    "*://*.amazon.ca/*",
+    "*://*.walmart.ca/*",
+    "*://*.foodbasics.ca/*",
+    "*://*.sobeys.com/*",
+    "*://*.well.ca/*",
+    "*://*.indigo.ca/*",
+    "*://*.canadiantire.ca/*",
+    "*://*.simons.ca/*",
+    "*://*.leevalley.com/*"
   ],
 
   "optional_host_permissions": ["*://*/*"],
@@ -23,6 +32,9 @@
     {
       "matches": [
         "*://*.amazon.ca/*",
+        "*://*.walmart.ca/*",
+        "*://*.foodbasics.ca/*",
+        "*://*.sobeys.com/*",
         "*://*.well.ca/*",
         "*://*.indigo.ca/*",
         "*://*.canadiantire.ca/*",

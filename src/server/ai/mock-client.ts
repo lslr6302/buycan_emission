@@ -1,6 +1,6 @@
-import { normalizeTitle, parsePrice } from '../../shared/normalize';
-import type { ProductRef, ProductSpec } from '../../shared/types';
-import type { AiCandidate, AiClient, AlternativeSearchInput, SanityVerdict } from './client';
+import { normalizeTitle } from '../../shared/normalize';
+import type { AiLead, ProductRef, ProductSpec } from '../../shared/types';
+import type { AiClient, AlternativeSearchInput, SanityVerdict } from './client';
 
 /**
  * Deterministic stand-in for the Gemini integration. No network, same shapes,
@@ -8,9 +8,9 @@ import type { AiCandidate, AiClient, AlternativeSearchInput, SanityVerdict } fro
  * harness, where a nondeterministic answer would make the benchmark table
  * meaningless.
  *
- * `searchAlternative` deliberately returns one plausible candidate and one
- * fabricated one, because the fabricated one is the point: it proves the
- * validation gates in pipeline/gates.ts actually fire. Do not "fix" it.
+ * `suggestAlternatives` deliberately returns one real lead and one with no
+ * citation, because the uncited one is the point: it proves the lead filter
+ * drops it before any store is searched. Do not "fix" it.
  */
 export class MockAiClient implements AiClient {
   readonly name = 'mock';
@@ -47,28 +47,23 @@ export class MockAiClient implements AiClient {
     return { category, hard, soft, originRegion: null };
   }
 
-  async searchAlternative(input: AlternativeSearchInput): Promise<AiCandidate[]> {
-    const { product } = input;
+  async suggestAlternatives(input: AlternativeSearchInput): Promise<AiLead[]> {
     return [
       {
-        title: `Canadian-made alternative to ${product.title}`,
-        brand: 'Rocky Mountain Soap Company',
-        url: 'https://www.rockymountainsoap.com/',
-        retailer: 'Rocky Mountain Soap Co.',
-        priceCad: parsePrice(String(product.price?.amount ?? '')) ?? null,
-        sourceUrl: 'https://www.rockymountainsoap.com/pages/our-story',
-        claim: 'Manufactured in Canmore, Alberta.',
+        brand: 'Green Beaver',
+        product: 'natural aluminum-free antiperspirant',
+        query: 'Green Beaver antiperspirant',
+        claim: 'Made in Hawkesbury, Ontario.',
+        sourceUrl: 'https://greenbeaver.com/pages/about-us',
       },
       {
-        // Fabricated on purpose. The gates must reject this before any user
-        // sees it; if it ever renders, the validation path is broken.
-        title: 'Maple Leaf Authentic Canadian Goods - Premium Edition',
+        // No citation on purpose. The pipeline must drop it before searching
+        // any store; if it ever renders, the lead filter is broken.
         brand: 'TrueNorth Collective',
-        url: 'https://truenorth-collective-canada.example/shop/premium',
-        retailer: 'TrueNorth Collective',
-        priceCad: 39.99,
-        sourceUrl: null,
+        product: 'premium Canadian goods',
+        query: 'TrueNorth Collective',
         claim: 'Proudly Canadian owned and operated.',
+        sourceUrl: null,
       },
     ].slice(0, Math.max(1, input.limit));
   }
@@ -108,6 +103,9 @@ const CATEGORY_KEYWORDS: Array<[RegExp, string]> = [
   [/vitamin|supplement|softgel/, 'supplements_vitamin_d'],
   [/mouse|keyboard|webcam|headset|monitor/, 'electronics_peripherals'],
 ];
+
+/** The category vocabulary the catalogue is labelled with. Other AI clients must answer in it. */
+export const KNOWN_CATEGORIES: string[] = [...new Set(CATEGORY_KEYWORDS.map(([, category]) => category))];
 
 /**
  * Breadcrumb first, title second. A hand-written map is twenty minutes of work

@@ -42,6 +42,7 @@ function copyStatic() {
   }
   writeFileSync(join(OUT, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
   copyFileSync(join(SRC, 'popup', 'popup.html'), join(OUT, 'popup', 'popup.html'));
+  copyFileSync(join(SRC, 'offscreen.html'), join(OUT, 'offscreen.html'));
 
   const demo = join(SRC, 'demo-cart.json');
   if (existsSafe(demo)) copyFileSync(demo, join(OUT, 'demo-cart.json'));
@@ -61,6 +62,7 @@ const options = {
     content: join(SRC, 'content.ts'),
     background: join(SRC, 'background.ts'),
     'popup/popup': join(SRC, 'popup', 'popup.ts'),
+    offscreen: join(SRC, 'offscreen.ts'),
   },
   outdir: OUT,
   bundle: true,

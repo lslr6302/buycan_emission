@@ -8,6 +8,7 @@ import {
   type Settings,
   type TabState,
 } from './messages';
+import { searchStoresInBrowser } from './store-search';
 
 /**
  * Service worker. Holds every network call, so the content script never talks
@@ -23,12 +24,39 @@ import {
  * abstention cached before a data fix keeps being served for a day, and the
  * fix looks like it did not work.
  */
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v4';
 
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const MAX_CACHE_ENTRIES = 500;
 
-const tabStates = new Map<number, TabState>();
+// --- per-tab state ---------------------------------------------------------
+
+/**
+ * Kept in session storage, not in memory: Chrome stops an idle service worker
+ * after ~30s, and an in-memory map died with it - so opening the popup a
+ * minute after the page loaded said "no supported shopping page".
+ *
+ * Updates for one tab are chained so a report landing mid-lookup cannot
+ * overwrite the lookup's result with a stale read.
+ */
+const tabQueues = new Map<number, Promise<unknown>>();
+
+async function getTab(tabId: number): Promise<TabState | undefined> {
+  const key = `tab:${tabId}`;
+  const stored = await chrome.storage.session.get(key);
+  return stored[key] as TabState | undefined;
+}
+
+function updateTab(tabId: number, change: (existing: TabState | undefined) => TabState): Promise<void> {
+  const previous = tabQueues.get(tabId) ?? Promise.resolve();
+  const next = previous
+    .catch(() => undefined)
+    .then(async () => {
+      await chrome.storage.session.set({ [`tab:${tabId}`]: change(await getTab(tabId)) });
+    });
+  tabQueues.set(tabId, next);
+  return next;
+}
 
 // --- settings --------------------------------------------------------------
 
@@ -101,27 +129,32 @@ async function resolve(product: ProductRef): Promise<ResolveResponse> {
   const cached = await cacheGet(`${CACHE_VERSION}:${key}`);
   if (cached) return cached;
 
-  const data = await post<ResolveResponse>(
+  const response = await post<ResolveResponse>(
     '/v1/product/resolve',
     {
       product,
       weights: settings.weights,
       verifiedOnly: settings.verifiedOnly,
       destinationRegion: settings.province ? `CA-${settings.province}` : null,
+      browserCheck: true,
     },
     settings,
   );
-  await cachePut(`${CACHE_VERSION}:${key}`, data);
+  const { data, transientFailure } = await searchStoresInBrowser(response, settings.weights);
+  // An AI outage or an unreachable store is not an answer; caching it would
+  // keep saying "nothing found" for a day after the problem cleared.
+  if (!data.diagnostics.aiError && !transientFailure) await cachePut(`${CACHE_VERSION}:${key}`, data);
   return data;
 }
 
 async function searchAlternatives(site: string, query: string): Promise<ResolveResponse> {
   const settings = await getSettings();
-  return post<ResolveResponse>(
+  const response = await post<ResolveResponse>(
     '/v1/search',
-    { site, query, weights: settings.weights, verifiedOnly: settings.verifiedOnly },
+    { site, query, weights: settings.weights, verifiedOnly: settings.verifiedOnly, browserCheck: true },
     settings,
   );
+  return (await searchStoresInBrowser(response, settings.weights)).data;
 }
 
 async function analyzeCart(site: string, lines: CartLine[]): Promise<CartAnalysis> {
@@ -171,15 +204,19 @@ chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) =>
       switch (message.type) {
         case 'report': {
           if (tabId !== undefined) {
-            const existing = tabStates.get(tabId);
-            tabStates.set(tabId, {
-              url: message.report.url,
-              site: message.report.site,
-              kind: message.report.pageKind,
-              resolve: existing?.resolve,
-              cart: existing?.cart,
-              report: message.report,
-              updatedAt: Date.now(),
+            const report = message.report;
+            await updateTab(tabId, (existing) => {
+              // A new page (in-site navigation) must not inherit the last page's result.
+              const samePage = existing?.url === report.url;
+              return {
+                url: report.url,
+                site: report.site,
+                kind: report.pageKind,
+                resolve: samePage ? existing?.resolve : undefined,
+                cart: samePage ? existing?.cart : undefined,
+                report,
+                updatedAt: Date.now(),
+              };
             });
             if (message.report.pageKind === 'none' || message.report.error) {
               setBadge(tabId, 'idle');
@@ -191,14 +228,14 @@ chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) =>
         case 'resolve': {
           const data = await resolve(message.product);
           if (tabId !== undefined) {
-            tabStates.set(tabId, {
-              ...tabStates.get(tabId),
-              url: message.product.url,
+            await updateTab(tabId, (existing) => ({
+              ...existing,
+              url: existing?.url ?? message.product.url,
               site: message.product.site,
               kind: 'product',
               resolve: data,
               updatedAt: Date.now(),
-            });
+            }));
             setBadge(tabId, data.abstained ? 'abstain' : 'match', data.candidates.length);
           }
           sendResponse({ ok: true, kind: 'resolve', data } satisfies Response);
@@ -207,14 +244,14 @@ chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) =>
         case 'search': {
           const data = await searchAlternatives(message.site, message.query);
           if (tabId !== undefined) {
-            tabStates.set(tabId, {
-              ...tabStates.get(tabId),
-              url: '',
+            await updateTab(tabId, (existing) => ({
+              ...existing,
+              url: existing?.url ?? '',
               site: message.site,
               kind: 'search',
               resolve: data,
               updatedAt: Date.now(),
-            });
+            }));
             setBadge(tabId, data.abstained ? 'abstain' : 'match', data.candidates.length);
           }
           sendResponse({ ok: true, kind: 'search', data } satisfies Response);
@@ -223,14 +260,14 @@ chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) =>
         case 'analyzeCart': {
           const data = await analyzeCart(message.site, message.lines);
           if (tabId !== undefined) {
-            tabStates.set(tabId, {
-              ...tabStates.get(tabId),
-              url: '',
+            await updateTab(tabId, (existing) => ({
+              ...existing,
+              url: existing?.url ?? '',
               site: message.site,
               kind: 'cart',
               cart: data,
               updatedAt: Date.now(),
-            });
+            }));
             setBadge(tabId, data.swapCount > 0 ? 'match' : 'abstain', data.swapCount);
           }
           sendResponse({ ok: true, kind: 'cart', data } satisfies Response);
@@ -238,7 +275,7 @@ chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) =>
         }
         case 'getTabState': {
           const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-          const state = tab?.id !== undefined ? (tabStates.get(tab.id) ?? null) : null;
+          const state = tab?.id !== undefined ? ((await getTab(tab.id)) ?? null) : null;
           sendResponse({ ok: true, kind: 'tabState', data: state } satisfies Response);
           break;
         }
@@ -271,10 +308,11 @@ chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) =>
       const detail = error instanceof Error ? error.message : String(error);
       if (tabId !== undefined) {
         setBadge(tabId, 'idle');
-        const existing = tabStates.get(tabId);
-        if (existing?.report) {
-          existing.report = { ...existing.report, error: detail } satisfies PageReport;
-        }
+        await updateTab(tabId, (existing) =>
+          existing?.report
+            ? { ...existing, report: { ...existing.report, error: detail } satisfies PageReport }
+            : (existing ?? { url: '', site: '', kind: 'none', updatedAt: Date.now() }),
+        ).catch(() => undefined);
       }
       sendResponse({ ok: false, error: detail } satisfies Response);
     }
@@ -283,4 +321,7 @@ chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) =>
   return true; // Keep the channel open for the async reply.
 });
 
-chrome.tabs.onRemoved.addListener((tabId) => tabStates.delete(tabId));
+chrome.tabs.onRemoved.addListener((tabId) => {
+  tabQueues.delete(tabId);
+  void chrome.storage.session.remove(`tab:${tabId}`);
+});

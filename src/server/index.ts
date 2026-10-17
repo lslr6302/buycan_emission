@@ -45,6 +45,7 @@ const resolveSchema = z.object({
   weights: weightsSchema.optional(),
   verifiedOnly: z.boolean().optional(),
   destinationRegion: z.string().nullable().optional(),
+  browserCheck: z.boolean().optional(),
 });
 
 const searchSchema = z.object({
@@ -52,6 +53,7 @@ const searchSchema = z.object({
   query: z.string().min(2).max(300),
   weights: weightsSchema.optional(),
   verifiedOnly: z.boolean().optional(),
+  browserCheck: z.boolean().optional(),
 });
 
 const cartSchema = z.object({
@@ -120,7 +122,7 @@ async function main(): Promise<void> {
       res.status(400).json({ error: 'invalid_request', detail: parsed.error.flatten() });
       return;
     }
-    const { site, query, weights, verifiedOnly } = parsed.data;
+    const { site, query, weights, verifiedOnly, browserCheck } = parsed.data;
     try {
       res.json(
         await resolveProduct(
@@ -140,6 +142,7 @@ async function main(): Promise<void> {
             },
             weights,
             verifiedOnly,
+            browserCheck,
           },
           deps,
         ),

@@ -71,7 +71,7 @@ curl localhost:8787/v1/health
 | Cart aggregation | done |
 | Overlay + popup | done, needs real-page testing |
 | **Ownership/catalogue data** | **placeholder seed, 25 items / 11 categories — not demo-ready** |
-| **Gemini integration** | **stub — throws NotImplemented** |
+| Gemini fallback (free-tier suggestions + store search in the browser) | done; suggestions tested live, browser store search not yet run in Chrome |
 
 The seed data under `src/server/data/seed/` is unverified placeholder and every
 catalogue URL is a brand homepage, not a real product link. It exists so the
@@ -80,9 +80,10 @@ pipeline runs. It is not safe to show a judge.
 **A product in a category with no seed items will abstain.** Covered so far:
 hair care, oral care, body wash, deodorant, lotion, laundry, chips, coffee,
 tee shirts, drinkware, vitamins. Anything else falls through to the AI
-fallback — which is still a stub that rejects its own fixtures by design, so
-that abstention says nothing about whether an alternative exists. The popup
-and the abstention message both say when that is what happened.
+fallback. With `AI_BACKEND=mock` (the default) that fallback rejects its own
+fixtures by design, so the abstention says nothing about whether an
+alternative exists; the popup and the abstention message both say so. Run
+with Gemini to get a real search.
 
 ---
 
@@ -131,8 +132,38 @@ Three methods, three narrow jobs:
 | `sanityCheck` | yes/no veto on a top candidate. A filter, never a ranker. |
 
 ```bash
-AI_BACKEND=gemini GEMINI_API_KEY=... npm run server
+npm run server:gemini     # loads GEMINI_API_KEY from .env
+npm run try:gemini -- "Dove Men+Care Antiperspirant Stick 76 g" --brand Dove --price 7.97
 ```
+
+**How the fallback works.** Only when the dataset has nothing, Gemini names
+Canadian products to look for — brand, product, store search terms, the
+Canadian claim and a source page. It never supplies a product URL. The
+extension then searches the shopper's own site first, then `amazon.ca`,
+`walmart.ca`, `foodbasics.ca` and `sobeys.com` (list in
+`src/shared/retailers.ts`), stopping at the first store that has it. A result
+only counts if it is the suggested brand and product type, and it is only
+shown once its own page loads with a readable price; the card shows the
+store's title and price, not the model's.
+
+**Why the store search runs in the browser.** All four stores block servers
+(blank page, 403, or a "Verify Your Identity" wall). The extension's service
+worker searches them with the shopper's own session and parses results in an
+offscreen document (`src/extension/store-search.ts`, `offscreen.ts`). The
+server only returns the leads (`browserSearch` in the response) when the
+caller sends `browserCheck: true`, which only the extension does.
+
+**Ownership.** A suggested brand the dataset knows is foreign is dropped. A
+brand the dataset has never heard of is kept and shown as AI-found with its
+ownership chips at Unknown.
+
+**Free tier.** Everything above runs on a free Gemini key. Google Search
+grounding is paid-tier only; `GEMINI_SEARCH=on` adds it (the model then
+checks its Canadian claims and cites real pages). `GEMINI_MODEL` (default
+`gemini-3.6-flash`) falls back to `GEMINI_FAST_MODEL` (default
+`gemini-3.5-flash-lite`) on 429/5xx or timeout. Errors are logged as
+`[gemini] ...` in the server terminal and surface as "the AI search could not
+run" rather than "no alternative".
 
 Three things the prompts must not do, because they are the project thesis:
 

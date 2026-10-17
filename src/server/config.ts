@@ -69,7 +69,12 @@ export function createAiClient(config: Config): AiClient {
     case 'gemini': {
       const key = process.env.GEMINI_API_KEY;
       if (!key) throw new Error('AI_BACKEND=gemini requires GEMINI_API_KEY.');
-      return new GeminiClient(key, process.env.GEMINI_MODEL);
+      return new GeminiClient(
+        key,
+        process.env.GEMINI_MODEL,
+        process.env.GEMINI_FAST_MODEL,
+        process.env.GEMINI_SEARCH === 'on',
+      );
     }
     case 'none':
       return new NullAiClient();

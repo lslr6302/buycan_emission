@@ -1,4 +1,5 @@
 import { clamp01, jaccard, titleTokens } from './normalize';
+import { hostMatches, hostOf } from './retailers';
 import type {
   Candidate,
   ProductSpec,
@@ -37,6 +38,21 @@ export function rank(candidates: Candidate[], weights: Weights): Candidate[] {
   return candidates
     .map((c) => ({ ...c, score: totalScore(c.components, weights) }))
     .sort((a, b) => b.score - a.score || a.title.localeCompare(b.title));
+}
+
+/**
+ * The shopper's own site first, then everything else, each group in score
+ * order. Staying on the site they are already using is worth more than a
+ * small score difference - no new account, no second cart.
+ */
+export function rankPreferringSite(candidates: Candidate[], weights: Weights, site: string | null): Candidate[] {
+  const ranked = rank(candidates, weights);
+  if (!site) return ranked;
+  const onSite = (c: Candidate) => {
+    const host = hostOf(c.url);
+    return host !== null && hostMatches(host, site);
+  };
+  return [...ranked.filter(onSite), ...ranked.filter((c) => !onSite(c))];
 }
 
 // ---------------------------------------------------------------------------

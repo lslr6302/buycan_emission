@@ -10,6 +10,9 @@ import { extractFromHtml } from '../src/shared/extract';
 import { gtinCheckDigitValid, normalizeGtin, parsePrice, productKey } from '../src/shared/normalize';
 import { DEFAULT_WEIGHTS, priceScore, rank, totalScore } from '../src/shared/scoring';
 import { runGates } from '../src/server/pipeline/gates';
+import { allowedSitesFor, siteFor } from '../src/shared/retailers';
+import { listingMatchesLead, parseWalmartSearch, pickListing, searchUrl } from '../src/shared/stores';
+import { rankPreferringSite } from '../src/shared/scoring';
 import type { Candidate } from '../src/shared/types';
 
 let passed = 0;
@@ -63,6 +66,17 @@ const aggregateHtml = `<script type="application/ld+json">
 {"@type":"Product","name":"Thing","offers":{"@type":"AggregateOffer","lowPrice":"19.99","priceCurrency":"CAD"}}
 </script>`;
 check('handles AggregateOffer', extractFromHtml(aggregateHtml, { site: 'x.ca', url: 'u' })?.price?.amount === 19.99);
+
+const productGroupHtml = `<script type="application/ld+json">
+{"@context":"http://schema.org/","@type":"ProductGroup","name":"Antiperspirant - Unscented",
+ "brand":{"@type":"Brand","name":"Green Beaver"},"productGroupID":"8812",
+ "hasVariant":[{"@type":"Product","sku":"GB-AP-UNS","gtin":"0628451123453",
+   "offers":{"@type":"Offer","price":"12.99","priceCurrency":"CAD"}}]}
+</script>`;
+const fromGroup = extractFromHtml(productGroupHtml, { site: 'greenbeaver.com', url: 'u' });
+check('reads price off a ProductGroup variant (current Shopify themes)', fromGroup?.price?.amount === 12.99);
+check('reads sku and barcode off the variant', fromGroup?.siteId === 'GB-AP-UNS' && fromGroup?.gtin === '00628451123453',
+  `${fromGroup?.siteId} ${fromGroup?.gtin}`);
 
 check(
   'refuses a page with no price',
@@ -157,6 +171,44 @@ const base = { title: 'T', brand: 'B', retailer: 'R', priceCad: 1, claim: 'c' };
     { fetchImpl: dead },
   );
   check('rejects a dead link', !unreachable.passed && unreachable.rejection?.gate === 'url_unreachable');
+
+  console.log('\nAllowed sites (shopper\'s site first, then the four retailers)');
+
+  const indigoSites = allowedSitesFor('www.indigo.ca');
+  check('current site comes first', indigoSites[0] === 'indigo.ca' && indigoSites.length === 5, indigoSites.join(','));
+  check('no duplicate when already on a listed retailer', allowedSitesFor('www.amazon.ca').join(',') === 'amazon.ca,walmart.ca,foodbasics.ca,sobeys.com');
+  check('subdomains match their site', siteFor('https://www.sobeys.com/en/p/x', indigoSites) === 'sobeys.com');
+  check('lookalike domains do not', siteFor('https://notamazon.ca/dp/B000000000', indigoSites) === null);
+
+  const located = (id: string, url: string, score: number): Candidate =>
+    ({ id, title: id, url, components: { equivalence: score, canadian: score, price: score }, score: 0 }) as Candidate;
+  const mixed = [located('walmart-best', 'https://www.walmart.ca/en/ip/a/1', 0.9), located('indigo-ok', 'https://www.indigo.ca/p/2', 0.4)];
+  check('shopper\'s own site ranks first even with a lower score',
+    rankPreferringSite(mixed, DEFAULT_WEIGHTS, 'indigo.ca')[0]!.id === 'indigo-ok');
+
+  console.log('\nStore search for AI leads (brand and product type must both match)');
+
+  const lead = { brand: 'Green Beaver', query: 'Green Beaver antiperspirant' };
+  check('accepts the suggested brand and type', listingMatchesLead('Green Beaver 100% natural Antiperspirant - Fresh Verve', lead));
+  check('rejects the foreign brand the store ranked first', !listingMatchesLead('Dove Men+Care Antiperspirant Stick 72H, 76 g', lead));
+  check('rejects the right brand in the wrong product', !listingMatchesLead('Green Beaver Natural Toothpaste Spearmint', lead));
+  check('matches a brand written without spaces', listingMatchesLead('GreenBeaver Antiperspirant Unscented', lead));
+
+  const results = [
+    { title: 'AXE 48H Protection Antiperspirant Stick, 76 g', url: 'https://www.walmart.ca/en/ip/axe/1', priceCad: 6.97 },
+    { title: 'Green Beaver 100% natural Antiperspirant - Fresh Verve', url: 'https://www.walmart.ca/en/ip/gb/2', priceCad: 12.97 },
+  ];
+  check('picks the first listing that is really the lead', pickListing(results, lead)?.url === 'https://www.walmart.ca/en/ip/gb/2');
+
+  const walmartHtml = `<script id="__NEXT_DATA__" type="application/json">${JSON.stringify({
+    props: { pageProps: { initialData: { searchResult: { itemStacks: [{ items: [
+      { name: 'Green Beaver 100% natural Deodorant - Citrus', canonicalUrl: '/en/ip/Green-Beaver/6000202015029?classType=REGULAR', price: 12.97 },
+    ] }] } } } },
+  })}</script>`;
+  const walmartListings = parseWalmartSearch(walmartHtml);
+  check('reads Walmart search results', walmartListings[0]?.url === 'https://www.walmart.ca/en/ip/Green-Beaver/6000202015029' && walmartListings[0]?.priceCad === 12.97,
+    JSON.stringify(walmartListings[0]));
+  check('builds store search URLs', searchUrl('amazon.ca', 'maple syrup') === 'https://www.amazon.ca/s?k=maple%20syrup');
 
   console.log(`\n${passed} passed, ${failed} failed\n`);
   process.exit(failed > 0 ? 1 : 0);

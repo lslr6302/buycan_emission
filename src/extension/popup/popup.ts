@@ -1,4 +1,4 @@
-import { rank } from '../../shared/scoring';
+import { rankPreferringSite } from '../../shared/scoring';
 import type { Candidate, Weights } from '../../shared/types';
 import {
   DEFAULT_SETTINGS,
@@ -176,7 +176,7 @@ function render(): void {
     return;
   }
 
-  const ranked = rank(resolved.candidates, settings.weights);
+  const ranked = rankPreferringSite(resolved.candidates, settings.weights, resolved.product.site);
   result.innerHTML = ranked.map(candidateHtml).join('');
 }
 
