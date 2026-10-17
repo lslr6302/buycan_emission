@@ -1,0 +1,16 @@
+# Secrets — never commit these
+.env
+*.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# JavaScript
+node_modules/
+dist/
+
+# Mac
+.DS_Store

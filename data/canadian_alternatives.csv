@@ -1,0 +1,864 @@
+id,category,category_slug,us_product,canadian_alternative,canadian_alternative_name,canadian_alternative_note,needs_review
+1,Dairy,dairy,Horizon Organic Milk,Neilson Dairy Milk,Neilson Dairy Milk,,True
+2,Dairy,dairy,Chobani Greek Yogurt,Liberté Méditerranée Yogurt,Liberté Méditerranée Yogurt,,True
+3,Dairy,dairy,Kraft Singles Cheese,Black Diamond Cheese,Black Diamond Cheese,,True
+4,Dairy,dairy,Land O'Lakes Butter,Gay Lea Butter,Gay Lea Butter,,True
+5,Dairy,dairy,Daisy Sour Cream,Sealtest Sour Cream,Sealtest Sour Cream,,True
+6,Dairy,dairy,Yoplait Yogurt,Astro Original Yogurt,Astro Original Yogurt,,True
+7,Dairy,dairy,yoplait yogurt tubes,IÖGO Nano Tubes,IÖGO Nano Tubes,,True
+8,Dairy,dairy,Philadelphia Cream Cheese,Western Cream Cheese,Western Cream Cheese,,True
+9,Dairy,dairy,Silk Almond Milk,Earth's Own Almond Milk,Earth's Own Almond Milk,,True
+10,Dairy,dairy,Haagen-Dazs Ice Cream,Kawartha Dairy Ice Cream,Kawartha Dairy Ice Cream,,True
+11,Dairy,dairy,Fage Yogurt,Liberté Organic Yogurt,Liberté Organic Yogurt,,True
+12,Dairy,dairy,Tillamook Cheese,Balderson Cheese,Balderson Cheese,,True
+13,Dairy,dairy,Cabot Cheese,Bothwell Cheese,Bothwell Cheese,,True
+14,Dairy,dairy,Organic Valley Milk,Harmony Organic Milk,Harmony Organic Milk,,True
+15,Dairy,dairy,Lucerne Milk,Beatrice Milk,Beatrice Milk,,True
+16,Dairy,dairy,Fairlife Milk,Joyya Ultra-Filtered Milk,Joyya Ultra-Filtered Milk,,True
+17,Dairy,dairy,Stonyfield Organic Yogurt,Olympic Organic Yogurt,Olympic Organic Yogurt,,True
+18,Dairy,dairy,Noosa Yogurt,Riviera Petit Pot Yogurt,Riviera Petit Pot Yogurt,,True
+19,Dairy,dairy,FAGE Greek Yogurt,PC Black Label Greek Yogurt,PC Black Label Greek Yogurt,,True
+20,Dairy,dairy,Good Culture Cottage Cheese,Nordica Cottage Cheese,Nordica Cottage Cheese,,True
+21,Dairy,dairy,Kozy Shack Pudding,President’s Choice Pudding,President’s Choice Pudding,,True
+22,Dairy,dairy,Breyers Ice Cream,Chapman’s Ice Cream,Chapman’s Ice Cream,,True
+23,Dairy,dairy,Ben & Jerry’s Ice Cream,President’s Choice Ice Cream,President’s Choice Ice Cream,,True
+24,Dairy,dairy,Oatly Oat Milk,Earth's Own Oat Milk,Earth's Own Oat Milk,,True
+25,Dairy,dairy,Califia Farms Almond Milk,Silk Almond Milk (Canadian-made),Silk Almond Milk,Canadian-made,True
+26,Dairy,dairy,So Delicious Coconut Milk,Natura Coconut Milk,Natura Coconut Milk,,True
+27,Dairy,dairy,Lactaid Milk,Natrel Lactose-Free Milk,Natrel Lactose-Free Milk,,True
+28,Dairy,dairy,Reddi-wip Whipped Cream,Gay Lea Real Whipped Cream,Gay Lea Real Whipped Cream,,True
+29,Dairy,dairy,Land O’Lakes Half & Half,Natrel Half & Half,Natrel Half & Half,,True
+30,Snacks,snacks,Lay's Potato Chips,Old Dutch Potato Chips,Old Dutch Potato Chips,,True
+31,Snacks,snacks,Cheetos,Hawkins Cheezies,Hawkins Cheezies,,True
+32,Snacks,snacks,Doritos,Miss Vickie's Spicy Dill Chips,Miss Vickie's Spicy Dill Chips,,True
+33,Snacks,snacks,Pringles,Herr's Potato Chips,Herr's Potato Chips,,True
+34,Snacks,snacks,Popchips,Humm! Hummus Chips,Humm! Hummus Chips,,True
+35,Snacks,snacks,Ritz Crackers,Christie Crackers,Christie Crackers,,True
+36,Snacks,snacks,Cheez-It Crackers,Goldfish Crackers,Goldfish Crackers,,True
+37,Snacks,snacks,Pepperidge Farm Cookies,President's Choice Decadent Cookies,President's Choice Decadent Cookies,,True
+38,Snacks,snacks,Pop-Tarts,President's Choice Toaster Pastries,President's Choice Toaster Pastries,,True
+39,Snacks,snacks,Quaker Granola Bars,President's Choice Granola Bars,President's Choice Granola Bars,,True
+40,Snacks,snacks,Pirate's Booty,President's Choice White Cheddar Puffs,President's Choice White Cheddar Puffs,,True
+41,Snacks,snacks,Chex Mix,President's Choice Trail Mix,President's Choice Trail Mix,,True
+42,Snacks,snacks,Funyuns,Hickory Sticks,Hickory Sticks,,True
+43,Snacks,snacks,Fritos,Ruffles All Dressed Chips,Ruffles All Dressed Chips,,True
+44,Snacks,snacks,Tostitos Tortilla Chips,Que Pasa Tortilla Chips,Que Pasa Tortilla Chips,,True
+45,Snacks,snacks,Garden of Eatin' Tortilla Chips,Que Pasa Organic Chips,Que Pasa Organic Chips,,True
+46,Snacks,snacks,Sunchips,SunChips (Canadian-made version),SunChips,Canadian-made version,True
+47,Snacks,snacks,Utz Potato Chips,Humpty Dumpty Potato Chips,Humpty Dumpty Potato Chips,,True
+48,Snacks,snacks,Frito-Lay Variety Pack,Old Dutch Variety Pack,Old Dutch Variety Pack,,True
+49,Snacks,snacks,Terra Chips,Humm! Veggie Chips,Humm! Veggie Chips,,True
+50,Snacks,snacks,Planters Peanuts,President's Choice Deluxe Mixed Nuts,President's Choice Deluxe Mixed Nuts,,True
+51,Snacks,snacks,Blue Diamond Almonds,Royal Nuts Almonds,Royal Nuts Almonds,,True
+52,Snacks,snacks,David Sunflower Seeds,Spitz Sunflower Seeds,Spitz Sunflower Seeds,,True
+53,Snacks,snacks,Honey Maid Graham Crackers,Dare Graham Crackers,Dare Graham Crackers,,True
+54,Snacks,snacks,Teddy Grahams,Bear Paws Crackers,Bear Paws Crackers,,True
+55,Snacks,snacks,Nutter Butter,Peak Freans Peanut Butter Cookies,Peak Freans Peanut Butter Cookies,,True
+56,Snacks,snacks,Little Debbie Oatmeal Creme Pies,Vachon Ah Caramel!,Vachon Ah Caramel!,,True
+57,Snacks,snacks,Hostess Twinkies,Vachon Jos Louis,Vachon Jos Louis,,True
+58,Snacks,snacks,Ding Dongs,Vachon Passion Flakie,Vachon Passion Flakie,,True
+59,Snacks,snacks,Clif Bars,President's Choice Protein Bars,President's Choice Protein Bars,,True
+60,Snacks,snacks,Kind Bars,Lärabar (Canadian distribution),Lärabar,Canadian distribution,True
+61,Snacks,snacks,Nature Valley Granola Bars,Compliments Granola Bars,Compliments Granola Bars,,True
+62,Snacks,snacks,Keebler Fudge Stripes,Peek Freans Shortbread,Peek Freans Shortbread,,True
+63,Snacks,snacks,Famous Amos Cookies,Dad’s Oatmeal Cookies,Dad’s Oatmeal Cookies,,True
+64,Snacks,snacks,Oreos,Christie’s Oreo (Canadian-made),Christie’s Oreo,Canadian-made,True
+65,Snacks,snacks,Nilla Wafers,Christie Nilla Wafers,Christie Nilla Wafers,,True
+66,Snacks,snacks,Chips Ahoy!,Christie Chips Ahoy! (Canadian-made),Christie Chips Ahoy!,Canadian-made,True
+67,Snacks,snacks,Fig Newtons,Leclerc Fig Bars,Leclerc Fig Bars,,True
+68,Snacks,snacks,Reese's Puffs Snack Bars,President’s Choice Peanut Butter Bars,President’s Choice Peanut Butter Bars,,True
+69,Snacks,snacks,Welch's Fruit Snacks,Mott’s Fruit Snacks,Mott’s Fruit Snacks,,True
+70,Snacks,snacks,Skippy PB Bites,Kraft Peanut Butter Bites,Kraft Peanut Butter Bites,,True
+71,Snacks,snacks,Triscuit Crackers,Crunchmaster Multigrain Crackers,Crunchmaster Multigrain Crackers,,True
+72,Snacks,snacks,Wheat Thins,Christie Wheat Thins,Christie Wheat Thins,,True
+73,Snacks,snacks,Bugles,Humpty Dumpty Nacho Horns,Humpty Dumpty Nacho Horns,,True
+74,Snacks,snacks,Rold Gold Pretzels,President’s Choice Pretzel Twists,President’s Choice Pretzel Twists,,True
+75,Beverages,beverages,Coca-Cola,Pepsi (Canadian Bottling),Pepsi,Canadian Bottling,True
+76,Beverages,beverages,Gatorade,Powerade (Canadian version),Powerade,Canadian version,True
+77,Beverages,beverages,Starbucks Cold Brew,Tim Hortons Cold Brew,Tim Hortons Cold Brew,,True
+78,Beverages,beverages,Nesquik Chocolate Milk,Sealtest Chocolate Milk,Sealtest Chocolate Milk,,True
+79,Beverages,beverages,Simply Orange Juice,President's Choice Orange Juice,President's Choice Orange Juice,,True
+80,Beverages,beverages,Red Bull,Red Rain Energy Drink,Red Rain Energy Drink,,True
+81,Beverages,beverages,Dasani Water,Nestlé Pure Life Water,Nestlé Pure Life Water,,True
+82,Beverages,beverages,Snapple Iced Tea,President's Choice Iced Tea,President's Choice Iced Tea,,True
+83,Beverages,beverages,Minute Maid Lemonade,Allen's Lemonade,Allen's Lemonade,,True
+84,Beverages,beverages,7UP,Canada Dry Ginger Ale,Canada Dry Ginger Ale,,True
+85,Beverages,beverages,Pepsi (US Bottling),Pepsi (Canadian Bottling),Pepsi,Canadian Bottling,True
+86,Beverages,beverages,Mtn Dew,Crush Lime,Crush Lime,,True
+87,Beverages,beverages,Dr Pepper,Pepsi Dr Pepper (Canadian Bottling),Pepsi Dr Pepper,Canadian Bottling,True
+88,Beverages,beverages,Fanta,Crush Orange,Crush Orange,,True
+89,Beverages,beverages,Arizona Iced Tea,Peace Tea (Canadian version),Peace Tea,Canadian version,True
+90,Beverages,beverages,Monster Energy,Beaver Buzz Energy,Beaver Buzz Energy,,True
+91,Beverages,beverages,Vitaminwater,President's Choice Vitamin Water,President's Choice Vitamin Water,,True
+92,Beverages,beverages,LaCroix Sparkling Water,Montellier Sparkling Water,Montellier Sparkling Water,,True
+93,Beverages,beverages,Perrier,Eska Sparkling Water,Eska Sparkling Water,,True
+94,Beverages,beverages,Smartwater,Eska Water,Eska Water,,True
+95,Beverages,beverages,Honest Tea,David’s Tea Cold Brew,David’s Tea Cold Brew,,True
+96,Beverages,beverages,Ocean Spray Cranberry Juice,Allen's Cranberry Juice,Allen's Cranberry Juice,,True
+97,Beverages,beverages,SunnyD,McCain Five Alive,McCain Five Alive,,True
+98,Beverages,beverages,V8 Vegetable Juice,Mott's Garden Cocktail,Mott's Garden Cocktail,,True
+99,Beverages,beverages,Bai Antioxidant Drinks,President's Choice Antioxidant Infused Water,President's Choice Antioxidant Infused Water,,True
+100,Beverages,beverages,Tropicana Orange Juice,McCain Pure Orange Juice,McCain Pure Orange Juice,,True
+101,Beverages,beverages,Gold Peak Iced Tea,Tim Hortons Iced Tea,Tim Hortons Iced Tea,,True
+102,Beverages,beverages,Bang Energy,Guru Energy Drink,Guru Energy Drink,,True
+103,Beverages,beverages,Bubble Tea (American Brands),Presotea or Chatime (Canadian locations),Presotea or Chatime,Canadian locations,True
+104,Beverages,beverages,White Claw (US),White Claw (Canadian version),White Claw,Canadian version,True
+105,Beverages,beverages,Truly Hard Seltzer,Coors Seltzer,Coors Seltzer,,True
+106,Beverages,beverages,Four Loko,Stack Vodka Energy,Stack Vodka Energy,,True
+107,Beverages,beverages,Michelob Ultra,Molson Ultra,Molson Ultra,,True
+108,Beverages,beverages,Coors Light,Moosehead Light,Moosehead Light,,True
+109,Beverages,beverages,Bud Light,Labatt Blue Light,Labatt Blue Light,,True
+110,Baking,baking,Robin Hood Flour,Five Roses Flour,Five Roses Flour,,True
+111,Baking,baking,Betty Crocker Cake Mix,President's Choice Cake Mix,President's Choice Cake Mix,,True
+112,Baking,baking,Pillsbury Cookie Dough,Western Family Cookie Dough,Western Family Cookie Dough,,True
+113,Baking,baking,Crisco Shortening,Bakers Superior Shortening,Bakers Superior Shortening,,True
+114,Baking,baking,Hershey's Cocoa,Camino Cocoa Powder,Camino Cocoa Powder,,True
+115,Baking,baking,Domino Sugar,Rogers Sugar,Rogers Sugar,,True
+116,Baking,baking,McCormick Vanilla Extract,Club House Vanilla Extract,Club House Vanilla Extract,,True
+117,Baking,baking,Jell-O Pudding,President's Choice Pudding Mix,President's Choice Pudding Mix,,True
+118,Baking,baking,Bisquick,Five Roses Baking Mix,Five Roses Baking Mix,,True
+119,Baking,baking,King Arthur Flour,Milanaise Organic Flour,Milanaise Organic Flour,,True
+120,Baking,baking,Duncan Hines Cake Mix,Compliments Cake Mix,Compliments Cake Mix,,True
+121,Baking,baking,Ghirardelli Baking Chocolate,Camino Baking Chocolate,Camino Baking Chocolate,,True
+122,Baking,baking,Nestlé Toll House Chocolate Chips,Hershey's Chipits,Hershey's Chipits,,True
+123,Baking,baking,Hershey’s Baking Chips,Cadbury Chocolate Chips,Cadbury Chocolate Chips,,True
+124,Baking,baking,Karo Corn Syrup,BeeHive Corn Syrup,BeeHive Corn Syrup,,True
+125,Baking,baking,Arm & Hammer Baking Soda,Cow Brand Baking Soda,Cow Brand Baking Soda,,True
+126,Baking,baking,Rumford Baking Powder,Magic Baking Powder,Magic Baking Powder,,True
+127,Baking,baking,Baker's Unsweetened Chocolate,Camino Unsweetened Chocolate,Camino Unsweetened Chocolate,,True
+128,Baking,baking,Eagle Brand Sweetened Condensed Milk,Eagle Brand Sweetened Condensed Milk,Eagle Brand Sweetened Condensed Milk,,True
+129,Baking,baking,Reese's Peanut Butter Chips,President's Choice Peanut Butter Chips,President's Choice Peanut Butter Chips,,True
+130,Baking,baking,Land O'Lakes Whipped Cream,Gay Lea Whipped Cream,Gay Lea Whipped Cream,,True
+131,Baking,baking,Wilton Food Coloring,Club House Food Coloring,Club House Food Coloring,,True
+132,Baking,baking,Agave Nectar,Canadian Maple Syrup,Canadian Maple Syrup,,True
+133,Baking,baking,Brown Sugar (C&H),Redpath Brown Sugar,Redpath Brown Sugar,,True
+134,Baking,baking,Organic Sugar (Wholesome),Lantic Organic Sugar,Lantic Organic Sugar,,True
+135,Baking,baking,Vanilla Bean Paste (Nielsen-Massey),President's Choice Vanilla Bean Paste,President's Choice Vanilla Bean Paste,,True
+136,Baking,baking,Almond Flour (Bob’s Red Mill),President’s Choice Almond Flour,President’s Choice Almond Flour,,True
+137,Baking,baking,Coconut Flour (Bob’s Red Mill),Compliments Coconut Flour,Compliments Coconut Flour,,True
+138,Baking,baking,Gluten-Free Flour (Cup4Cup),President's Choice Gluten-Free Flour,President's Choice Gluten-Free Flour,,True
+139,Baking,baking,Pastry Dough (Pepperidge Farm),Pillsbury Pastry Dough (Canadian version),Pillsbury Pastry Dough,Canadian version,True
+140,Baking,baking,Chia Seeds (Spectrum),President’s Choice Chia Seeds,President’s Choice Chia Seeds,,True
+141,Baking,baking,Flax Seeds (Bob’s Red Mill),President’s Choice Flax Seeds,President’s Choice Flax Seeds,,True
+142,Baking,baking,Pure Honey (Sue Bee),Billy Bee Honey,Billy Bee Honey,,True
+143,Cereal,cereal,Cheerios,Quaker Oats Cereal,Quaker Oats Cereal,,True
+144,Cereal,cereal,Lucky Charms,President's Choice Marshmallow Cereal,President's Choice Marshmallow Cereal,,True
+145,Cereal,cereal,Frosted Flakes,Post Honeycomb Cereal,Post Honeycomb Cereal,,True
+146,Cereal,cereal,Special K,Vector Cereal,Vector Cereal,,True
+147,Cereal,cereal,Cinnamon Toast Crunch,President's Choice Cinnamon Crunch,President's Choice Cinnamon Crunch,,True
+148,Cereal,cereal,Raisin Bran,Post Raisin Bran,Post Raisin Bran,,True
+149,Cereal,cereal,Honey Bunches of Oats,Nature's Path Honey Almond Cereal,Nature's Path Honey Almond Cereal,,True
+150,Cereal,cereal,Cap'n Crunch,President's Choice Peanut Butter Crunch,President's Choice Peanut Butter Crunch,,True
+151,Cereal,cereal,Quaker Oatmeal Squares,President's Choice Oatmeal Crisp,President's Choice Oatmeal Crisp,,True
+152,Cereal,cereal,Frosted Mini-Wheats,Post Mini-Wheats (Canadian version),Post Mini-Wheats,Canadian version,True
+153,Cereal,cereal,Froot Loops,President's Choice Fruitful O's,President's Choice Fruitful O's,,True
+154,Cereal,cereal,Corn Pops,Kellogg's Corn Pops (Canadian recipe),Kellogg's Corn Pops,Canadian recipe,True
+155,Cereal,cereal,Rice Krispies,Kellogg's Rice Krispies (Canada),Kellogg's Rice Krispies,Canada,True
+156,Cereal,cereal,Apple Jacks,President's Choice Apple Crunch,President's Choice Apple Crunch,,True
+157,Cereal,cereal,Honeycomb,Post Honeycomb Cereal (Canadian),Post Honeycomb Cereal,Canadian,True
+158,Cereal,cereal,Cocoa Krispies,President's Choice Cocoa Crunch,President's Choice Cocoa Crunch,,True
+159,Cereal,cereal,Cinnamon Life,President's Choice Cinnamon Oat Crunch,President's Choice Cinnamon Oat Crunch,,True
+160,Cereal,cereal,Cookie Crisp,President's Choice Cookie Bites,President's Choice Cookie Bites,,True
+161,Cereal,cereal,Golden Grahams,Post Golden Crisp (Canada),Post Golden Crisp,Canada,True
+162,Cereal,cereal,Trix,President's Choice Fruity Hoops,President's Choice Fruity Hoops,,True
+163,Cereal,cereal,Kix,President's Choice Puffed Corn,President's Choice Puffed Corn,,True
+164,Cereal,cereal,Reese's Puffs,President's Choice Peanut Butter Balls,President's Choice Peanut Butter Balls,,True
+165,Cereal,cereal,Wheaties,Nature's Path Organic Flax Plus,Nature's Path Organic Flax Plus,,True
+166,Cereal,cereal,Chex,President's Choice Corn Cereal,President's Choice Corn Cereal,,True
+167,Cereal,cereal,Crispix,Kellogg's Crispix (Canada),Kellogg's Crispix,Canada,True
+168,Cereal,cereal,Raisin Bran Crunch,Post Raisin Bran Crunch,Post Raisin Bran Crunch,,True
+169,Cereal,cereal,Cocoa Pebbles,President's Choice Chocolate Rice Cereal,President's Choice Chocolate Rice Cereal,,True
+170,Cereal,cereal,Grape-Nuts,Red River Cereal,Red River Cereal,,True
+171,Cereal,cereal,Cream of Wheat,Red River Hot Cereal,Red River Hot Cereal,,True
+172,Cereal,cereal,Magic Spoon,Love Child Organics Cereal,Love Child Organics Cereal,,True
+173,Cereal,cereal,Cascadian Farm Organic,Nature's Path Organic,Nature's Path Organic,,True
+174,Cereal,cereal,Kashi GoLean,President's Choice Blue Menu High Fibre,President's Choice Blue Menu High Fibre,,True
+175,Frozen Vegetables,frozen-vegetables,Bird's Eye Vegetables,McCain Frozen Vegetables,McCain Frozen Vegetables,,True
+176,Frozen Vegetables,frozen-vegetables,Green Giant Mixed Vegetables,Arctic Gardens Stir-Fry Blend,Arctic Gardens Stir-Fry Blend,,True
+177,Frozen Vegetables,frozen-vegetables,Steamfresh Broccoli,McCain Steam & Serve Broccoli,McCain Steam & Serve Broccoli,,True
+178,Frozen Pizza,frozen-pizza,DiGiorno Pizza,Dr. Oetker Pizza,Dr. Oetker Pizza,,True
+179,Frozen Pizza,frozen-pizza,Red Baron Pizza,Delissio Pizza,Delissio Pizza,,True
+180,Frozen Pizza,frozen-pizza,California Pizza Kitchen,McCain Thin Crust Pizza,McCain Thin Crust Pizza,,True
+181,Frozen Pizza,frozen-pizza,Digiorno Rising Crust,President's Choice Stone-Baked Pizza,President's Choice Stone-Baked Pizza,,True
+182,Frozen Meals,frozen-meals,Marie Callender's Meals,President's Choice Frozen Entrées,President's Choice Frozen Entrées,,True
+183,Frozen Meals,frozen-meals,Lean Cuisine,President's Choice Blue Menu Meals,President's Choice Blue Menu Meals,,True
+184,Frozen Meals,frozen-meals,Stouffer's Lasagna,Compliments Lasagna,Compliments Lasagna,,True
+185,Frozen Meals,frozen-meals,Boston Pizza Entrées,McCain Deep 'n Delicious Entrées,McCain Deep 'n Delicious Entrées,,True
+186,Frozen Meals,frozen-meals,Healthy Choice,President's Choice Blue Menu Steamers,President's Choice Blue Menu Steamers,,True
+187,Frozen Snacks,frozen-snacks,Hot Pockets,McCain Pizza Pockets,McCain Pizza Pockets,,True
+188,Frozen Snacks,frozen-snacks,TGIFriday's Appetizers,McCain Pizza Snacks,McCain Pizza Snacks,,True
+189,Frozen Snacks,frozen-snacks,Jimmy Dean Breakfast Sandwiches,McCain Breakfast Pancakes,McCain Breakfast Pancakes,,True
+190,Frozen Snacks,frozen-snacks,Bagel Bites,Dr. Oetker Bagel Bites,Dr. Oetker Bagel Bites,,True
+191,Frozen Desserts,frozen-desserts,Breyers Ice Cream,Chapman's Ice Cream,Chapman's Ice Cream,,True
+192,Frozen Desserts,frozen-desserts,Blue Bunny Ice Cream,Chapman's Frozen Yogurt,Chapman's Frozen Yogurt,,True
+193,Frozen Desserts,frozen-desserts,Ben & Jerry's,Kawartha Dairy Ice Cream,Kawartha Dairy Ice Cream,,True
+194,Frozen Desserts,frozen-desserts,Talenti Gelato,Chapman's Gelato,Chapman's Gelato,,True
+195,Frozen Desserts,frozen-desserts,Drumstick Cones,Chapman's Sundae Cones,Chapman's Sundae Cones,,True
+196,Frozen Desserts,frozen-desserts,Nestlé Ice Cream Sandwiches,Chapman's Classic Sandwiches,Chapman's Classic Sandwiches,,True
+197,Frozen Desserts,frozen-desserts,Häagen-Dazs,President's Choice Belgian Chocolate Ice Cream,President's Choice Belgian Chocolate Ice Cream,,True
+198,Frozen Desserts,frozen-desserts,Klondike Bars,Chapman's Original Klondike-Style Bars,Chapman's Original Klondike-Style Bars,,True
+199,Frozen Desserts,frozen-desserts,Outshine Fruit Bars,SunRype Real Fruit Bars,SunRype Real Fruit Bars,,True
+200,Frozen Potatoes,frozen-potatoes,Ore-Ida Fries,McCain Superfries,McCain Superfries,,True
+201,Frozen Potatoes,frozen-potatoes,Alexia Sweet Potato Fries,McCain Sweet Potato Fries,McCain Sweet Potato Fries,,True
+202,Frozen Potatoes,frozen-potatoes,Cavendish Hash Browns,McCain Hash Browns,McCain Hash Browns,,True
+203,Frozen Appetizers,frozen-appetizers,Marie Callender's Appetizers,Compliments Spring Rolls,Compliments Spring Rolls,,True
+204,Frozen Appetizers,frozen-appetizers,TGI Fridays Mozzarella Sticks,McCain Mozzarella Cheese Sticks,McCain Mozzarella Cheese Sticks,,True
+205,Frozen Appetizers,frozen-appetizers,Farm Rich Meatballs,Janes Pub Style Meatballs,Janes Pub Style Meatballs,,True
+206,Frozen Seafood,frozen-seafood,SeaPak Shrimp,High Liner Shrimp,High Liner Shrimp,,True
+207,Frozen Seafood,frozen-seafood,Gorton's Fish Fillets,High Liner Pan-Seared Fish,High Liner Pan-Seared Fish,,True
+208,Frozen Seafood,frozen-seafood,Van de Kamp's Fish Sticks,High Liner Fish Sticks,High Liner Fish Sticks,,True
+209,Frozen Breakfast,frozen-breakfast,Eggo Waffles,McCain Frozen Waffles,McCain Frozen Waffles,,True
+210,Frozen Breakfast,frozen-breakfast,Jimmy Dean Pancakes,McCain Buttermilk Pancakes,McCain Buttermilk Pancakes,,True
+211,Frozen Breakfast,frozen-breakfast,Pillsbury Toaster Strudel,President's Choice Toaster Strudel,President's Choice Toaster Strudel,,True
+212,Frozen Organic,frozen-organic,Amy's Kitchen,President's Choice Organics,President's Choice Organics,,True
+213,Frozen Organic,frozen-organic,Cedarlane Entrées,President's Choice Organic Bowls,President's Choice Organic Bowls,,True
+214,Frozen Vegan,frozen-vegan,Boca Veggie Burgers,Yves Veggie Cuisine Burgers,Yves Veggie Cuisine Burgers,,True
+215,Frozen Vegan,frozen-vegan,Gardein Plant-Based,President's Choice Plant-Based,President's Choice Plant-Based,,True
+216,Condiments,condiments,Heinz Ketchup,French's Ketchup,French's Ketchup,,True
+217,Condiments,condiments,Hunt's Ketchup,President's Choice Ketchup,President's Choice Ketchup,,True
+218,Condiments,condiments,Sir Kensington's Ketchup,Kozlik's Canadian Mustard,Kozlik's Canadian Mustard,,True
+219,Condiments,condiments,Annie's Naturals Mustard,President's Choice Organics Mustard,President's Choice Organics Mustard,,True
+220,Condiments,condiments,Hellmann's Mayo,President's Choice Mayo,President's Choice Mayo,,True
+221,Condiments,condiments,Duke's Mayo,Kraft Real Mayo,Kraft Real Mayo,,True
+222,Condiments,condiments,Best Foods Mayo,Western Family Mayo,Western Family Mayo,,True
+223,Condiments,condiments,Primal Kitchen Avocado Oil Mayo,President's Choice Avocado Oil Mayo,President's Choice Avocado Oil Mayo,,True
+224,Condiments,condiments,French's Classic Mustard,Keene's Mustard,Keene's Mustard,,True
+225,Condiments,condiments,Gulden's Spicy Brown Mustard,Keene's Spicy Beer Mustard,Keene's Spicy Beer Mustard,,True
+226,Condiments,condiments,Colman's Mustard,Kozlik's Triple Crunch Mustard,Kozlik's Triple Crunch Mustard,,True
+227,Condiments,condiments,Hidden Valley Ranch,Renée's Gourmet Ranch Dressing,Renée's Gourmet Ranch Dressing,,True
+228,Condiments,condiments,Kraft Ranch Dressing,President's Choice Ranch Dressing,President's Choice Ranch Dressing,,True
+229,Condiments,condiments,Wish-Bone Italian Dressing,Kraft Italian Dressing,Kraft Italian Dressing,,True
+230,Condiments,condiments,Newman's Own Caesar Dressing,Renée's Caesar Dressing,Renée's Caesar Dressing,,True
+231,Condiments,condiments,Brianna's Salad Dressing,President's Choice Balsamic Vinaigrette,President's Choice Balsamic Vinaigrette,,True
+232,Condiments,condiments,Ken's Steak House Dressing,President's Choice Greek Dressing,President's Choice Greek Dressing,,True
+233,Condiments,condiments,Sriracha,President's Choice Sriracha,President's Choice Sriracha,,True
+234,Condiments,condiments,Frank's RedHot Sauce,Canadian Texas Pete Hot Sauce,Canadian Texas Pete Hot Sauce,,True
+235,Condiments,condiments,Tabasco Sauce,Pepper North Hot Sauce (Ontario),Pepper North Hot Sauce,Ontario,True
+236,Condiments,condiments,Cholula Hot Sauce,Dawson's Hot Sauce (Vancouver),Dawson's Hot Sauce,Vancouver,True
+237,Condiments,condiments,Texas Pete Hot Sauce,Maritime Madness Hot Sauce,Maritime Madness Hot Sauce,,True
+238,Condiments,condiments,Bull's-Eye BBQ Sauce,Diana Sauce (Canadian BBQ),Diana Sauce,Canadian BBQ,True
+239,Condiments,condiments,Sweet Baby Ray's BBQ Sauce,President's Choice Smoky BBQ Sauce,President's Choice Smoky BBQ Sauce,,True
+240,Condiments,condiments,Stub's BBQ Sauce,Big Rock BBQ Sauce (Alberta),Big Rock BBQ Sauce,Alberta,True
+241,Condiments,condiments,Lea & Perrins Worcestershire Sauce,President's Choice Worcestershire,President's Choice Worcestershire,,True
+242,Condiments,condiments,French's Crispy Fried Onions,President's Choice Crispy Onions,President's Choice Crispy Onions,,True
+243,Condiments,condiments,Vlasic Pickles,Bick's Pickles,Bick's Pickles,,True
+244,Condiments,condiments,Clausen Pickles,Strub's Pickles (Ontario),Strub's Pickles,Ontario,True
+245,Condiments,condiments,Best Maid Pickles,McClure's Garlic Dill Pickles,McClure's Garlic Dill Pickles,,True
+246,Condiments,condiments,Heinz Relish,President's Choice Sweet Relish,President's Choice Sweet Relish,,True
+247,Condiments,condiments,Mt. Olive Relish,Bick's Relish,Bick's Relish,,True
+248,Condiments,condiments,Buffalo Wild Wings Sauce,President's Choice Buffalo Sauce,President's Choice Buffalo Sauce,,True
+249,Condiments,condiments,Stonewall Kitchen Jam,E.D. Smith Jam (Ontario),E.D. Smith Jam,Ontario,True
+250,Condiments,condiments,Smucker's Jam,President's Choice Fruit Spread,President's Choice Fruit Spread,,True
+251,Condiments,condiments,Bonne Maman Preserves,Wilkin & Sons Canadian Preserves,Wilkin & Sons Canadian Preserves,,True
+252,Condiments,condiments,Bragg Apple Cider Vinegar,Okanagan Gold Apple Cider Vinegar,Okanagan Gold Apple Cider Vinegar,,True
+253,Condiments,condiments,Pompeian Olive Oil,President's Choice Olive Oil,President's Choice Olive Oil,,True
+254,Condiments,condiments,Bertolli Olive Oil,Colavita Canada Olive Oil,Colavita Canada Olive Oil,,True
+255,Condiments,condiments,Kikkoman Soy Sauce,Yamasa Soy Sauce (Canadian distribution),Yamasa Soy Sauce,Canadian distribution,True
+256,Condiments,condiments,La Choy Soy Sauce,President's Choice Soy Sauce,President's Choice Soy Sauce,,True
+257,Condiments,condiments,San-J Tamari,President's Choice Gluten-Free Tamari,President's Choice Gluten-Free Tamari,,True
+258,Condiments,condiments,Heinz Gravy,Club House Gravy Mix,Club House Gravy Mix,,True
+259,Condiments,condiments,McCormick Gravy Mix,President's Choice Gravy,President's Choice Gravy,,True
+260,Bread,bread,Pepperidge Farm Bread,Dempster's Bread,Dempster's Bread,,True
+261,Bread,bread,Sara Lee Bread,Villaggio Bread,Villaggio Bread,,True
+262,Bread,bread,Arnold Bread,Stonemill Bread,Stonemill Bread,,True
+263,Bread,bread,Thomas' English Muffins,Demster's English Muffins,Demster's English Muffins,,True
+264,Bread,bread,Wonder Bread,Bon Matin Classic White (Quebec),Bon Matin Classic White,Quebec,True
+265,Bread,bread,Nature's Own Whole Wheat,Dempster's 100% Whole Wheat,Dempster's 100% Whole Wheat,,True
+266,Bread,bread,Dave's Killer Bread,Silver Hills Sprouted Grain Bread (BC),Silver Hills Sprouted Grain Bread,BC,True
+267,Bread,bread,Oroweat Ancient Grains,Stonemill Ancient Grains Bread,Stonemill Ancient Grains Bread,,True
+268,Bread,bread,Entenmann's Banana Loaf,President's Choice Banana Loaf,President's Choice Banana Loaf,,True
+269,Bread,bread,Ball Park Hot Dog Buns,Villaggio Soft Hot Dog Buns,Villaggio Soft Hot Dog Buns,,True
+270,Bread,bread,Brownberry Multigrain,Stonemill Multigrain Bread,Stonemill Multigrain Bread,,True
+271,Bread,bread,Franz Artisan Bread,ACE Bakery Artisan Bread (Ontario),ACE Bakery Artisan Bread,Ontario,True
+272,Bread,bread,Mission Tortillas,Dempster's Tortillas,Dempster's Tortillas,,True
+273,Bread,bread,Thomas' Bagels,Dempster's Bagels,Dempster's Bagels,,True
+274,Bread,bread,Arnold Whole Grain Bread,Stonemill 12 Grain Bread,Stonemill 12 Grain Bread,,True
+275,Bread,bread,Sara Lee Artesano Bread,Villaggio Artisan Loaf,Villaggio Artisan Loaf,,True
+276,Bread,bread,Pepperidge Farm Cinnamon Raisin,Dempster's Cinnamon Raisin Bread,Dempster's Cinnamon Raisin Bread,,True
+277,Bread,bread,Udi's Gluten-Free Bread,Promise Gluten-Free Bread,Promise Gluten-Free Bread,,True
+278,Bread,bread,La Brea Bakery Sourdough,ACE Bakery Sourdough,ACE Bakery Sourdough,,True
+279,Bread,bread,Martin's Potato Bread,Granny's Potato Bread,Granny's Potato Bread,,True
+280,Bread,bread,Pepperidge Farm Whole Grain,Dempster's Harvest Whole Grain,Dempster's Harvest Whole Grain,,True
+281,Bread,bread,Arnold Sandwich Thins,Stonemill Sandwich Thins,Stonemill Sandwich Thins,,True
+282,Bread,bread,Sara Lee Honey Wheat,Villaggio Honey Wheat Bread,Villaggio Honey Wheat Bread,,True
+283,Bread,bread,Bimbo Bread,McGavin's Bread (Western Canada),McGavin's Bread,Western Canada,True
+284,Bread,bread,Franz Gluten-Free,Promise Gluten-Free Baguette,Promise Gluten-Free Baguette,,True
+285,Bread,bread,Pepperidge Farm Texas Toast,Demster's Garlic Bread,Demster's Garlic Bread,,True
+286,Bread,bread,Thomas' Everything Bagels,Dempster's Everything Bagels,Dempster's Everything Bagels,,True
+287,Bread,bread,King's Hawaiian Rolls,President's Choice Hawaiian Sweet Rolls,President's Choice Hawaiian Sweet Rolls,,True
+288,Bread,bread,Orowheat Sandwich Buns,Stonemill Sandwich Buns,Stonemill Sandwich Buns,,True
+289,Bread,bread,Arnold Brick Oven Bread,ACE Bakery Rustic Loaf,ACE Bakery Rustic Loaf,,True
+290,Bread,bread,Sara Lee Pound Cake,President's Choice Pound Cake,President's Choice Pound Cake,,True
+291,Bread,bread,Pepperidge Farm Farmhouse Bread,Demster's Country Grain,Demster's Country Grain,,True
+292,Bread,bread,Entenmann's Donuts,President's Choice Decadent Donuts,President's Choice Decadent Donuts,,True
+293,Bread,bread,Thomas' Croissants,President's Choice Butter Croissants,President's Choice Butter Croissants,,True
+294,Bread,bread,Martin's Pretzel Buns,ACE Bakery Pretzel Buns,ACE Bakery Pretzel Buns,,True
+295,Bread,bread,Pepperidge Farm Pumpernickel,Dempster's Pumpernickel,Dempster's Pumpernickel,,True
+296,Bread,bread,Sara Lee Cinnamon Rolls,President's Choice Cinnamon Buns,President's Choice Cinnamon Buns,,True
+297,Meat,meat,Oscar Mayer Bacon,Schneider's Bacon,Schneider's Bacon,,True
+298,Meat,meat,Jimmy Dean Sausages,Maple Leaf Breakfast Sausages,Maple Leaf Breakfast Sausages,,True
+299,Meat,meat,Hillshire Farm Deli Meat,Maple Leaf Prime Deli Meat,Maple Leaf Prime Deli Meat,,True
+300,Meat,meat,Tyson Chicken Nuggets,Janes Pub Style Chicken,Janes Pub Style Chicken,,True
+301,Meat,meat,Perdue Chicken,Maple Lodge Farms Chicken,Maple Lodge Farms Chicken,,True
+302,Meat,meat,Smithfield Ham,Olymel Cooked Ham,Olymel Cooked Ham,,True
+303,Meat,meat,Hormel Pepperoni,Schneider's Pepperoni,Schneider's Pepperoni,,True
+304,Meat,meat,Ball Park Hot Dogs,Schneider's Juicy Jumbos,Schneider's Juicy Jumbos,,True
+305,Meat,meat,Applegate Organic Hot Dogs,Schneider's Naturals Hot Dogs,Schneider's Naturals Hot Dogs,,True
+306,Meat,meat,Johnsonville Bratwurst,Maple Leaf Bratwurst Sausages,Maple Leaf Bratwurst Sausages,,True
+307,Meat,meat,Farmland Pork,Fearmans Pork (Ontario),Fearmans Pork,Ontario,True
+308,Meat,meat,Boar's Head Turkey Breast,Maple Leaf Oven Roasted Turkey,Maple Leaf Oven Roasted Turkey,,True
+309,Meat,meat,Butterball Turkey,Maple Lodge Farms Turkey,Maple Lodge Farms Turkey,,True
+310,Meat,meat,Rosina Meatballs,Janes Pub Style Meatballs,Janes Pub Style Meatballs,,True
+311,Meat,meat,Jimmy Dean Breakfast Bowls,McCain Breakfast Sandwiches,McCain Breakfast Sandwiches,,True
+312,Meat,meat,Banquet Chicken,Janes Pub Style Chicken Breasts,Janes Pub Style Chicken Breasts,,True
+313,Meat,meat,Hebrew National Beef Franks,Schneider's Grill Em' Beef Franks,Schneider's Grill Em' Beef Franks,,True
+314,Meat,meat,Land O'Frost Deli Meat,Maple Leaf Natural Selections Deli Meat,Maple Leaf Natural Selections Deli Meat,,True
+315,Meat,meat,Jack Link's Beef Jerky,Biltong Chief (Canadian Jerky),Biltong Chief,Canadian Jerky,True
+316,Meat,meat,Old Wisconsin Sausages,Maple Leaf Smoked Sausages,Maple Leaf Smoked Sausages,,True
+317,Meat,meat,Libby's Corned Beef,Schneider's Corned Beef,Schneider's Corned Beef,,True
+318,Meat,meat,Foster Farms Chicken,Lilydale Chicken Breasts,Lilydale Chicken Breasts,,True
+319,Meat,meat,Purdue Ground Turkey,Maple Lodge Farms Ground Turkey,Maple Lodge Farms Ground Turkey,,True
+320,Meat,meat,Jimmy Dean Croissants,McCain Breakfast Croissants,McCain Breakfast Croissants,,True
+321,Meat,meat,Hormel Chili,Stagg Chili (Canadian Distribution),Stagg Chili,Canadian Distribution,True
+322,Meat,meat,Jimmy Dean Pancakes & Sausage,McCain Breakfast Combos,McCain Breakfast Combos,,True
+323,Meat,meat,Tyson Frozen Chicken Wings,Janes Pub Style Chicken Wings,Janes Pub Style Chicken Wings,,True
+324,Meat,meat,Perdue Short Cuts,Maple Leaf Ready Crisp Bacon,Maple Leaf Ready Crisp Bacon,,True
+325,Meat,meat,Smithfield Pork Chops,Fearmans Pork Chops,Fearmans Pork Chops,,True
+326,Meat,meat,Applegate Chicken Strips,Janes Pub Style Chicken Strips,Janes Pub Style Chicken Strips,,True
+327,Meat,meat,Beyond Meat Burgers,Yves Veggie Cuisine Burgers,Yves Veggie Cuisine Burgers,,True
+328,Meat,meat,Impossible Plant-Based Sausage,President's Choice Plant-Based Sausage,President's Choice Plant-Based Sausage,,True
+329,Meat,meat,Tofurky Holiday Roast,Yves Veggie Holiday Roast,Yves Veggie Holiday Roast,,True
+330,Meat,meat,MorningStar Farms Veggie Burgers,President's Choice Blue Menu Veggie Burgers,President's Choice Blue Menu Veggie Burgers,,True
+331,Meat,meat,Lightlife Plant-Based Bacon,Yves Veggie Bacon,Yves Veggie Bacon,,True
+332,Meat,meat,Gardein Chicken Tenders,Janes Pub Style Plant-Based Tenders,Janes Pub Style Plant-Based Tenders,,True
+333,Meat,meat,Peameal Bacon (Canadian Specialty),Toronto Packing Peameal Bacon,Toronto Packing Peameal Bacon,,True
+334,Meat,meat,USDA Choice Beef,Canadian Ranchers AAA Beef,Canadian Ranchers AAA Beef,,True
+335,Meat,meat,Black Angus Steak,Spring Creek Ranch Alberta Beef,Spring Creek Ranch Alberta Beef,,True
+336,Meat,meat,Wild Caught Salmon,BC Salmon (Canadian Pacific),BC Salmon,Canadian Pacific,True
+337,Meat,meat,US Farmed Tilapia,Canadian Clearwater Tilapia,Canadian Clearwater Tilapia,,True
+338,Meat,meat,Boar's Head Prosciutto,Olymel Prosciutto,Olymel Prosciutto,,True
+339,Meat,meat,Columbus Salami,Olymel Genoa Salami,Olymel Genoa Salami,,True
+340,Meat,meat,Wild Fork Bison,Britannia Farms Bison (Alberta),Britannia Farms Bison,Alberta,True
+341,Clothing,clothing,Levi's Jeans,Roots Jeans,Roots Jeans,,True
+342,Clothing,clothing,Carhartt Jackets,Canada Goose Jackets,Canada Goose Jackets,,True
+343,Clothing,clothing,Nike Hoodies,Lululemon Hoodies,Lululemon Hoodies,,True
+344,Clothing,clothing,Converse Sneakers,Canada West Boots,Canada West Boots,,True
+345,Clothing,clothing,The North Face Winter Gear,Arc'teryx Winter Gear,Arc'teryx Winter Gear,,True
+346,Household,household,Clorox Wipes,President's Choice Disinfecting Wipes,President's Choice Disinfecting Wipes,,True
+347,Household,household,Bounty Paper Towels,Cashmere Paper Towels,Cashmere Paper Towels,,True
+348,Household,household,Dawn Dish Soap,Sunlight Dish Soap,Sunlight Dish Soap,,True
+349,Household,household,Tide Laundry Detergent,Purex Laundry Detergent,Purex Laundry Detergent,,True
+350,Household,household,Swiffer Sweeper,Quickie Sweeper,Quickie Sweeper,,True
+351,Household,household,Swiffer WetJet Pads,Quickie Wet & Dry Mop Pads,Quickie Wet & Dry Mop Pads,,True
+352,Household,household,Swiffer Duster,Quickie Microfibre Duster,Quickie Microfibre Duster,,True
+353,Household,household,Lysol Spray,Life Brand Disinfectant Spray,Life Brand Disinfectant Spray,,True
+354,Household,household,Windex,President's Choice Glass Cleaner,President's Choice Glass Cleaner,,True
+355,Household,household,Mr. Clean Multi-Surface,Attitude All-Purpose Cleaner,Attitude All-Purpose Cleaner,,True
+356,Household,household,Scrubbing Bubbles,Life Brand Bathroom Cleaner,Life Brand Bathroom Cleaner,,True
+357,Household,household,Seventh Generation Dish Soap,Attitude Dish Soap,Attitude Dish Soap,,True
+358,Household,household,Method All-Purpose Cleaner,Attitude Natural Cleaner,Attitude Natural Cleaner,,True
+359,Household,household,Glad Trash Bags,President's Choice Kitchen Catchers,President's Choice Kitchen Catchers,,True
+360,Household,household,Hefty Trash Bags,Glad ForceFlex (Canadian version),Glad ForceFlex,Canadian version,True
+361,Household,household,Ziploc Bags,President's Choice Food Storage Bags,President's Choice Food Storage Bags,,True
+362,Household,household,Scotch-Brite Sponges,Quickie Scrub Sponges,Quickie Scrub Sponges,,True
+363,Household,household,Febreze Air Freshener,Life Brand Air Freshener,Life Brand Air Freshener,,True
+364,Household,household,Air Wick Plug-Ins,Life Brand Scented Oils,Life Brand Scented Oils,,True
+365,Household,household,Downy Fabric Softener,Purex Fabric Softener,Purex Fabric Softener,,True
+366,Household,household,Bounce Dryer Sheets,Purex Dryer Sheets,Purex Dryer Sheets,,True
+367,Household,household,OxiClean Stain Remover,President's Choice Oxi Stain Remover,President's Choice Oxi Stain Remover,,True
+368,Household,household,Resolve Carpet Cleaner,Life Brand Carpet Cleaner,Life Brand Carpet Cleaner,,True
+369,Household,household,Shout Stain Remover,President's Choice Stain Remover,President's Choice Stain Remover,,True
+370,Household,household,Finish Dishwasher Detergent,Cascade Dishwasher Pods (Canada),Cascade Dishwasher Pods,Canada,True
+371,Household,household,Affresh Washing Machine Cleaner,Life Brand Washing Machine Cleaner,Life Brand Washing Machine Cleaner,,True
+372,Household,household,Reynolds Wrap Aluminum Foil,President's Choice Aluminum Foil,President's Choice Aluminum Foil,,True
+373,Household,household,Glad Press'n Seal,President's Choice Plastic Wrap,President's Choice Plastic Wrap,,True
+374,Household,household,Command Hooks,3M Command Hooks (Canadian packaging),3M Command Hooks,Canadian packaging,True
+375,Household,household,Drano Drain Cleaner,Life Brand Drain Opener,Life Brand Drain Opener,,True
+376,Household,household,Brawny Paper Towels,SpongeTowels Ultra (Canadian),SpongeTowels Ultra,Canadian,True
+377,Household,household,Scotch Packaging Tape,3M Scotch Tape (Canada),3M Scotch Tape,Canada,True
+378,Household,household,Elmer's Glue,LePage Glue,LePage Glue,,True
+379,Household,household,Sharpie Markers,Marvy Uchida Markers (Canadian),Marvy Uchida Markers,Canadian,True
+380,Household,household,Rubbermaid Containers,President's Choice Food Containers,President's Choice Food Containers,,True
+381,Household,household,Yeti Tumblers,Stanley Canada Tumblers,Stanley Canada Tumblers,,True
+382,Household,household,Brita Water Filters,ZeroWater Canada Filters,ZeroWater Canada Filters,,True
+383,Household,household,Crock-Pot,Sunbeam Slow Cooker (Canadian),Sunbeam Slow Cooker,Canadian,True
+384,Household,household,GE Light Bulbs,Noma LED Bulbs (Canadian brand),Noma LED Bulbs,Canadian brand,True
+385,Household,household,Energizer Batteries,President's Choice Batteries,President's Choice Batteries,,True
+386,Household,household,Raid Ant & Roach Spray,EcoSense Pest Control (Canadian),EcoSense Pest Control,Canadian,True
+387,Personal Care,personal-care,Dove Soap,Cetaphil Gentle Cleanser,Cetaphil Gentle Cleanser,,True
+388,Personal Care,personal-care,Irish Spring Soap,Life Brand Antibacterial Soap,Life Brand Antibacterial Soap,,True
+389,Personal Care,personal-care,Neutrogena Facial Cleanser,Marcelle Gentle Cleansing Gel,Marcelle Gentle Cleansing Gel,,True
+390,Personal Care,personal-care,CeraVe Hydrating Cleanser,Attitude Sensitive Skin Cleanser,Attitude Sensitive Skin Cleanser,,True
+391,Personal Care,personal-care,Olay Regenerist Moisturizer,Marcelle Hydra-C Gel Cream,Marcelle Hydra-C Gel Cream,,True
+392,Personal Care,personal-care,Aveeno Daily Lotion,Green Beaver Ultra-Moisturizing Lotion,Green Beaver Ultra-Moisturizing Lotion,,True
+393,Personal Care,personal-care,Nivea Body Lotion,Life Brand Shea Butter Lotion,Life Brand Shea Butter Lotion,,True
+394,Personal Care,personal-care,Vaseline Petroleum Jelly,Life Brand Petroleum Jelly,Life Brand Petroleum Jelly,,True
+395,Personal Care,personal-care,Colgate Total Toothpaste,Tom's of Maine Fluoride-Free (Canada),Tom's of Maine Fluoride-Free,Canada,True
+396,Personal Care,personal-care,Crest Pro-Health Toothpaste,Hello Naturally Whitening Toothpaste (Canadian),Hello Naturally Whitening Toothpaste,Canadian,True
+397,Personal Care,personal-care,Sensodyne Toothpaste,President's Choice Sensitivity Relief,President's Choice Sensitivity Relief,,True
+398,Personal Care,personal-care,Head & Shoulders Shampoo,Live Clean Coconut Milk Shampoo,Live Clean Coconut Milk Shampoo,,True
+399,Personal Care,personal-care,Herbal Essences Shampoo,Attitude Super Leaves Shampoo,Attitude Super Leaves Shampoo,,True
+400,Personal Care,personal-care,Pantene Pro-V Shampoo,AG Hair Care Natural Shampoo,AG Hair Care Natural Shampoo,,True
+401,Personal Care,personal-care,Dove Dry Shampoo,Batiste Canada Dry Shampoo,Batiste Canada Dry Shampoo,,True
+402,Personal Care,personal-care,TRESemmé Conditioner,Live Clean Argan Oil Conditioner,Live Clean Argan Oil Conditioner,,True
+403,Personal Care,personal-care,Gillette Fusion Razors,Schick Intuition Razors,Schick Intuition Razors,,True
+404,Personal Care,personal-care,Venus Razors,BIC Soleil Razors (Canadian),BIC Soleil Razors,Canadian,True
+405,Personal Care,personal-care,Edge Shaving Gel,Life Brand Sensitive Shave Gel,Life Brand Sensitive Shave Gel,,True
+406,Personal Care,personal-care,Secret Clinical Strength,Native Deodorant (Canadian),Native Deodorant,Canadian,True
+407,Personal Care,personal-care,Degree Deodorant,Attitude Sensitive Skin Deodorant,Attitude Sensitive Skin Deodorant,,True
+408,Personal Care,personal-care,Old Spice Deodorant,Rocky Mountain Soap Co. Natural Deodorant,Rocky Mountain Soap Co. Natural Deodorant,,True
+409,Personal Care,personal-care,Neutrogena Sunscreen,Ombrelle Sunscreen (Canadian SPF),Ombrelle Sunscreen,Canadian SPF,True
+410,Personal Care,personal-care,Coppertone Sunscreen,Life Brand Sport SPF 50,Life Brand Sport SPF 50,,True
+411,Personal Care,personal-care,Maybelline Mascara,Annabelle Cosmetics Mascara,Annabelle Cosmetics Mascara,,True
+412,Personal Care,personal-care,L'Oréal Paris Foundation,Marcelle BB Cream,Marcelle BB Cream,,True
+413,Personal Care,personal-care,Burt's Bees Lip Balm,Rocky Mountain Soap Co. Lip Balm,Rocky Mountain Soap Co. Lip Balm,,True
+414,Personal Care,personal-care,Neutrogena Makeup Remover,Marcelle Gentle Eye Makeup Remover,Marcelle Gentle Eye Makeup Remover,,True
+415,Personal Care,personal-care,Tampax Tampons,President's Choice Organic Tampons,President's Choice Organic Tampons,,True
+416,Personal Care,personal-care,Always Pads,Stayfree Canada Pads,Stayfree Canada Pads,,True
+417,Personal Care,personal-care,Monistat Anti-Itch Cream,Life Brand Feminine Care Cream,Life Brand Feminine Care Cream,,True
+418,Personal Care,personal-care,Gillette Body Wash,Dove Men+Care (Canadian variant),Dove Men+Care,Canadian variant,True
+419,Personal Care,personal-care,Axe Body Spray,Old Spice Body Spray (Canadian),Old Spice Body Spray,Canadian,True
+420,Personal Care,personal-care,Johnson's Baby Shampoo,Attitude Baby Shampoo,Attitude Baby Shampoo,,True
+421,Personal Care,personal-care,Babyganics Lotion,Green Beaver Baby Lotion,Green Beaver Baby Lotion,,True
+422,Personal Care,personal-care,Dove Men+Care Face Wash,Brickell Men's Purifying Charcoal Face Wash (Canada),Brickell Men's Purifying Charcoal Face Wash,Canada,True
+423,Personal Care,personal-care,Colgate Optic White,Tom's of Maine Luminous White,Tom's of Maine Luminous White,,True
+424,Personal Care,personal-care,Clean & Clear Acne Wash,Life Brand Acne Wash,Life Brand Acne Wash,,True
+425,Personal Care,personal-care,Shae Moisture,Love Ur Curls,Love Ur Curls,,True
+426,Personal Care,personal-care,St. Ives Apricot Scrub,Rocky Mountain Soap Co. Facial Scrub,Rocky Mountain Soap Co. Facial Scrub,,True
+427,Personal Care,personal-care,Noxzema Cleansing Cream,Marcelle Cleansing Cream,Marcelle Cleansing Cream,,True
+428,Personal Care,personal-care,Aquaphor Healing Ointment,Life Brand Healing Ointment,Life Brand Healing Ointment,,True
+429,Pet Supplies,pet-supplies,Purina Dog Chow,President's Choice Dog Food,President's Choice Dog Food,,True
+430,Pet Supplies,pet-supplies,Blue Buffalo Cat Food,Acana Cat Food,Acana Cat Food,,True
+431,Pet Supplies,pet-supplies,Milk-Bone Dog Treats,President's Choice Dog Treats,President's Choice Dog Treats,,True
+432,Pet Supplies,pet-supplies,Hill's Science Diet,Royal Canin (Canadian distribution),Royal Canin,Canadian distribution,True
+433,Pet Supplies,pet-supplies,Rachael Ray Nutrish,President's Choice Nutrition First,President's Choice Nutrition First,,True
+434,Pet Supplies,pet-supplies,Pedigree Dog Food,President's Choice Adult Dog Food,President's Choice Adult Dog Food,,True
+435,Pet Supplies,pet-supplies,Fancy Feast Cat Food,Performatrin Ultra Cat Food,Performatrin Ultra Cat Food,,True
+436,Pet Supplies,pet-supplies,Meow Mix,President's Choice Indoor Cat Formula,President's Choice Indoor Cat Formula,,True
+437,Pet Supplies,pet-supplies,Greenies Dental Treats,Dentastix Dental Treats (Canada),Dentastix Dental Treats,Canada,True
+438,Pet Supplies,pet-supplies,Beggin' Strips,President's Choice Bacon-Flavored Dog Treats,President's Choice Bacon-Flavored Dog Treats,,True
+439,Pet Supplies,pet-supplies,Blue Buffalo Wilderness,Acana Wild Prairie Cat Food,Acana Wild Prairie Cat Food,,True
+440,Pet Supplies,pet-supplies,Wellness Dog Food,Horizon Complete Dog Food (Canadian brand),Horizon Complete Dog Food,Canadian brand,True
+441,Pet Supplies,pet-supplies,Taste of the Wild,Orijen Grain-Free Dog Food,Orijen Grain-Free Dog Food,,True
+442,Pet Supplies,pet-supplies,Zuke's Training Treats,President's Choice Training Bites,President's Choice Training Bites,,True
+443,Pet Supplies,pet-supplies,Old Mother Hubbard Biscuits,President's Choice Classic Biscuits,President's Choice Classic Biscuits,,True
+444,Pet Supplies,pet-supplies,Whiskas Cat Food,Performatrin Grain-Free Cat Food,Performatrin Grain-Free Cat Food,,True
+445,Pet Supplies,pet-supplies,Beneful Dog Food,President's Choice Chef's Blend,President's Choice Chef's Blend,,True
+446,Pet Supplies,pet-supplies,Merrick Dog Food,FirstMate Pet Foods (BC-based),FirstMate Pet Foods,BC-based,True
+447,Pet Supplies,pet-supplies,Redbarn Bully Sticks,Canada Pooch Bully Sticks,Canada Pooch Bully Sticks,,True
+448,Pet Supplies,pet-supplies,Kong Dog Toys,JW Pet Canada Toys,JW Pet Canada Toys,,True
+449,Pet Supplies,pet-supplies,Chuckit! Fetch Toys,Hyper Pet Fetch Toys (Canadian),Hyper Pet Fetch Toys,Canadian,True
+450,Pet Supplies,pet-supplies,Outward Hound Puzzle Toys,Nina Ottosson Puzzle Toys (Canada),Nina Ottosson Puzzle Toys,Canada,True
+451,Pet Supplies,pet-supplies,Frisco Cat Trees,Go Pet Club Cat Trees (Canadian),Go Pet Club Cat Trees,Canadian,True
+452,Pet Supplies,pet-supplies,Hartz Grooming Wipes,Life Brand Pet Wipes,Life Brand Pet Wipes,,True
+453,Pet Supplies,pet-supplies,Seresto Flea Collar,President's Choice Flea & Tick Collar,President's Choice Flea & Tick Collar,,True
+454,Pet Supplies,pet-supplies,Frontline Plus,Advantage II Flea Treatment (Canada),Advantage II Flea Treatment,Canada,True
+455,Pet Supplies,pet-supplies,Earthbath Shampoo,TropiClean Hypoallergenic Shampoo (Canadian),TropiClean Hypoallergenic Shampoo,Canadian,True
+456,Pet Supplies,pet-supplies,PetSafe Automatic Feeder,Pet Zone Smart Feeder (Canada),Pet Zone Smart Feeder,Canada,True
+457,Pet Supplies,pet-supplies,Arm & Hammer Cat Litter,ExquisiCat Clumping Litter,ExquisiCat Clumping Litter,,True
+458,Pet Supplies,pet-supplies,Dr. Elsey's Litter,President's Choice Odour Control Litter,President's Choice Odour Control Litter,,True
+459,Pet Supplies,pet-supplies,PetSmart Grreat Choice,Global Pet Foods In-House Brands,Global Pet Foods In-House Brands,,True
+460,Pet Supplies,pet-supplies,Aspen Pet Leashes,Canada Pooch Leashes & Collars,Canada Pooch Leashes & Collars,,True
+461,Pet Supplies,pet-supplies,Kuranda Dog Beds,Big Barker Orthopedic Beds (Canadian),Big Barker Orthopedic Beds,Canadian,True
+462,Pet Supplies,pet-supplies,Furminator Deshedding Tool,Safari De-Shedding Tool (Canada),Safari De-Shedding Tool,Canada,True
+463,Pet Supplies,pet-supplies,Cosequin Joint Supplements,Flexadin Joint Supplements (Canada),Flexadin Joint Supplements,Canada,True
+464,Pet Supplies,pet-supplies,Greenies Pill Pockets,President's Choice Pill Pockets,President's Choice Pill Pockets,,True
+465,Pet Supplies,pet-supplies,Nylabone Chew Toys,Petstages Chew Toys (Montreal-based),Petstages Chew Toys,Montreal-based,True
+466,Pet Supplies,pet-supplies,Purina Pro Plan Veterinary Diet,Royal Canin Veterinary Diet (Canada),Royal Canin Veterinary Diet,Canada,True
+467,Pet Supplies,pet-supplies,DentaLife Dental Chews,President's Choice Dental Sticks,President's Choice Dental Sticks,,True
+468,Pet Supplies,pet-supplies,American Journey Dog Food,FirstMate Pacific Ocean Meal (BC),FirstMate Pacific Ocean Meal,BC,True
+469,Pet Supplies,pet-supplies,Zesty Paws Supplements,Platinum Performance Canada,Platinum Performance Canada,,True
+470,Pet Supplies,pet-supplies,PetSmart Top Paw Toys,Global Paw Toys (Global Pet Foods),Global Paw Toys,Global Pet Foods,True
+471,Pet Supplies,pet-supplies,Simply Nourish Cat Food,Performatrin Limited Ingredient Diet,Performatrin Limited Ingredient Diet,,True
+472,Pet Supplies,pet-supplies,Blue Buffalo Life Protection,Acana Heritage Dog Food,Acana Heritage Dog Food,,True
+473,Pet Supplies,pet-supplies,PetSafe Water Fountain,Petkit Fountain (Canadian distributor),Petkit Fountain,Canadian distributor,True
+474,Pet Supplies,pet-supplies,Out! Pest Control,Life Brand Flea Spray,Life Brand Flea Spray,,True
+475,Pet Supplies,pet-supplies,Fancy Feast Broths,Performatrin Bone Broth for Cats,Performatrin Bone Broth for Cats,,True
+476,Pet Supplies,pet-supplies,Stella & Chewy's Freeze-Dried,Primal Pet Foods Freeze-Dried (Canada),Primal Pet Foods Freeze-Dried,Canada,True
+477,Pet Supplies,pet-supplies,Petmate Kennels,Porta Paws Travel Crates (Canadian),Porta Paws Travel Crates,Canadian,True
+478,Pet Supplies,pet-supplies,Petco Brand Products,Global Pet Foods In-House Brands,Global Pet Foods In-House Brands,,True
+479,Pet Supplies,pet-supplies,Purina Tidy Cats,ExquisiCat Multi-Cat Clumping Litter,ExquisiCat Multi-Cat Clumping Litter,,True
+480,Pet Supplies,pet-supplies,Fresh Step Litter,President's Choice Scoopable Litter,President's Choice Scoopable Litter,,True
+481,Pet Supplies,pet-supplies,PetSafe Automatic Litter Box,LitterMaid (Canadian distributor),LitterMaid,Canadian distributor,True
+482,Pet Supplies,pet-supplies,Greenies Pill Masker,President's Choice Pill Wrap,President's Choice Pill Wrap,,True
+483,Pet Supplies,pet-supplies,Wellness Core Cat Food,Acana Grasslands Cat Food,Acana Grasslands Cat Food,,True
+484,Pet Supplies,pet-supplies,American Journey Cat Food,FirstMate Australian Lamb Cat Food,FirstMate Australian Lamb Cat Food,,True
+485,Pet Supplies,pet-supplies,Bocce's Bakery Treats (US),Bocce's Bakery Treats (Canadian-made),Bocce's Bakery Treats,Canadian-made,True
+486,Pet Supplies,pet-supplies,Blue Buffalo Life Protection,First Mate,First Mate,,True
+487,Pet Supplies,pet-supplies,Blue Buffalo Life Protection,Go Solutions,Go Solutions,,True
+488,Pet Supplies,pet-supplies,Blue Buffalo Life Protection,Inukshuk,Inukshuk,,True
+489,Canned Soup,canned-soup,Progresso Soup,Campbell's Soup (Canadian-made),Campbell's Soup,Canadian-made,True
+490,Canned Soup,canned-soup,Amy's Kitchen,Imagine Organic Soups,Imagine Organic Soups,,True
+491,Canned Soup,canned-soup,Campbell's Chunky Soup,Habitant Soup,Habitant Soup,,True
+492,Canned Soup,canned-soup,Healthy Choice Soup,President's Choice Blue Menu Soup,President's Choice Blue Menu Soup,,True
+493,Canned Soup,canned-soup,Chef Boyardee,President's Choice Canned Pasta,President's Choice Canned Pasta,,True
+494,Canned Soup,canned-soup,Annie's Organic Soup,Blue Goose Organic Soup (Ontario),Blue Goose Organic Soup,Ontario,True
+495,Canned Soup,canned-soup,Wolfgang Puck Soup,President's Choice Black Label Soup,President's Choice Black Label Soup,,True
+496,Canned Soup,canned-soup,Trader Joe's Soup,Compliments Gourmet Soup,Compliments Gourmet Soup,,True
+497,Canned Tuna,canned-tuna,Chicken of the Sea,Clover Leaf Tuna,Clover Leaf Tuna,,True
+498,Canned Tuna,canned-tuna,Starkist Tuna,Clover Leaf Flaked Light Tuna,Clover Leaf Flaked Light Tuna,,True
+499,Canned Tuna,canned-tuna,Bumble Bee Salmon,Clover Leaf Pink Salmon,Clover Leaf Pink Salmon,,True
+500,Canned Tuna,canned-tuna,King Oscar Sardines,Clover Leaf Sardines,Clover Leaf Sardines,,True
+501,Canned Fish,canned-fish,Wild Planet Anchovies,Clover Leaf Anchovies,Clover Leaf Anchovies,,True
+502,Canned Fish,canned-fish,Season Mackerel,Clover Leaf Mackerel,Clover Leaf Mackerel,,True
+503,Canned Beans,canned-beans,Bush's Beans,Unico Beans,Unico Beans,,True
+504,Canned Beans,canned-beans,Goya Beans,Aylmer Beans,Aylmer Beans,,True
+505,Canned Beans,canned-beans,Goya Beans,Clark Beans,Clark Beans,,True
+506,Canned Beans,canned-beans,Rosarita Refried Beans,Unico Refried Beans,Unico Refried Beans,,True
+507,Canned Beans,canned-beans,Eden Organic Beans,Blue Goose Organic Beans,Blue Goose Organic Beans,,True
+508,Canned Vegetables,canned-vegetables,Green Giant,Aylmer Canned Vegetables,Aylmer Canned Vegetables,,True
+509,Canned Vegetables,canned-vegetables,Del Monte Corn,Aylmer Corn Niblets,Aylmer Corn Niblets,,True
+510,Canned Vegetables,canned-vegetables,Libby's Pumpkin,Aylmer Pumpkin Purée,Aylmer Pumpkin Purée,,True
+511,Canned Vegetables,canned-vegetables,Le Sueur Peas,Aylmer Tiny Tender Peas,Aylmer Tiny Tender Peas,,True
+512,Canned Vegetables,canned-vegetables,Contadina Tomatoes,Unico Crushed Tomatoes,Unico Crushed Tomatoes,,True
+513,Canned Vegetables,canned-vegetables,French Cut Green Beans,Aylmer French Style Beans,Aylmer French Style Beans,,True
+514,Canned Fruit,canned-fruit,Dole Canned Pineapple,Del Monte Canned Fruit,Del Monte Canned Fruit,,True
+515,Canned Fruit,canned-fruit,Dole Fruit Cocktail,Del Monte Fruit Cocktail,Del Monte Fruit Cocktail,,True
+516,Canned Fruit,canned-fruit,Del Monte Peaches,Sun-Rype Peaches (BC),Sun-Rype Peaches,BC,True
+517,Canned Fruit,canned-fruit,Libby's Pears,Aylmer Pears,Aylmer Pears,,True
+518,Canned Fruit,canned-fruit,Mott's Applesauce,Sun-Rype Applesauce,Sun-Rype Applesauce,,True
+519,Canned Fruit,canned-fruit,Dole Mandarin Oranges,Del Monte Mandarin Oranges,Del Monte Mandarin Oranges,,True
+520,Canned Chili,canned-chili,Stagg Chili,President's Choice Chili,President's Choice Chili,,True
+521,Canned Chili,canned-chili,Hormel Chili,Maple Leaf Chili,Maple Leaf Chili,,True
+522,Canned Baked Beans,canned-baked-beans,Bush's Baked Beans,Unico Baked Beans,Unico Baked Beans,,True
+523,Canned Baked Beans,canned-baked-beans,Van Camp's Pork & Beans,Pronto Beans in Tomato Sauce,Pronto Beans in Tomato Sauce,,True
+524,Canned Broth,canned-broth,Swanson Chicken Broth,President's Choice Chicken Broth,President's Choice Chicken Broth,,True
+525,Canned Broth,canned-broth,Kitchen Basics Beef Broth,Compliments Beef Broth,Compliments Beef Broth,,True
+526,Canned Broth,canned-broth,Pacific Foods Vegetable Broth,Imagine Organic Vegetable Broth,Imagine Organic Vegetable Broth,,True
+527,Canned Pasta,canned-pasta,Chef Boyardee Ravioli,President's Choice Ravioli,President's Choice Ravioli,,True
+528,Canned Pasta,canned-pasta,Chef Boyardee Beefaroni,Unico Pasta with Meat Sauce,Unico Pasta with Meat Sauce,,True
+529,Canned Stew,canned-stew,Dinty Moore Beef Stew,Pronto Beef Stew,Pronto Beef Stew,,True
+530,Canned Stew,canned-stew,Hormel Compleats,President's Choice Ready Meals,President's Choice Ready Meals,,True
+531,Canned Seafood,canned-seafood,Reese Smoked Oysters,Clover Leaf Smoked Oysters,Clover Leaf Smoked Oysters,,True
+532,Canned Seafood,canned-seafood,Crown Prince Clams,Clover Leaf Baby Clams,Clover Leaf Baby Clams,,True
+533,Canned Sauce,canned-sauce,Prego Pasta Sauce,Unico Pasta Sauce,Unico Pasta Sauce,,True
+534,Canned Sauce,canned-sauce,Ragu Sauce,Primo Pasta Sauce,Primo Pasta Sauce,,True
+535,Canned Sauce,canned-sauce,Hunt's Tomato Sauce,Aylmer Tomato Sauce,Aylmer Tomato Sauce,,True
+536,Canned Sauce,canned-sauce,Classico Alfredo,President's Choice Alfredo Sauce,President's Choice Alfredo Sauce,,True
+537,Canned Vegetables,canned-vegetables,Green Giant Mexicorn,Aylmer Mexicorn,Aylmer Mexicorn,,True
+538,Canned Vegetables,canned-vegetables,Le Sueur Carrots,Aylmer Sliced Carrots,Aylmer Sliced Carrots,,True
+539,Canned Vegetables,canned-vegetables,French's Fried Onions,President's Choice Crispy Onions,President's Choice Crispy Onions,,True
+540,Coffee,coffee,Starbucks Ground Coffee,Tim Hortons Coffee,Tim Hortons Coffee,,True
+541,Coffee,coffee,Dunkin' Donuts Coffee,Tim Hortons Dark Roast,Tim Hortons Dark Roast,,True
+542,Coffee Pods,coffee-pods,Keurig K-Cups,President's Choice Coffee Pods,President's Choice Coffee Pods,,True
+543,Coffee,coffee,Peet's Coffee,Tim Hortons House Blend,Tim Hortons House Blend,,True
+544,Coffee,coffee,Lavazza Coffee,Tim Hortons French Vanilla,Tim Hortons French Vanilla,,True
+545,Coffee,coffee,Starbucks VIA,Tim Hortons Instant Coffee,Tim Hortons Instant Coffee,,True
+546,Coffee,coffee,Starbucks Cold Brew,Tim Hortons Cold Brew Coffee,Tim Hortons Cold Brew Coffee,,True
+547,Coffee,coffee,McDonald's Iced Coffee,Tim Hortons Iced Coffee,Tim Hortons Iced Coffee,,True
+548,Coffee,coffee,Nespresso,Tim Hortons Espresso,Tim Hortons Espresso,,True
+549,Coffee,coffee,Dunkin' Donuts Flavored Coffee,Tim Hortons Flavored Coffee,Tim Hortons Flavored Coffee,,True
+550,Coffee,coffee,McDonald's,Equator Coffee Roasters,Equator Coffee Roasters,,True
+551,Coffee,coffee,McDonald's,Fluid Solar Roasted Coffee,Fluid Solar Roasted Coffee,,True
+552,Coffee,coffee,McDonald's,Second Cup,Second Cup,,True
+553,Tea,tea,Lipton Tea,Tetley Tea,Tetley Tea,,True
+554,Tea,tea,Celestial Seasonings Tea,Red Rose Tea,Red Rose Tea,,True
+555,Tea,tea,Bigelow Tea,David's Tea,David's Tea,,True
+556,Tea,tea,Stash Tea,The Tea Emporium,The Tea Emporium,,True
+557,Tea,tea,Twinings Tea,No. 1 Tea,No. 1 Tea,,True
+558,Tea,tea,Harney & Sons,Fortnum & Mason Tea,Fortnum & Mason Tea,,True
+559,Tea,tea,Teavana,Teaopia,Teaopia,,True
+560,Tea,tea,Pukka Herbs,The Honest Leaf Tea,The Honest Leaf Tea,,True
+561,Tea,tea,Republic of Tea,Silk Road Tea,Silk Road Tea,,True
+562,Tea,tea,Numi Organic Tea,Natural Source Tea,Natural Source Tea,,True
+563,Tea,tea,Tea Forte,Tea & Absinthe,Tea & Absinthe,,True
+564,Tea,tea,Tazo Tea,Tease Tea,Tease Tea,,True
+565,Tea,tea,Good Earth Tea,Earthly Herbal,Earthly Herbal,,True
+566,Tea,tea,Teas' Tea,Tess Tea,Tess Tea,,True
+567,Tea,tea,Adagio Tea,Tea Inspired,Tea Inspired,,True
+568,Tea,tea,PG Tips,Red Rose Green Tea,Red Rose Green Tea,,True
+569,Tea,tea,Traditional Medicinals,Herbal Apothecary,Herbal Apothecary,,True
+570,Tea,tea,Organic India Tea,Chaiwala,Chaiwala,,True
+571,Tea,tea,Good Earth Organic Tea,South Asia Herbal Tea,South Asia Herbal Tea,,True
+572,Tea,tea,Matcha Love,Matcha Ninja,Matcha Ninja,,True
+573,Tea,tea,Argo Tea,Chaiwala,Chaiwala,,True
+574,Tea,tea,David's Tea,Tea Desire,Tea Desire,,True
+575,Tea,tea,Brew Dr. Kombucha,Booster Juice Kombucha,Booster Juice Kombucha,,True
+576,Tea,tea,Teavana,Tea Desire,Tea Desire,,True
+577,Tea,tea,Fortnum & Mason,Harrods Tea,Harrods Tea,,True
+578,Tea,tea,Tea Bags from China,China Green Tea,China Green Tea,,True
+579,Tea,tea,Republic of Tea,Tea Palace,Tea Palace,,True
+580,Tea,tea,Harney & Sons,Fortnum & Mason,Fortnum & Mason,,True
+581,Candy,candy,Hershey's Chocolate,Cadbury Dairy Milk (Canadian),Cadbury Dairy Milk,Canadian,True
+582,Candy,candy,M&M's,Smarties (Canadian version),Smarties,Canadian version,True
+583,Candy,candy,Skittles,Maynards Wine Gums,Maynards Wine Gums,,True
+584,Candy,candy,Jolly Rancher,Maynards Fuzzy Peaches,Maynards Fuzzy Peaches,,True
+585,Candy,candy,Twizzlers,Red Vines (available in Canada),Red Vines,available in Canada,True
+586,Candy,candy,Starburst,Maynards Sour Patch Kids,Maynards Sour Patch Kids,,True
+587,Candy,candy,3 Musketeers,Coffee Crisp (Canadian),Coffee Crisp,Canadian,True
+588,Candy,candy,Reese's Pieces,President's Choice Peanut Butter Cups,President's Choice Peanut Butter Cups,,True
+589,Candy,candy,Kit Kat,Smarties (Canadian version),Smarties,Canadian version,True
+590,Candy,candy,Milky Way,Caramilk (Canadian),Caramilk,Canadian,True
+591,Candy,candy,Snickers,Peanut Butter Cup (President's Choice),Peanut Butter Cup,President's Choice,True
+592,Candy,candy,Almond Joy,Wonder Bar (Canadian),Wonder Bar,Canadian,True
+593,Candy,candy,Butterfinger,Oh Henry! (Canadian),Oh Henry!,Canadian,True
+594,Candy,candy,Peanut M&Ms,Peanut Smarties (Canadian),Peanut Smarties,Canadian,True
+595,Candy,candy,Whoppers,Maltesers (available in Canada),Maltesers,available in Canada,True
+596,Candy,candy,Life Savers,Klondike Life Savers,Klondike Life Savers,,True
+597,Candy,candy,Tootsie Rolls,Tootsie Pops (available in Canada),Tootsie Pops,available in Canada,True
+598,Candy,candy,Airheads,Fuzzy Peaches (Maynards),Fuzzy Peaches,Maynards,True
+599,Candy,candy,Peach Rings,Maynards Fuzzy Peaches,Maynards Fuzzy Peaches,,True
+600,Candy,candy,Lemonheads,Maynards Sour Lemonade,Maynards Sour Lemonade,,True
+601,Candy,candy,Reese's Peanut Butter Cups,Mr. Big Bar,Mr. Big Bar,,True
+602,Candy,candy,Pop Rocks,Pop Rocks (Canada),Pop Rocks,Canada,True
+603,Candy,candy,Hot Tamales,Hot Lips (Maynards),Hot Lips,Maynards,True
+604,Candy,candy,Sour Patch Watermelon,Maynards Watermelon,Maynards Watermelon,,True
+605,Candy,candy,Snickers Peanut Butter,Peanut Butter Wonder Bar,Peanut Butter Wonder Bar,,True
+606,Candy,candy,Starburst,Maynards Swedish Berries,Maynards Swedish Berries,,True
+607,Candy,candy,Cadbury Crème Egg,Cadbury Caramel Egg (Canadian),Cadbury Caramel Egg,Canadian,True
+608,Candy,candy,Milky Way Simply Caramel,Caramilk,Caramilk,,True
+609,Candy,candy,Junior Mints,Caramel Chocolate Mints,Caramel Chocolate Mints,,True
+610,Candy,candy,Lindt Lindor Truffles,President's Choice Lindor Truffles,President's Choice Lindor Truffles,,True
+611,Candy,candy,Milk Duds,Maltesers,Maltesers,,True
+612,Candy,candy,Kit Kat Chunky,Kit Kat Supreme (Canada),Kit Kat Supreme,Canada,True
+613,Candy,candy,Sour Patch Kids,Maynards Sour Patch Kids,Maynards Sour Patch Kids,,True
+614,Candy,candy,Butterfinger Bites,Wonder Bar Bites,Wonder Bar Bites,,True
+615,Candy,candy,Twix,Caramilk Twix,Caramilk Twix,,True
+616,Candy,candy,Twix,Fine Chocolate by Ludwig,Fine Chocolate by Ludwig,,True
+617,Candy,candy,Twix,Galerie au Chocolat,Galerie au Chocolat,,True
+618,Chips,chips,Fritos,Ruffles All Dressed Chips,Ruffles All Dressed Chips,,True
+619,Chips,chips,Tostitos Tortilla Chips,Que Pasa Tortilla Chips,Que Pasa Tortilla Chips,,True
+620,Chips,chips,Garden of Eatin' Tortilla Chips,Que Pasa Organic Chips,Que Pasa Organic Chips,,True
+621,Chips,chips,Sunchips,SunChips (Canadian-made version),SunChips,Canadian-made version,True
+622,Chips,chips,Utz Potato Chips,Humpty Dumpty Potato Chips,Humpty Dumpty Potato Chips,,True
+623,Chips,chips,Frito-Lay Variety Pack,Old Dutch Variety Pack,Old Dutch Variety Pack,,True
+624,Chips,chips,Lays Potato Chips,Miss Vickie's Chips,Miss Vickie's Chips,,True
+625,Chips,chips,Ruffles Potato Chips,Old Dutch Ridges Chips,Old Dutch Ridges Chips,,True
+626,Chips,chips,Pringles,Pringles (Canadian version),Pringles,Canadian version,True
+627,Chips,chips,Wise Potato Chips,Old Dutch Potato Chips,Old Dutch Potato Chips,,True
+628,Chips,chips,Lays Kettle Cooked Chips,Miss Vickie's Kettle Cooked Chips,Miss Vickie's Kettle Cooked Chips,,True
+629,Chips,chips,Smartfood Popcorn,Popcornopolis (Canadian-made),Popcornopolis,Canadian-made,True
+630,Chips,chips,Chex Mix,Chex Mix (Canadian),Chex Mix,Canadian,True
+631,Chips,chips,Lays Wavy Potato Chips,Old Dutch Wavy Chips,Old Dutch Wavy Chips,,True
+632,Chips,chips,Kettle Brand Chips,Sunshine Kettle Chips (Canadian),Sunshine Kettle Chips,Canadian,True
+633,Chips,chips,Popchips,Wise Popcorn (Canada),Wise Popcorn,Canada,True
+634,Chips,chips,Lays Sour Cream & Onion,Miss Vickie's Sour Cream & Onion,Miss Vickie's Sour Cream & Onion,,True
+635,Chips,chips,Lays Barbecue Chips,Miss Vickie's Barbecue Chips,Miss Vickie's Barbecue Chips,,True
+636,Chips,chips,Lays Salt & Vinegar Chips,Miss Vickie's Salt & Vinegar Chips,Miss Vickie's Salt & Vinegar Chips,,True
+637,Chips,chips,Kettle Cooked Chips,Old Dutch Kettle Cooked Chips,Old Dutch Kettle Cooked Chips,,True
+638,Chips,chips,Lays Baked Chips,Miss Vickie's Baked Chips,Miss Vickie's Baked Chips,,True
+639,Chips,chips,Pringles Sour Cream & Onion,Pringles Salt & Vinegar (Canadian),Pringles Salt & Vinegar,Canadian,True
+640,Chips,chips,Pringles BBQ,Pringles Original (Canadian),Pringles Original,Canadian,True
+641,Chips,chips,Fritos Chili Cheese,Old Dutch Cheddar Chips,Old Dutch Cheddar Chips,,True
+642,Chips,chips,SunChips Harvest Cheddar,SunChips (Canadian version),SunChips,Canadian version,True
+643,Chips,chips,Stacy's Pita Chips,Que Pasa Pita Chips,Que Pasa Pita Chips,,True
+644,Chips,chips,Lays Chips,Humpty Dumpty Chips,Humpty Dumpty Chips,,True
+645,Chips,chips,Tostitos Salsa,President's Choice Salsa,President's Choice Salsa,,True
+646,Chips,chips,Utz Crab Chips,Old Dutch Crab Chips (Canada),Old Dutch Crab Chips,Canada,True
+647,Chips,chips,Tostitos Scoops,Que Pasa Tortilla Scoops,Que Pasa Tortilla Scoops,,True
+648,Chips,chips,Lays Kettle Cooked Sea Salt,Miss Vickie's Sea Salt Chips,Miss Vickie's Sea Salt Chips,,True
+649,Chips,chips,Chester's Flamin' Hot Chips,Miss Vickie's Flamin' Hot Chips,Miss Vickie's Flamin' Hot Chips,,True
+650,Chips,chips,Keebler Cheddar Crackers,Cheez-It Crackers (Canadian),Cheez-It Crackers,Canadian,True
+651,Chips,chips,Cheezies (US),Hawkins Cheezies (Canadian),Hawkins Cheezies,Canadian,True
+652,Chips,chips,Terra Chips,Humm! Veggie Chips,Humm! Veggie Chips,,True
+653,Frozen Dessert,frozen-dessert,Häagen-Dazs,Kawartha Dairy Ice Cream,Kawartha Dairy Ice Cream,,True
+654,Frozen Dessert,frozen-dessert,Blue Bunny Ice Cream,Chapman's Frozen Yogurt,Chapman's Frozen Yogurt,,True
+655,Frozen Dessert,frozen-dessert,Breyers,President's Choice Ice Cream,President's Choice Ice Cream,,True
+656,Frozen Dessert,frozen-dessert,Dairy Queen,Marble Slab Creamery (Canada),Marble Slab Creamery,Canada,True
+657,Frozen Dessert,frozen-dessert,Magnum Ice Cream,Chapman's Ice Cream Bars,Chapman's Ice Cream Bars,,True
+658,Frozen Dessert,frozen-dessert,GoodPop,Chapman's GoodPop (Canadian version),Chapman's GoodPop,Canadian version,True
+659,Frozen Dessert,frozen-dessert,Friendly's Ice Cream,Laura Secord Ice Cream,Laura Secord Ice Cream,,True
+660,Frozen Dessert,frozen-dessert,Haagen-Dazs Bars,Chapman's Ice Cream Bars,Chapman's Ice Cream Bars,,True
+661,Frozen Dessert,frozen-dessert,Edy's Ice Cream,President's Choice Frozen Desserts,President's Choice Frozen Desserts,,True
+662,Frozen Dessert,frozen-dessert,Nestle Drumstick,Chapman's Drumsticks,Chapman's Drumsticks,,True
+663,Frozen Dessert,frozen-dessert,Klondike Bars,President's Choice Klondike Bars,President's Choice Klondike Bars,,True
+664,Frozen Dessert,frozen-dessert,Frozen Yogurt,Baskin-Robbins Frozen Yogurt,Baskin-Robbins Frozen Yogurt,,True
+665,Frozen Dessert,frozen-dessert,Van Leeuwen Ice Cream,Thrifty's Ice Cream (Canada),Thrifty's Ice Cream,Canada,True
+666,Frozen Dessert,frozen-dessert,Serendipity Ice Cream,Chapman's Serendipity Ice Cream,Chapman's Serendipity Ice Cream,,True
+667,Frozen Dessert,frozen-dessert,Ben & Jerry's,Beau's Ice Cream,Beau's Ice Cream,,True
+668,Frozen Dessert,frozen-dessert,Ample Hills Ice Cream,La Rocca Gelato (Canada),La Rocca Gelato,Canada,True
+669,Frozen Dessert,frozen-dessert,Stone Cold Creamery,La Crème de la Crème Ice Cream (Canada),La Crème de la Crème Ice Cream,Canada,True
+670,Frozen Dessert,frozen-dessert,Carvel,Marble Slab Ice Cream (Canada),Marble Slab Ice Cream,Canada,True
+671,Frozen Dessert,frozen-dessert,Perry's Ice Cream,President's Choice Gelato,President's Choice Gelato,,True
+672,Frozen Dessert,frozen-dessert,The Baked Bear,The Ice Cream Shoppe (Canada),The Ice Cream Shoppe,Canada,True
+673,Frozen Dessert,frozen-dessert,So Delicious,Silk Frozen Dessert (Canada),Silk Frozen Dessert,Canada,True
+674,Frozen Dessert,frozen-dessert,Cold Stone Creamery,Marble Slab Creamery (Canada),Marble Slab Creamery,Canada,True
+675,Frozen Dessert,frozen-dessert,Vanilla Ice Cream,Chapman's Vanilla Ice Cream,Chapman's Vanilla Ice Cream,,True
+676,Frozen Dessert,frozen-dessert,Chocolate Ice Cream,President's Choice Chocolate Ice Cream,President's Choice Chocolate Ice Cream,,True
+677,Frozen Dessert,frozen-dessert,Ice Cream Sandwiches,Chapman's Ice Cream Sandwiches,Chapman's Ice Cream Sandwiches,,True
+678,Frozen Dessert,frozen-dessert,Magnum Ice Cream Bars,Beau's Magnum Ice Cream Bars (Canada),Beau's Magnum Ice Cream Bars,Canada,True
+679,Frozen Dessert,frozen-dessert,Frozen Custard,The Works Gelato (Canada),The Works Gelato,Canada,True
+680,Frozen Dessert,frozen-dessert,Plum Good,Plum Good Ice Cream (Canada),Plum Good Ice Cream,Canada,True
+681,Jewelry,jewelry,BodyArtForms,Valkyrie Canada,Valkyrie Canada,,True
+682,Pasta,pasta,Barilla Pasta,Catelli Pasta,Catelli Pasta,,True
+683,Pasta Sauce,pasta-sauce,Prego,Unico Pasta Sauce,Unico Pasta Sauce,,True
+684,Pasta,pasta,Ronzoni,No Name Pasta,No Name Pasta,,True
+685,Pasta,pasta,De Cecco,San Remo Pasta (Canada),San Remo Pasta,Canada,True
+686,Pasta,pasta,Annie's Mac & Cheese,President's Choice Mac & Cheese,President's Choice Mac & Cheese,,True
+687,Pasta,pasta,Knorr Pasta Sides,Unico Pasta Sides,Unico Pasta Sides,,True
+688,Pasta Sauce,pasta-sauce,Classico,Cruciani Pasta Sauce (Canada),Cruciani Pasta Sauce,Canada,True
+689,Pasta Sauce,pasta-sauce,Bertolli Pasta Sauce,President's Choice Pasta Sauce,President's Choice Pasta Sauce,,True
+690,Pasta,pasta,Mueller's Pasta,Italian Home Bakery Pasta (Canada),Italian Home Bakery Pasta,Canada,True
+691,Pasta,pasta,Pastene,San Remo Pasta (Canada),San Remo Pasta,Canada,True
+692,Pasta,pasta,Ronzoni,President's Choice Pasta,President's Choice Pasta,,True
+693,Pasta Sauce,pasta-sauce,Hunt's,Del Monte Pasta Sauce,Del Monte Pasta Sauce,,True
+694,Pasta Sauce,pasta-sauce,Newman's Own,President's Choice Organic Pasta Sauce,President's Choice Organic Pasta Sauce,,True
+695,Pasta,pasta,Barilla,Catelli Smart Pasta,Catelli Smart Pasta,,True
+696,Pasta,pasta,San Giorgio,Barilla Pasta (Canadian-made version),Barilla Pasta,Canadian-made version,True
+697,Pasta,pasta,Stouffer's Mac & Cheese,Unico Mac & Cheese,Unico Mac & Cheese,,True
+698,Pasta,pasta,Farmer's Market,President's Choice Organic Pasta,President's Choice Organic Pasta,,True
+699,Pasta Sauce,pasta-sauce,Victoria,Allegro Pasta Sauce,Allegro Pasta Sauce,,True
+700,Pasta,pasta,Rao's,President's Choice Pasta,President's Choice Pasta,,True
+701,Energy Bars,energy-bars,Clif Bars,President's Choice Protein Bars,President's Choice Protein Bars,,True
+702,Energy Bars,energy-bars,Quest Bars,Rawcology Energy Bars,Rawcology Energy Bars,,True
+703,Energy Bars,energy-bars,Kind Bars,MadeGood Organic Granola Bars,MadeGood Organic Granola Bars,,True
+704,Energy Bars,energy-bars,PowerBar,Endurance Energy Bars,Endurance Energy Bars,,True
+705,Energy Bars,energy-bars,Lärabar,Goodfood Energy Bars,Goodfood Energy Bars,,True
+706,Energy Bars,energy-bars,ProBar,Simply Protein Bars,Simply Protein Bars,,True
+707,Energy Bars,energy-bars,RXBAR,KIND Protein Bars,KIND Protein Bars,,True
+708,Energy Bars,energy-bars,GoMacro,Manitoba Harvest Protein Bars,Manitoba Harvest Protein Bars,,True
+709,Energy Bars,energy-bars,Simple Mills,Prana Organic Bars,Prana Organic Bars,,True
+710,Energy Bars,energy-bars,Enjoy Life Protein Bars,Hero Protein Bars,Hero Protein Bars,,True
+711,Energy Bars,energy-bars,Vitamin Shoppe Protein Bars,Organic Traditions Superfood Bars,Organic Traditions Superfood Bars,,True
+712,Energy Bars,energy-bars,Gu Energy Bars,Chomps Energy Bars (Canada),Chomps Energy Bars,Canada,True
+713,Energy Bars,energy-bars,ThinkThin,True North Protein Bars,True North Protein Bars,,True
+714,Energy Bars,energy-bars,Clif Kid ZBars,Uncle Bob's Protein Bars (Canada),Uncle Bob's Protein Bars,Canada,True
+715,Energy Bars,energy-bars,Nature Valley,MadeGood Protein Bars,MadeGood Protein Bars,,True
+716,Energy Bars,energy-bars,LaraBar Protein,Better than Peanut Butter Protein Bar,Better than Peanut Butter Protein Bar,,True
+717,Energy Bars,energy-bars,Perfect Bar,Fit Crunch Bars (Canada),Fit Crunch Bars,Canada,True
+718,Energy Bars,energy-bars,Go Lean,Kashi Protein Bars,Kashi Protein Bars,,True
+719,Energy Bars,energy-bars,Just Bare,Happy Planet Protein Bars,Happy Planet Protein Bars,,True
+720,Energy Bars,energy-bars,Power Crunch,Unico Protein Bars,Unico Protein Bars,,True
+721,Energy Bars,energy-bars,FitJoy,True North Protein Bars (Canada),True North Protein Bars,Canada,True
+722,Energy Bars,energy-bars,Atkins Protein Bars,Clif Protein Bars (Canada),Clif Protein Bars,Canada,True
+723,Energy Bars,energy-bars,The Protein Pick-Up,Smart Protein Bars,Smart Protein Bars,,True
+724,Energy Bars,energy-bars,Fit Crunch,No Name Protein Bars,No Name Protein Bars,,True
+725,Baby Food,baby-food,Gerber Baby Food,President's Choice Organics,President's Choice Organics,,True
+726,Baby Food,baby-food,Hipp Organic Baby Food,Earth's Best Organic Baby Food,Earth's Best Organic Baby Food,,True
+727,Baby Food,baby-food,Plum Organics,Happy Baby Organic Baby Food,Happy Baby Organic Baby Food,,True
+728,Baby Food,baby-food,Beech-Nut,Sunripe Organic Baby Food,Sunripe Organic Baby Food,,True
+729,Baby Food,baby-food,Earth's Best,Organic Meadow Baby Food,Organic Meadow Baby Food,,True
+730,Baby Food,baby-food,Happy Baby,PC Organics Baby Food,PC Organics Baby Food,,True
+731,Baby Food,baby-food,Once Upon a Farm,Nature's Path Organic Baby Food,Nature's Path Organic Baby Food,,True
+732,Baby Food,baby-food,Yummi Bears,Sunshine Organic Baby Food,Sunshine Organic Baby Food,,True
+733,Baby Food,baby-food,Similac Organic Baby Food,Nurture Organic Baby Food,Nurture Organic Baby Food,,True
+734,Baby Food,baby-food,NurturMe,Pure Organic Baby Food,Pure Organic Baby Food,,True
+735,Baby Food,baby-food,Baby Mum-Mum,Goldfish Organic Baby Snacks,Goldfish Organic Baby Snacks,,True
+736,Baby Food,baby-food,Little Spoon,Happy Tot Organic Baby Food,Happy Tot Organic Baby Food,,True
+737,Baby Food,baby-food,Gerber Organic Baby Food,Plum Organics Baby Food (Canada),Plum Organics Baby Food,Canada,True
+738,Baby Food,baby-food,Nursery Fresh,Organic Selections Baby Food,Organic Selections Baby Food,,True
+739,Baby Food,baby-food,Abbott Nutrition Organic Baby Food,Choice Organics Baby Food,Choice Organics Baby Food,,True
+740,Baby Food,baby-food,Earth's Best Organic Baby Food,Purees by President's Choice,Purees by President's Choice,,True
+741,Baby Food,baby-food,Happy Tot Organic Baby Food,GoGo Squeez Baby Food,GoGo Squeez Baby Food,,True
+742,Baby Food,baby-food,Plum Tots Organic Baby Food,Chickadee Organic Baby Food,Chickadee Organic Baby Food,,True
+743,Baby Food,baby-food,Gerber Graduates Baby Food,Savvy Organics Baby Food,Savvy Organics Baby Food,,True
+744,Baby Food,baby-food,Earth's Best Organic Baby Food,Nature's Best Organic Baby Food,Nature's Best Organic Baby Food,,True
+745,Baby Food,baby-food,Similac Sensitive,Good Start Organic Baby Food,Good Start Organic Baby Food,,True
+746,Baby Food,baby-food,Happy Family Organic Baby Food,Sunripe Baby Food,Sunripe Baby Food,,True
+747,Baby Food,baby-food,Plum Organics Toddler Food,Peach & Plum Organic Baby Food,Peach & Plum Organic Baby Food,,True
+748,Baby Food,baby-food,Baby Foods by Beech-Nut,Solly's Organic Baby Food,Solly's Organic Baby Food,,True
+749,Crackers,crackers,Triscuit,Crunchmaster Multigrain Crackers,Crunchmaster Multigrain Crackers,,True
+750,Crackers,crackers,Wheat Thins,Christie Wheat Thins,Christie Wheat Thins,,True
+751,Crackers,crackers,Goldfish,Cheez-It Crackers (Canada),Cheez-It Crackers,Canada,True
+752,Crackers,crackers,Ritz,Christie Ritz Crackers,Christie Ritz Crackers,,True
+753,Crackers,crackers,Premium Saltines,Christie Premium Crackers,Christie Premium Crackers,,True
+754,Crackers,crackers,Cheez-It,Old Cheddar Crackers (Canada),Old Cheddar Crackers,Canada,True
+755,Crackers,crackers,Club Crackers,Christie Club Crackers,Christie Club Crackers,,True
+756,Crackers,crackers,Cheddar Goldfish,President's Choice Cheddar Crackers,President's Choice Cheddar Crackers,,True
+757,Crackers,crackers,Popcorners,Que Pasa Tortilla Chips,Que Pasa Tortilla Chips,,True
+758,Crackers,crackers,Stonefire Crackers,President's Choice Flatbreads,President's Choice Flatbreads,,True
+759,Crackers,crackers,Kashi Crackers,Annie's Organic Crackers (Canada),Annie's Organic Crackers,Canada,True
+760,Crackers,crackers,Ak-Mak Crackers,PC Organics Crackers,PC Organics Crackers,,True
+761,Crackers,crackers,Back to Nature Crackers,President's Choice Multigrain Crackers,President's Choice Multigrain Crackers,,True
+762,Crackers,crackers,Water Crackers,President's Choice Water Crackers,President's Choice Water Crackers,,True
+763,Crackers,crackers,Good Thins,President's Choice Good Thins,President's Choice Good Thins,,True
+764,Crackers,crackers,Triscuit Thin Crisps,PC Thin Crisps,PC Thin Crisps,,True
+765,Crackers,crackers,Seedy Crackers,Grissol Crackers,Grissol Crackers,,True
+766,Crackers,crackers,Keebler Club Crackers,Christie Club Crackers,Christie Club Crackers,,True
+767,Crackers,crackers,Blue Diamond Almonds Cracker,Blue Diamond Crackers (Canada),Blue Diamond Crackers,Canada,True
+768,Crackers,crackers,Barnum's Animal Crackers,President's Choice Animal Crackers,President's Choice Animal Crackers,,True
+769,Crackers,crackers,Thinaddictives Crackers,Blue Diamond Almonds Thin Crackers,Blue Diamond Almonds Thin Crackers,,True
+770,Crackers,crackers,Newtons,President's Choice Fig Newtons,President's Choice Fig Newtons,,True
+771,Crackers,crackers,Milton's Craft Bakers,President's Choice Craft Bakers,President's Choice Craft Bakers,,True
+772,Butter,butter,Land O'Lakes Butter,Churn 84 Butter,Churn 84 Butter,,True
+773,Butter,butter,Imperial Butter,Quebec Butter (Canada),Quebec Butter,Canada,True
+774,Butter,butter,Blue Bonnet,President's Choice Butter,President's Choice Butter,,True
+775,Butter,butter,Country Crock,Catelli Butter,Catelli Butter,,True
+776,Butter,butter,Smart Balance,President's Choice Smart Balance Butter,President's Choice Smart Balance Butter,,True
+777,Butter,butter,Earth Balance,Earth Balance (Canada),Earth Balance,Canada,True
+778,Butter,butter,Margarine,St. Hubert Butter,St. Hubert Butter,,True
+779,Butter,butter,Parkay Butter,PC Parkay Butter,PC Parkay Butter,,True
+780,Butter,butter,Challenge Butter,Kerrygold Pure Irish Butter (available in Canada),Kerrygold Pure Irish Butter,available in Canada,True
+781,Butter,butter,Good & Gather Butter,No Name Butter,No Name Butter,,True
+782,Butter,butter,Martha White Butter,Grimm's Butter,Grimm's Butter,,True
+783,Butter,butter,Fleischmann's Butter,Margarine by Buttermilk Bakery,Margarine by Buttermilk Bakery,,True
+784,Butter,butter,Butterball Butter,Crave Natural Butter,Crave Natural Butter,,True
+785,Butter,butter,Land O' Lakes,Quebec Farm Butter,Quebec Farm Butter,,True
+786,Butter,butter,Kerrygold,Ontario Grass-Fed Butter,Ontario Grass-Fed Butter,,True
+787,Butter,butter,Sara Lee Butter,Catelli 100% Pure Butter,Catelli 100% Pure Butter,,True
+788,Butter,butter,Churn,Unico 100% Natural Butter,Unico 100% Natural Butter,,True
+789,Butter,butter,Willamette Valley Butter,Alpine Gold Butter (Canada),Alpine Gold Butter,Canada,True
+790,Butter,butter,Surol Butter,Butter Me Up (Canadian Brand),Butter Me Up,Canadian Brand,True
+791,Juice,juice,Mott's Apple Juice,Allen's Apple Juice,Allen's Apple Juice,,True
+792,Juice,juice,Minute Maid Orange Juice,President's Choice Orange Juice,President's Choice Orange Juice,,True
+793,Juice,juice,Tropicana Orange Juice,Fresh 100% Pure Orange Juice (Canada),Fresh 100% Pure Orange Juice,Canada,True
+794,Juice,juice,Simply Orange Juice,Uncle Luke's Orange Juice,Uncle Luke's Orange Juice,,True
+795,Juice,juice,Welch's Grape Juice,McIntosh Grape Juice,McIntosh Grape Juice,,True
+796,Juice,juice,Ocean Spray Cranberry Juice,LaFerme Cranberry Juice,LaFerme Cranberry Juice,,True
+797,Juice,juice,Ocean Spray Juice Cocktail,St. Lawrence Juice Cocktail,St. Lawrence Juice Cocktail,,True
+798,Juice,juice,Juicy Juice,Kids Cranberry Apple Juice (Canada),Kids Cranberry Apple Juice,Canada,True
+799,Juice,juice,Crush Orange Soda,PC Orange Soda,PC Orange Soda,,True
+800,Juice,juice,Apple & Eve,Apple & Eve Apple Juice (Canada),Apple & Eve Apple Juice,Canada,True
+801,Juice,juice,Honest Tea,The Greenhouse Juice Co. (Canada),The Greenhouse Juice Co.,Canada,True
+802,Juice,juice,V8 Vegetable Juice,Unico Vegetable Juice,Unico Vegetable Juice,,True
+803,Juice,juice,Sun Orchard Orange Juice,Sunray Pure Orange Juice,Sunray Pure Orange Juice,,True
+804,Juice,juice,Red Bull Energy Drink,Rockstar Energy Drink (Canada),Rockstar Energy Drink,Canada,True
+805,Juice,juice,Seagram's Ginger Ale,Canada Dry Ginger Ale,Canada Dry Ginger Ale,,True
+806,Juice,juice,PepsiCo Aquafina,Crystal Clear Spring Water (Canada),Crystal Clear Spring Water,Canada,True
+807,Juice,juice,Gatorade,Powerade (Canada),Powerade,Canada,True
+808,Juice,juice,Campbell's Tomato Juice,Knorr Tomato Juice,Knorr Tomato Juice,,True
+809,Juice,juice,Minute Maid Lemonade,Old-Fashioned Lemonade (Canada),Old-Fashioned Lemonade,Canada,True
+810,Juice,juice,Del Monte Fruit Cocktail,Del Monte Mixed Fruit (Canada),Del Monte Mixed Fruit,Canada,True
+811,Juice,juice,Sunrise Citrus,Sunrise Fruit Juices (Canada),Sunrise Fruit Juices,Canada,True
+812,Juice,juice,Ocean Spray Blueberry Juice,Wild Blueberry Juice (Canada),Wild Blueberry Juice,Canada,True
+813,Cheese,cheese,Kraft Singles,Black Diamond Cheese,Black Diamond Cheese,,True
+814,Cheese,cheese,Philadelphia Cream Cheese,Neilson Cream Cheese,Neilson Cream Cheese,,True
+815,Cheese,cheese,Velveeta,Agropur Le Cinq Bouchons,Agropur Le Cinq Bouchons,,True
+816,Cheese,cheese,Cheddar Cheese (Kraft),Armstrong Cheddar Cheese,Armstrong Cheddar Cheese,,True
+817,Cheese,cheese,Sargento Cheddar,Old Quebec Cheddar,Old Quebec Cheddar,,True
+818,Cheese,cheese,Land O' Lakes,Finlandia Cheese,Finlandia Cheese,,True
+819,Cheese,cheese,Cracker Barrel,President's Choice Cheese,President's Choice Cheese,,True
+820,Cheese,cheese,Borden Cheese,Beau's Artisan Cheese,Beau's Artisan Cheese,,True
+821,Cheese,cheese,Mozzarella (Galbani),Saputo Mozzarella,Saputo Mozzarella,,True
+822,Cheese,cheese,American Cheese (Kraft),Cheddar (Sainte-Maure),Cheddar,Sainte-Maure,True
+823,Cheese,cheese,Feta Cheese (Athenos),Shepherd’s Garden Feta Cheese,Shepherd’s Garden Feta Cheese,,True
+824,Cheese,cheese,Provolone (BelGioioso),Trio Provolone,Trio Provolone,,True
+825,Cheese,cheese,Gouda (Boar's Head),Dutch Masterpiece Gouda,Dutch Masterpiece Gouda,,True
+826,Cheese,cheese,Goat Cheese (Chavrie),Monforte Dairy Goat Cheese,Monforte Dairy Goat Cheese,,True
+827,Cheese,cheese,Swiss Cheese (Emmi),Yoplait Swiss Cheese,Yoplait Swiss Cheese,,True
+828,Cheese,cheese,Parmesan (Kraft),Grana Padano (Canada),Grana Padano,Canada,True
+829,Cheese,cheese,Brie (President),Les Fromages du Vieux-Montréal Brie,Les Fromages du Vieux-Montréal Brie,,True
+830,Cheese,cheese,Blue Cheese (Stilton),Roquefort (Quebec),Roquefort,Quebec,True
+831,Cheese,cheese,Cream Cheese (Kraft),Agropur Cream Cheese,Agropur Cream Cheese,,True
+832,Cheese,cheese,Colby Jack Cheese,Armstrong Colby Jack Cheese,Armstrong Colby Jack Cheese,,True
+833,Cheese,cheese,Muenster Cheese,Dufresne Muenster Cheese,Dufresne Muenster Cheese,,True
+834,Restaurant,restaurant,McDonald's,Tim Hortons,Tim Hortons,,True
+835,Restaurant,restaurant,Burger King,Harvey's,Harvey's,,True
+836,Restaurant,restaurant,Wendy's,A&W Canada,A&W Canada,,True
+837,Restaurant,restaurant,Taco Bell,Taco Time,Taco Time,,True
+838,Restaurant,restaurant,Chick-fil-A,Mary Brown’s Chicken,Mary Brown’s Chicken,,True
+839,Restaurant,restaurant,Popeyes,KFC Canada,KFC Canada,,True
+840,Restaurant,restaurant,Five Guys,Hero Certified Burgers,Hero Certified Burgers,,True
+841,Restaurant,restaurant,Subway,Mr. Sub,Mr. Sub,,True
+842,Restaurant,restaurant,Arby's,Smoke's Poutinerie,Smoke's Poutinerie,,True
+843,Restaurant,restaurant,In-N-Out Burger,The Burger’s Priest,The Burger’s Priest,,True
+844,Restaurant,restaurant,Applebee's,Swiss Chalet,Swiss Chalet,,True
+845,Restaurant,restaurant,Chili's,Kelseys,Kelseys,,True
+846,Restaurant,restaurant,Olive Garden,East Side Mario’s,East Side Mario’s,,True
+847,Restaurant,restaurant,Red Lobster,The Keg (for seafood options),The Keg,for seafood options,True
+848,Restaurant,restaurant,IHOP,Cora’s,Cora’s,,True
+849,Restaurant,restaurant,Denny’s,Sunset Grill,Sunset Grill,,True
+850,Restaurant,restaurant,Cracker Barrel,Purdy’s Chocolatier Café,Purdy’s Chocolatier Café,,True
+851,Restaurant,restaurant,Outback Steakhouse,The Keg,The Keg,,True
+852,Restaurant,restaurant,Buffalo Wild Wings,St. Louis Bar & Grill,St. Louis Bar & Grill,,True
+853,Restaurant,restaurant,TGI Fridays,Jack Astor’s,Jack Astor’s,,True
+854,Restaurant,restaurant,Starbucks,Second Cup,Second Cup,,True
+855,Restaurant,restaurant,Dunkin’ Donuts,Tim Hortons,Tim Hortons,,True
+856,Restaurant,restaurant,Krispy Kreme,Country Style,Country Style,,True
+857,Restaurant,restaurant,Domino’s Pizza,Pizza Pizza,Pizza Pizza,,True
+858,Restaurant,restaurant,Papa John’s,Panago Pizza,Panago Pizza,,True
+859,Restaurant,restaurant,Little Caesars,Gino’s Pizza,Gino’s Pizza,,True
+860,Restaurant,restaurant,California Pizza Kitchen,Boston Pizza,Boston Pizza,,True
+861,Restaurant,restaurant,Dairy Queen,Laura Secord Ice Cream,Laura Secord Ice Cream,,True
+862,Restaurant,restaurant,Baskin-Robbins,Marble Slab Creamery,Marble Slab Creamery,,True
+863,Restaurant,restaurant,Cold Stone Creamery,Cows Ice Cream,Cows Ice Cream,,True
