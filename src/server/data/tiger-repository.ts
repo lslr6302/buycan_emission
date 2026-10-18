@@ -264,7 +264,7 @@ export class TigerRepository implements Repository {
   async findAlternatives(query: AlternativeQuery): Promise<CatalogueItem[]> {
     const brand = query.brand?.trim();
     if (brand && brand.length >= 2) {
-      const viaMatches = await this.alternativesForBrand(brand, query.limit);
+      const viaMatches = await this.alternativesForBrand(brand, query.limit, query.category);
       if (viaMatches.length > 0) return viaMatches;
     }
     const byText = await this.alternativesByText(query.text, query.limit, query.category);
@@ -282,11 +282,48 @@ export class TigerRepository implements Repository {
     return [...byText, ...byCategory.filter((item) => !seen.has(item.id))].slice(0, query.limit);
   }
 
-  private async alternativesForBrand(brand: string, limit: number): Promise<CatalogueItem[]> {
+  /**
+   * The curated path - with a guard against company-level rows.
+   *
+   * The matches table mixes two kinds of row. Some name a product
+   * ("Classic Clean Shampoo" -> "Daily Moisturizing Shampoo"); most only
+   * say that two *companies* overlap, with the overlap described in notes
+   * ("Password management", "Cloud file storage"). Brand-level rows are
+   * right for "what else could I buy from a Canadian company" and wrong
+   * for "what do I buy instead of this".
+   *
+   * Offered blind they produce nonsense: Apple AirPods returned 1Password,
+   * Sync.com and BlackBerry, because those substitute for Apple the
+   * company. So a company-level row is only usable when we know what
+   * category the page product is in and can confine the answer to it.
+   * Without a category we cannot tell, and we do not guess.
+   */
+  private async alternativesForBrand(
+    brand: string,
+    limit: number,
+    category: string | null,
+  ): Promise<CatalogueItem[]> {
+    const allowed = category ? CATEGORY_MAP[category] : undefined;
+
+    // No category: accept only rows that name an actual product.
+    const productLevelOnly = !allowed
+      ? `and (coalesce(m.us_product_name,'') <> '' or coalesce(m.canadian_product_name,'') <> '')`
+      : '';
+
+    // Known category: keep the answer on the right shelf.
+    const categoryClause = allowed ? `and b.category = any($3)` : '';
     const { rows } = await this.sql.query(
+      // The similarity floor matters more here than anywhere else. A loose
+      // match on this path does not merely rank something badly - it hands
+      // back the *curated* alternatives for a different company, with full
+      // confidence and a verified badge. "dreame", an appliance maker,
+      // trigram-matched "DreamHost" at 0.42 and an air fryer was offered a
+      // web-hosting provider.
       `with target as (
          select slug from us_brands
-          where lower(name) = lower($1) or lower(name) % lower($1)
+          where lower(name) = lower($1)
+             or (lower(name) % lower($1)
+                 and similarity(lower(name), lower($1)) >= ${FUZZY_BRAND_THRESHOLD})
           order by (lower(name) = lower($1)) desc,
                    similarity(lower(name), lower($1)) desc
           limit 1
@@ -299,6 +336,8 @@ export class TigerRepository implements Repository {
          join brands b on b.slug = m.brand_slug
          left join ownership_overrides o on o.brand_slug = b.slug
         where ${QUALITY_FILTER}
+          ${productLevelOnly}
+          ${categoryClause}
         order by m.match_verified desc,
                  case m.coverage
                    when 'Broad coverage' then 3
@@ -307,7 +346,7 @@ export class TigerRepository implements Repository {
                    else 0 end desc,
                  b.verification = 'Verified' desc
         limit $2`,
-      [brand, limit],
+      allowed ? [brand, limit, allowed] : [brand, limit],
     );
     return rows.map((r) => this.toCatalogueItem(r));
   }
@@ -345,6 +384,18 @@ export class TigerRepository implements Repository {
   ): Promise<CatalogueItem[]> {
     const strict = await this.textSearch(text, limit, 'websearch_to_tsquery', category);
     if (strict.length > 0) return strict;
+
+    // The loose pass needs a category to be safe.
+    //
+    // OR-ing a listing's words across all 1,404 brands finds *something*
+    // every time, and with no category to confine it that something is
+    // often absurd: an air fryer matched a web-hosting company on shared
+    // filler words. Excluding the service industries was not enough -
+    // "Technology" is a legitimate shelf, just not for a kitchen appliance.
+    //
+    // When we cannot tell what the product is, we do not get to guess what
+    // replaces it.
+    if (!category) return [];
 
     const loose = orTsQuery(text);
     if (!loose) return [];
@@ -575,6 +626,7 @@ export class TigerRepository implements Repository {
       massKg: null,
       gtin: null,
       shipsFrom: region ? `CA-${region}` : null,
+      verification: verificationLevel(String(row['verification'] ?? '')),
       similarity: matchStrength(row),
     };
   }
@@ -679,6 +731,13 @@ function manufacturing(tags: string[], source: string | null, confidence: Confid
     return { value: 'non-CA', source, confidence };
   }
   return { value: null, source: null, confidence: 'low', reason: 'manufacturing not recorded' };
+}
+
+/** brands.verification -> the three states the UI distinguishes. */
+function verificationLevel(raw: string): 'verified' | 'partial' | 'unverified' {
+  if (raw === 'Verified') return 'verified';
+  if (raw === 'Partially verified') return 'partial';
+  return 'unverified';
 }
 
 function verificationConfidence(verification: string): Confidence {

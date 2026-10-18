@@ -108,11 +108,42 @@ const CATEGORY_KEYWORDS: Array<[RegExp, string]> = [
 export const KNOWN_CATEGORIES: string[] = [...new Set(CATEGORY_KEYWORDS.map(([, category]) => category))];
 
 /**
- * Breadcrumb first, title second. A hand-written map is twenty minutes of work
- * and beats a classifier that has to be trained, evaluated and explained.
+ * Title first, breadcrumb second - and the breadcrumb read most-specific
+ * segment first.
+ *
+ * This used to concatenate the breadcrumb and the title into one string and
+ * return the first keyword that matched anywhere in it. Two things went
+ * wrong at once: a word from the site's navigation outranked the product's
+ * own name, and ties were broken by the order the patterns happen to be
+ * written in - where deodorant sits first. So "Old Spice Body Wash" under
+ * the breadcrumb "Beauty > Deodorants & Antiperspirants" came back as a
+ * deodorant, and got deodorant alternatives.
+ *
+ * The title names the product; the breadcrumb only says which aisle it is
+ * near. So the title decides, and the breadcrumb is consulted only when the
+ * title is uninformative - deepest segment first, since "Beauty >
+ * Deodorants > Shampoo" is a shampoo.
  */
 export function guessCategory(product: ProductRef): string | null {
-  const haystack = `${product.categoryHint ?? ''} ${product.title}`.toLowerCase();
+  const fromTitle = matchCategory(product.title);
+  if (fromTitle) return fromTitle;
+
+  const segments = (product.categoryHint ?? '')
+    .split(/[>›»|/]/)
+    .map((segment) => segment.trim())
+    .filter(Boolean)
+    .reverse();
+
+  for (const segment of segments) {
+    const found = matchCategory(segment);
+    if (found) return found;
+  }
+  return null;
+}
+
+function matchCategory(text: string): string | null {
+  if (!text) return null;
+  const haystack = text.toLowerCase();
   for (const [pattern, category] of CATEGORY_KEYWORDS) {
     if (pattern.test(haystack)) return category;
   }

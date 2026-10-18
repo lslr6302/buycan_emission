@@ -195,6 +195,7 @@ function toCandidate(lead: BrowserLead, page: ProductRef, url: string, site: str
     brand: page.brand ?? lead.brand,
     url,
     linkKind: 'product',
+    verification: 'unverified',
     retailer: RETAILER_NAMES[site] ?? site,
     retailerCanadianOwned: null,
     priceCad,

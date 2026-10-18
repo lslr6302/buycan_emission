@@ -6,6 +6,7 @@
  * Not a substitute for the eval harness - that measures accuracy against
  * hand-labelled ground truth. This just checks the machinery works.
  */
+import { guessCategory } from '../src/server/ai/mock-client';
 import { extractFromHtml, isUsable, mergeProducts, pickPrice } from '../src/shared/extract';
 import { gtinCheckDigitValid, normalizeGtin, parsePrice, productKey } from '../src/shared/normalize';
 import { DEFAULT_WEIGHTS, priceScore, rank, totalScore } from '../src/shared/scoring';
@@ -148,6 +149,44 @@ check(
   'weight beats document order',
   pickPrice([{ text: '\$99.99', weight: 30 }, { text: '\$8.97', weight: 100 }]) === 8.97,
 );
+
+// --- category classification ------------------------------------------------
+
+console.log('\nCategory from the title, not the breadcrumb');
+
+const ref = (title: string, categoryHint: string | null) =>
+  ({
+    site: 'amazon.ca', siteId: null, url: 'u', title, brand: null, gtin: null,
+    price: { amount: 1, currency: 'CAD' }, categoryHint, imageUrl: null, massKg: null,
+    extraction: { tier: 'adapter' as const, confidence: 'low' as const },
+  });
+
+// Regression: the breadcrumb used to outrank the title, and deodorant won
+// every tie because it is first in the keyword list.
+check(
+  'title beats a misleading breadcrumb',
+  guessCategory(ref('Old Spice Body Wash Swagger 473 ml', 'Beauty > Deodorants & Antiperspirants')) ===
+    'personal_care_body_wash',
+);
+check(
+  'shampoo under a deodorant breadcrumb is shampoo',
+  guessCategory(ref('Dove Shampoo Daily Moisture', 'Beauty > Deodorants > Shampoo')) ===
+    'personal_care_hair',
+);
+check(
+  'real deodorants still classify',
+  guessCategory(ref('Old Spice Deodorant Stick Fiji', 'Beauty > Deodorants')) ===
+    'personal_care_deodorant',
+);
+check(
+  'breadcrumb used when the title says nothing',
+  guessCategory(ref('Swagger 473 ml', 'Beauty > Hair Care > Shampoo')) === 'personal_care_hair',
+);
+check(
+  'deepest breadcrumb segment wins',
+  guessCategory(ref('Fiji 85 g', 'Beauty > Shampoo > Deodorants')) === 'personal_care_deodorant',
+);
+check('nothing to go on returns null', guessCategory(ref('Thing 3000', null)) === null);
 
 // --- GTIN ------------------------------------------------------------------
 

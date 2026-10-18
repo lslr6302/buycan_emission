@@ -196,5 +196,7 @@ function toCatalogueItem(raw: (typeof catalogueSeed.items)[number]): CatalogueIt
     gtin: raw.gtin,
     shipsFrom: raw.shipsFrom,
     similarity: null,
+    // The seed file is explicitly unverified placeholder data.
+    verification: 'unverified',
   };
 }

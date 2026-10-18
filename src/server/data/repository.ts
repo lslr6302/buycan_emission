@@ -90,6 +90,12 @@ export interface CatalogueItem {
   massKg: number | null;
   gtin: string | null;
   shipsFrom: string | null;
+  /**
+   * The directory's own assessment of this brand, not ours. Most entries
+   * are 'unverified'; saying otherwise on their behalf is the overclaiming
+   * this project exists to avoid.
+   */
+  verification: 'verified' | 'partial' | 'unverified';
   /** Cosine similarity from the vector search, when the backend supplies one. */
   similarity?: number | null;
 }

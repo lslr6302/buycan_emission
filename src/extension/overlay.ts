@@ -208,6 +208,9 @@ const STYLES = `
   .dot { width: 9px; height: 9px; border-radius: 7px; display: inline-block; flex: none; }
   .dot-green { background: ${GREEN}; }
   .dot-amber { background: ${AMBER}; }
+  /* Listed in the directory but not checked by anyone - neither a pass nor
+     a fail, so neither green nor amber. */
+  .dot-grey { background: #9ca3af; }
   .row {
     font-size: 12px; padding: 7px 2px 7px 0;
     border-top: 2px dashed ${TAN};
@@ -440,14 +443,23 @@ function dimensionChips(verdict: ResolveResponse['provenance']): string {
 }
 
 function candidateCard(candidate: Candidate, originalPrice: number | null): string {
-  // Green dot for a record we verified, amber for an AI match we could only
-  // corroborate in part. The wording stays as blunt as the colour.
+  // The badge reports the directory's own assessment, not ours.
+  //
+  // It used to say "verified" for anything that came out of the dataset,
+  // which conflated "we have a record" with "someone checked". Most of the
+  // directory is explicitly marked Unverified, so the badge was asserting
+  // on the curators' behalf something they had not claimed - exactly the
+  // overclaiming the whole project is positioned against.
   const [dotClass, badge] =
     candidate.matchType === 'retailer_swap'
       ? ['dot-green', 'same product']
       : candidate.origin === 'ai'
         ? ['dot-amber', 'ai matched']
-        : ['dot-green', 'verified'];
+        : candidate.verification === 'verified'
+          ? ['dot-green', 'verified']
+          : candidate.verification === 'partial'
+            ? ['dot-amber', 'partly verified']
+            : ['dot-grey', 'listed, unverified'];
 
   const price = candidate.priceCad === null ? '' : `$${candidate.priceCad.toFixed(2)}`;
   const delta =

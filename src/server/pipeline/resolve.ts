@@ -411,6 +411,7 @@ function toCandidate(
     shipsFrom: item.shipsFrom,
     provenance: placeholderProvenance(item.brand),
     linkKind: 'brand',
+    verification: item.verification,
     components: {
       equivalence,
       // Provenance is filled in by attachProvenance once the candidate's own
@@ -441,6 +442,7 @@ function toCandidateFromStore(
   return {
     id: `ai-store:${entry.id}`,
     origin: 'ai',
+    verification: 'unverified',
     matchType: 'equivalent',
     title: entry.title,
     brand: entry.brand,

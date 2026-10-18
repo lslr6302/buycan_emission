@@ -168,6 +168,8 @@ export interface Candidate {
    * and should look like one, not be passed off as a product link.
    */
   linkKind: 'product' | 'brand';
+  /** How well the source dataset vouches for this brand. */
+  verification: 'verified' | 'partial' | 'unverified';
   /** Mandatory for AI-origin candidates. */
   sourceUrl: string | null;
   /** Human-readable reason this was surfaced, shown under the card. */
