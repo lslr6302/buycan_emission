@@ -85,6 +85,11 @@ export class MockRepository implements Repository {
     return out;
   }
 
+  /** Seed brands carry no storefront domains, so this is always a miss. */
+  async findBrandByDomain(): Promise<BrandRecord | null> {
+    return null;
+  }
+
   async findAlternatives(query: AlternativeQuery): Promise<CatalogueItem[]> {
     const queryTokens = titleTokens(query.text);
 
@@ -164,6 +169,11 @@ function toBrandRecord(raw: (typeof brandsSeed.brands)[number]): BrandRecord {
     hqCountry: toSourced(raw.hqCountry as RawSourced),
     foundedIn: toSourced(raw.foundedIn as RawSourced),
     mfgOrigin: toSourced(raw.mfgOrigin as RawSourced),
+    listedCanadian: {
+      value: toSourced(raw.hqCountry as RawSourced).value === 'CA',
+      source: toSourced(raw.hqCountry as RawSourced).source,
+      confidence: 'medium',
+    },
     cfiaClass: (raw.cfiaClass as BrandRecord['cfiaClass']) ?? null,
     lastReviewed: raw.lastReviewed,
   };

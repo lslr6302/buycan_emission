@@ -320,8 +320,11 @@ export function renderAlreadyCanadian(result: ResolveResponse): void {
   const p = result.provenance;
   const made = p.dimensions.madeInCanada.value;
 
-  const madeNote =
-    made === true
+  const listedOnly = p.dimensions.canadianOwned.value === null && p.listedCanadian.value === true;
+
+  const madeNote = listedOnly
+    ? 'Listed in the Canadian brands directory.'
+    : made === true
       ? 'Made in Canada too.'
       : made === false
         ? 'Canadian-owned, though not manufactured in Canada.'
@@ -333,7 +336,7 @@ export function renderAlreadyCanadian(result: ResolveResponse): void {
       <div class="head">
         <span class="leaf">🍁</span>
         <div class="head-text">
-          <div class="title">This one is Canadian</div>
+          <div class="title">${listedOnly ? 'Listed as Canadian' : 'This one is Canadian'}</div>
           <div class="sub">${escapeHtml(p.displayName)} · ${escapeHtml(madeNote)}</div>
         </div>
         <button class="x" title="Hide for this page">×</button>
@@ -346,11 +349,62 @@ export function renderAlreadyCanadian(result: ResolveResponse): void {
             ? `<div class="why dim">Labelled "${escapeHtml(p.cfiaClass)}" — a specific legal claim, not a slogan.</div>`
             : ''
         }
+        ${
+          listedOnly
+            ? `<div class="why dim">This is the directory's own listing, not a verified ownership record — the specific details are not filled in${
+                p.listedCanadian.source
+                  ? ` (<a href="${escapeHtml(p.listedCanadian.source)}" target="_blank" rel="noopener">source</a>)`
+                  : ''
+              }.</div>`
+            : ''
+        }
         <div class="why dim">No alternatives suggested: you are already buying Canadian.</div>
       </div>
       <div class="foot">Every claim above links to its source. Hover a tag.</div>
     </div>`;
 
+  shadow.append(container);
+  wire(shadow);
+}
+
+/**
+ * We could not identify the product's brand, but the shop itself is a
+ * listed Canadian business. Worth saying: most small Canadian retailers
+ * stock brands no directory covers, and going silent there is the case
+ * where the tool looks least useful despite being on exactly the kind of
+ * store it exists to send people to.
+ */
+function renderCanadianRetailer(result: ResolveResponse): void {
+  const site = result.siteBrand;
+  if (!site) return;
+
+  const shadow = mount();
+  const container = document.createElement('div');
+  container.innerHTML = `
+    <div class="panel open success">
+      <div class="head">
+        <span class="leaf">🍁</span>
+        <div class="head-text">
+          <div class="title">You are on a Canadian shop</div>
+          <div class="sub">${escapeHtml(site.name)}</div>
+        </div>
+        <button class="x" title="Hide for this page">×</button>
+      </div>
+      <div class="body">
+        <div class="why">
+          ${escapeHtml(site.name)} is listed in the Canadian brands directory${
+            site.source
+              ? ` (<a href="${escapeHtml(site.source)}" target="_blank" rel="noopener">source</a>)`
+              : ''
+          }.
+        </div>
+        <div class="why dim">
+          We could not identify this product's own brand, so we are not
+          claiming anything about who makes it — only about the shop.
+        </div>
+      </div>
+      <div class="foot">No alternatives suggested: the money is already staying here.</div>
+    </div>`;
   shadow.append(container);
   wire(shadow);
 }
@@ -362,10 +416,11 @@ export function renderProduct(result: ResolveResponse, expanded: boolean): void 
     return;
   }
 
-  // Nothing to offer means nothing on screen. The badge and the popup carry
-  // the abstention; the page stays untouched.
+  // Nothing to offer, but the shop itself is Canadian - say that instead of
+  // disappearing.
   if (result.abstained) {
-    remove();
+    if (result.provenance.isUnknown && result.siteBrand) renderCanadianRetailer(result);
+    else remove();
     return;
   }
 
