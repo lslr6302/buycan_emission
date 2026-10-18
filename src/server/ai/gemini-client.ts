@@ -264,7 +264,7 @@ const SUGGEST_SCHEMA: JsonSchema = {
   required: ['suggestions'],
 };
 
-const SANITY_SYSTEM = `You are a strict filter. Answer whether a shopper buying the first product would reasonably accept the second as a substitute: same purpose, same form, comparable size. Different brand is fine. Different product type (e.g. conditioner for shampoo, mouthwash for toothpaste) is not. Give a one-sentence reason.`;
+const SANITY_SYSTEM = `You are a strict filter. Answer whether a shopper buying the first product would reasonably accept the second as a substitute: same purpose, same form, comparable size. Different brand is fine. Different product type (e.g. conditioner for shampoo, mouthwash for toothpaste) is not. When the alternative is a brand rather than a single listing, accept it if that brand is known to sell a substitute for the shopper's product, and reject it only if the brand clearly does not make that kind of product (e.g. a coffee roaster offered for dog food). Missing size or variant details are not a reason to reject a brand. Give a one-sentence reason.`;
 
 const SANITY_SCHEMA: JsonSchema = {
   type: 'object',

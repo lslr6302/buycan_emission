@@ -1,4 +1,4 @@
-import { normalizeBrand, productKey, round } from '../../shared/normalize';
+import { jaccard, normalizeBrand, productKey, round, titleTokens } from '../../shared/normalize';
 import { allowedSitesFor } from '../../shared/retailers';
 import {
   DEFAULT_WEIGHTS,
@@ -138,12 +138,20 @@ export async function resolveProduct(
   let aiStoreHits = 0;
 
   if (candidates.length === 0 && !request.verifiedOnly && deps.aiStore) {
-    const stored = await deps.aiStore
-      .find({ productKey: key, brandKey, category: spec?.category ?? null, limit: 4 })
+    const found = await deps.aiStore
+      .find({ productKey: key, brandKey, category: spec?.category ?? null, limit: 12 })
       .catch((error) => {
         console.error('[ai-store] find failed:', error instanceof Error ? error.message : error);
         return [];
       });
+    // The store matches siblings on brand + category, and the category list
+    // is too coarse to stand on its own - yogurt, ice cream and sprinkles all
+    // land in one bucket. A find made for a different product is reused only
+    // when that product's title is close to this one; otherwise a fresh AI
+    // search (step 9) does better than a stale answer to another question.
+    const stored = found
+      .filter((entry) => isReusableFind(entry, key, product.title, ai.name))
+      .slice(0, 4);
     aiStoreHits = stored.length;
     candidates = stored.map((entry) => toCandidateFromStore(entry, product, spec));
   }
@@ -428,6 +436,16 @@ function toCandidate(
  * A previous AI discovery. Its facts were re-read from the retailer page when
  * it was stored; provenance is looked up afresh by attachProvenance.
  */
+/** Title overlap needed before one product's AI find is offered for another. */
+const STORED_SIBLING_MIN_SIMILARITY = 0.5;
+
+function isReusableFind(entry: StoredAlternative, key: string, title: string, aiName: string): boolean {
+  // Mock-model finds are placeholders; never let them stand in for a real search.
+  if (entry.aiBackend === 'mock' && aiName !== 'mock') return false;
+  if (entry.productKey === key) return true;
+  return jaccard(titleTokens(entry.originalTitle), titleTokens(title)) >= STORED_SIBLING_MIN_SIMILARITY;
+}
+
 function toCandidateFromStore(
   entry: StoredAlternative,
   product: ProductRef,
@@ -528,6 +546,19 @@ async function attachProvenance(candidates: Candidate[], repo: Repository): Prom
  * One yes/no call per top candidate. A filter, not a ranker - it can remove a
  * candidate but never reorder one, so rankings stay reproducible.
  */
+/**
+ * The curated table matches brand to brand, so most verified candidates are
+ * a brand name, not a listing. Handed over bare, the veto rejects them for
+ * "not being a specific product" - which empties nearly every result. Say
+ * what they are, so the question becomes "does this brand make a substitute".
+ */
+function describeForVeto(candidate: Candidate): string {
+  const brand = candidate.brand ?? '';
+  const brandLevel = !brand || normalizeBrand(candidate.title) === normalizeBrand(brand);
+  if (!brandLevel) return candidate.title;
+  return `${candidate.title} (a brand, not a single listing: the shopper would pick the matching item from its range)`;
+}
+
 async function applySanityVeto(
   candidates: Candidate[],
   product: ProductRef,
@@ -537,7 +568,7 @@ async function applySanityVeto(
   const kept: Candidate[] = [];
   for (const candidate of candidates) {
     try {
-      const verdict = await ai.sanityCheck(product, candidate.title);
+      const verdict = await ai.sanityCheck(product, describeForVeto(candidate));
       if (verdict.acceptable) {
         kept.push(candidate);
       } else {

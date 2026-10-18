@@ -314,6 +314,13 @@ const base = { title: 'T', brand: 'B', retailer: 'R', priceCad: 1, claim: 'c' };
   const sibling = await resolveProduct({ product: original('Speed Stick Deodorant Twin Pack'), browserCheck: true }, deps);
   check('same brand + category reuses it too', suggestions === 1 && sibling.diagnostics.aiStoreHits === 1);
 
+  // Same brand, same (coarse) category, different product: must not inherit
+  // the deodorant find - it should go back to the model instead.
+  const unrelated = await resolveProduct({ product: original('Speed Stick Gear Body Wash Fresh Rush 532 ml'), browserCheck: true }, deps);
+  check('same brand + category but a different product does not reuse it',
+    unrelated.diagnostics.aiStoreHits === 0 && suggestions === 2,
+    `${unrelated.diagnostics.aiStoreHits} hits / ${suggestions} model calls`);
+
   const strict = await resolveProduct({ product: original('Speed Stick Deodorant 85 g'), verifiedOnly: true }, deps);
   check('verifiedOnly ignores the AI store', strict.diagnostics.aiStoreHits === 0 && strict.candidates.length === 0);
 
