@@ -28,6 +28,7 @@ export function verdictFor(brand: BrandRecord | null, rawBrandName: string | nul
     displayName: brand.displayName,
     dimensions,
     ultimateParent: brand.parent,
+    listedCanadian: brand.listedCanadian,
     cfiaClass: brand.cfiaClass,
     canadianScore: null,
     coverage: coverageScore({ dimensions }),
@@ -36,7 +37,7 @@ export function verdictFor(brand: BrandRecord | null, rawBrandName: string | nul
   };
 
   verdict.canadianScore = canadianScore(verdict);
-  verdict.isUnknown = verdict.coverage === 0;
+  verdict.isUnknown = verdict.coverage === 0 && verdict.listedCanadian.value !== true;
   verdict.summary = summarize(verdict, brand);
   return verdict;
 }
@@ -96,6 +97,7 @@ function unlinkedVerdict(rawBrandName: string | null): ProvenanceVerdict {
       madeInCanada: unknown<boolean>(reason),
     },
     ultimateParent: unknown<string>(reason),
+    listedCanadian: unknown<boolean>(reason),
     cfiaClass: null,
     canadianScore: null,
     coverage: 0,
@@ -127,6 +129,11 @@ function summarize(verdict: ProvenanceVerdict, brand: BrandRecord): string {
   if (owned === true && made === true) {
     return 'Canadian-owned and made in Canada.';
   }
+  if (owned === null && verdict.listedCanadian.value === true) {
+    return made === true
+      ? 'Listed as a Canadian brand and made in Canada. Ownership details are not recorded.'
+      : 'Listed as a Canadian brand. Ownership details are not recorded.';
+  }
   if (owned === true) {
     return 'Canadian-owned. Manufacturing origin unknown.';
   }
@@ -153,6 +160,11 @@ export function ownStatusFor(verdict: ProvenanceVerdict): OwnStatus {
   const owned = d.canadianOwned.value;
 
   if (owned === true) return 'canadian';
+
+  // No ownership recorded, but the Canadian brands directory lists it and
+  // nothing contradicts that. Saying nothing here means going quiet on a
+  // Canadian brand's own storefront, which is the opposite of useful.
+  if (owned === null && verdict.listedCanadian.value === true) return 'canadian';
 
   const someCanadianSignal =
     d.canadianFounded.value === true ||

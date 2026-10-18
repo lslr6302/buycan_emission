@@ -166,7 +166,12 @@ async function runProduct(): Promise<void> {
     abstained: response.data.abstained,
   });
 
-  if (response.data.abstained) {
+  // Abstained, but the shop itself is a listed Canadian business - that is
+  // still worth saying, and renderProduct knows how to say it.
+  const canSaySomething =
+    response.data.abstained && response.data.provenance.isUnknown && !!response.data.siteBrand;
+
+  if (response.data.abstained && !canSaySomething) {
     log('not rendering: abstained -', response.data.abstentionReason);
     report({ ...base, overlay: 'suppressed_abstained' });
     return;

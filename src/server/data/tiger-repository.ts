@@ -1,4 +1,5 @@
 import { normalizeBrand } from '../../shared/normalize';
+import { requiredNouns } from '../pipeline/storefront';
 import { clamp01 } from '../../shared/normalize';
 import type { BrandRecord, Confidence, ProductSpec, Sourced } from '../../shared/types';
 import type {
@@ -210,13 +211,41 @@ export class TigerRepository implements Repository {
    *   2. No brand, e.g. a search-results page -> text search over Canadian
    *      brands by name, description and category.
    */
+  async findBrandByDomain(domain: string): Promise<BrandRecord | null> {
+    const host = domain.replace(/^www\./, '').toLowerCase();
+    if (host.length < 4) return null;
+    const { rows } = await this.sql.query(
+      `select b.*, o.owner_name, o.owner_country, o.note as owner_note,
+              o.source_url as owner_source, o.team_confirmed
+         from brands b
+         left join ownership_overrides o on o.brand_slug = b.slug
+        where b.website is not null
+          and replace(replace(lower(b.website), 'https://', ''), 'www.', '') like $1 || '%'
+        limit 1`,
+      [host],
+    );
+    return rows[0] ? this.canadianBrandRecord(rows[0]) : null;
+  }
+
   async findAlternatives(query: AlternativeQuery): Promise<CatalogueItem[]> {
     const brand = query.brand?.trim();
     if (brand && brand.length >= 2) {
       const viaMatches = await this.alternativesForBrand(brand, query.limit);
       if (viaMatches.length > 0) return viaMatches;
     }
-    return this.alternativesByText(query.text, query.limit, query.category);
+    const byText = await this.alternativesByText(query.text, query.limit, query.category);
+    if (byText.length >= query.limit) return byText;
+
+    // Top up from the category, do not merely fall back to it.
+    //
+    // A listing title is mostly words identifying the *product*, not the
+    // kind of thing it is: "Grizzly Claw Blend, Ground 100% Arabica" has
+    // one useful token. Matching on those terms surfaced a single brand out
+    // of the 41 Canadian coffee companies in the directory - and because it
+    // found *something*, a plain fallback would never have run.
+    const byCategory = await this.alternativesByCategory(query.category, query.limit);
+    const seen = new Set(byText.map((item) => item.id));
+    return [...byText, ...byCategory.filter((item) => !seen.has(item.id))].slice(0, query.limit);
   }
 
   private async alternativesForBrand(brand: string, limit: number): Promise<CatalogueItem[]> {
@@ -360,6 +389,44 @@ export class TigerRepository implements Repository {
     });
   }
 
+  /**
+   * Everything in a category, ranked by how well verified it is.
+   *
+   * Deliberately blunt. It only runs when the sharper passes found nothing,
+   * and "here are verified Canadian coffee roasters" is a far more useful
+   * answer on a bag of coffee than silence.
+   */
+  private async alternativesByCategory(
+    category: string | null,
+    limit: number,
+  ): Promise<CatalogueItem[]> {
+    if (!category) return [];
+    const allowed = CATEGORY_MAP[category];
+    const nouns = requiredNouns(category, null);
+    if (!allowed || nouns.length === 0) return [];
+
+    const { rows } = await this.sql.query(
+      `with q as (select to_tsquery('english', $1) as tsq)
+       select b.*, null::text as coverage, false as match_verified, false as match_partial,
+              array[]::text[] as notes, '' as canadian_product_name, '' as us_product_name,
+              o.owner_name, o.owner_country, o.source_url as owner_source,
+              0.5::float as text_sim
+         from brands b
+         cross join q
+         left join ownership_overrides o on o.brand_slug = b.slug
+        where ${QUALITY_FILTER}
+          and b.category = any($3)
+          and to_tsvector('english', b.name || ' ' || coalesce(b.description,'')) @@ q.tsq
+        order by (b.verification = 'Verified') desc,
+                 (b.verification = 'Partially verified') desc,
+                 cardinality(b.status_tags) desc,
+                 b.name
+        limit $2`,
+      [nouns.join(' | '), limit, allowed],
+    );
+    return rows.map((r) => this.toCatalogueItem(r));
+  }
+
   /** No barcode data in this dataset, so cross-store matching cannot run. */
   async findByGtin(): Promise<CatalogueItem[]> {
     return [];
@@ -413,6 +480,13 @@ export class TigerRepository implements Repository {
       hqCountry: tagField(tags, TAG.hq, TAG.notHq, 'CA', source, confidence),
       foundedIn: tagField(tags, TAG.founded, TAG.notFounded, 'CA', source, confidence),
       mfgOrigin: manufacturing(tags, source, confidence),
+      // Present in the Canadian brands table, which is the directory's own
+      // claim about it. Cited to the profile so it is checkable.
+      listedCanadian: {
+        value: true,
+        source: source ?? (row['profile_url'] as string) ?? null,
+        confidence: tags.length > 0 ? confidence : 'low',
+      },
       cfiaClass: tags.includes(TAG.productOf)
         ? 'Product of Canada'
         : tags.includes(TAG.made)
@@ -439,6 +513,7 @@ export class TigerRepository implements Repository {
       hqCountry: { value: 'US', source, confidence: 'medium' },
       foundedIn: { value: null, source: null, confidence: 'low', reason },
       mfgOrigin: { value: null, source: null, confidence: 'low', reason },
+      listedCanadian: { value: false, source, confidence: 'medium' },
       cfiaClass: null,
       lastReviewed: 'from us_brands',
     };

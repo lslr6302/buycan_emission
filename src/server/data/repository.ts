@@ -29,6 +29,13 @@ export interface Repository {
   findBrandsByKeys(keys: string[]): Promise<BrandRecord[]>;
 
   /**
+   * The brand whose own storefront this domain is, if the directory knows
+   * it. Lets us say something true about a page whose product brand is
+   * unknown: the shop itself may be a listed Canadian business.
+   */
+  findBrandByDomain(domain: string): Promise<BrandRecord | null>;
+
+  /**
    * The verified path. Hard constraints gate, embedding similarity ranks.
    * Implementations backed by Postgres should push the category filter and the
    * pgvector ORDER BY into SQL rather than filtering in Node.

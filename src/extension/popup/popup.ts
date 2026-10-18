@@ -160,6 +160,16 @@ function render(): void {
 
   status.textContent = `${escapeHtml(resolved.provenance.displayName)} · ${escapeHtml(resolved.provenance.summary)}`;
 
+  if (resolved.abstained && resolved.provenance.isUnknown && resolved.siteBrand) {
+    result.innerHTML = `
+      <div class="card">
+        <div class="card-title">You are on a Canadian shop</div>
+        <div class="muted">${escapeHtml(resolved.siteBrand.name)} is listed in the Canadian brands directory.</div>
+        <div class="muted">This product's own brand could not be identified, so no claim is made about who makes it.</div>
+      </div>`;
+    return;
+  }
+
   if (resolved.alreadyCanadian) {
     result.innerHTML = `
       <div class="card">

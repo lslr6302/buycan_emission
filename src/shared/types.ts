@@ -77,6 +77,15 @@ export interface BrandRecord {
   hqCountry: Sourced<string>;
   foundedIn: Sourced<string>;
   mfgOrigin: Sourced<string>;
+  /**
+   * The brand appears in the Canadian brands directory at all.
+   *
+   * Weaker than any specific dimension, but not nothing: a curated list of
+   * Canadian companies saying "this is one of ours" is a sourced claim.
+   * Hundreds of entries carry no individual tags, and treating those as
+   * wholly unknown means going silent on a Canadian brand's own storefront.
+   */
+  listedCanadian: Sourced<boolean>;
   cfiaClass: CfiaClass | null;
   lastReviewed: string;
   /**
@@ -101,6 +110,8 @@ export interface ProvenanceVerdict {
     madeInCanada: Sourced<boolean>;
   };
   ultimateParent: Sourced<string>;
+  /** Listed in the Canadian brands directory, even if untagged. */
+  listedCanadian: Sourced<boolean>;
   cfiaClass: CfiaClass | null;
   /** 0..1 over the dimensions we could answer. Null when we answered none. */
   canadianScore: number | null;
@@ -205,6 +216,12 @@ export interface ResolveResponse {
   ownStatus: OwnStatus;
   /** True when ownStatus is 'canadian'. No alternatives are retrieved. */
   alreadyCanadian: boolean;
+  /**
+   * The storefront itself, when the directory lists it as a Canadian
+   * business. Lets us say something true and useful on a page whose product
+   * brand we cannot identify - which is most small Canadian shops.
+   */
+  siteBrand: { name: string; source: string | null } | null;
   candidates: Candidate[];
   /** True when we have nothing to offer. The overlay stays hidden. */
   abstained: boolean;

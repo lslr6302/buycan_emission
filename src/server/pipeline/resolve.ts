@@ -76,6 +76,11 @@ export async function resolveProduct(
   // title, which almost always opens with the brand.
   const { brand, brandName } = await linkBrand(product, repo, request.fromSearch === true);
   const provenance = verdictFor(brand, brandName);
+
+  // Who runs this shop? On a small Canadian retailer's own site the product
+  // brand is often absent from the directory while the shop itself is in
+  // it, and "you are on a Canadian retailer" beats saying nothing at all.
+  const siteBrand = await findSiteBrand(product, repo);
   const ownStatus = ownStatusFor(provenance);
 
   // 3. Already Canadian-owned? Then there is nothing to switch to, and
@@ -90,6 +95,7 @@ export async function resolveProduct(
       provenance,
       ownStatus,
       alreadyCanadian: true,
+      siteBrand,
       candidates: [],
       abstained: false,
       abstentionReason: null,
@@ -154,6 +160,16 @@ export async function resolveProduct(
   candidates = await attachProvenance(candidates, repo);
   candidates = candidates.filter((c) => qualifiesAsCanadian(c.provenance));
 
+  // A brand is not an alternative to itself. On a Canadian brand's own
+  // store the retrieval happily matches the brand to its own catalogue and
+  // recommends the exact product already on screen, which reads as the tool
+  // not knowing where it is. Dropped before the storefront lookups so we do
+  // not spend a request confirming it either.
+  const pageBrand = normalizeBrand(brandName ?? product.brand ?? '');
+  if (pageBrand) {
+    candidates = candidates.filter((c) => normalizeBrand(c.brand ?? '') !== pageBrand);
+  }
+
   // 7. Rank deterministically, then veto the top few.
   candidates = rank(candidates, weights);
   if (deps.sanityVeto !== false && candidates.length > 0) {
@@ -166,6 +182,10 @@ export async function resolveProduct(
   // homepage into a real product link. Doing this before ranking would mean
   // a network request per candidate across a pool of thirty.
   candidates = await attachProductLinks(candidates, product, spec);
+
+  // Belt and braces: the storefront lookup can land on the very page the
+  // shopper is reading, even when the brand names differ.
+  candidates = candidates.filter((c) => !sameProductUrl(c.url, product.url));
 
   // Enforce the ceiling wherever the price came from. A candidate several
   // times the price of what the shopper is holding is a different purchase,
@@ -207,6 +227,7 @@ export async function resolveProduct(
     provenance,
     ownStatus,
     alreadyCanadian: false,
+    siteBrand,
     candidates,
     abstained,
     abstentionReason,
@@ -278,6 +299,21 @@ export function brandCandidatesFromTitle(title: string): string[] {
   if (first && first.length >= 4) out.push(first);
 
   return out;
+}
+
+/** The storefront's own listing in the Canadian brands directory. */
+async function findSiteBrand(
+  product: ProductRef,
+  repo: Repository,
+): Promise<{ name: string; source: string | null } | null> {
+  if (!product.site) return null;
+  try {
+    const found = await repo.findBrandByDomain(product.site);
+    if (!found || found.listedCanadian.value !== true) return null;
+    return { name: found.displayName, source: found.listedCanadian.source };
+  } catch {
+    return null;
+  }
 }
 
 async function loadSpec(
@@ -615,6 +651,20 @@ async function attachProductLinks(
       }
     }),
   );
+}
+
+/** Compares URLs ignoring query strings, fragments and a trailing slash. */
+function sameProductUrl(a: string, b: string): boolean {
+  const normalize = (raw: string): string => {
+    try {
+      const url = new URL(raw);
+      return `${url.hostname.replace(/^www\./, '')}${url.pathname.replace(/\/+$/, '')}`.toLowerCase();
+    } catch {
+      return raw.toLowerCase();
+    }
+  };
+  if (!a || !b) return false;
+  return normalize(a) === normalize(b);
 }
 
 function pickAbstentionReason(
