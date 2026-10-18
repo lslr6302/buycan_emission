@@ -1,4 +1,4 @@
-import { rank } from '../../shared/scoring';
+import { rankPreferringSite } from '../../shared/scoring';
 import type { Candidate, Weights } from '../../shared/types';
 import {
   DEFAULT_SETTINGS,
@@ -173,7 +173,7 @@ function render(): void {
   if (resolved.alreadyCanadian) {
     result.innerHTML = `
       <div class="card">
-        <div class="card-title">Already Canadian-owned</div>
+        <div class="card-title">Already Canadian</div>
         <div class="muted">${escapeHtml(resolved.provenance.summary)}</div>
         <div class="muted">No alternatives suggested — there is nothing to switch to.</div>
       </div>`;
@@ -196,7 +196,7 @@ function render(): void {
     return;
   }
 
-  const ranked = rank(resolved.candidates, settings.weights);
+  const ranked = rankPreferringSite(resolved.candidates, settings.weights, resolved.product.site);
   result.innerHTML = ranked.map(candidateHtml).join('');
 }
 

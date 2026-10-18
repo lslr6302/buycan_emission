@@ -174,6 +174,29 @@ export interface Candidate {
   rationale: string;
 }
 
+/**
+ * What the AI suggests looking for when the dataset has no answer: a Canadian
+ * brand and product, plus the words to type into a store's search box. It
+ * never carries a product URL - those come from the stores' own search, so a
+ * model cannot invent a listing.
+ */
+export interface AiLead {
+  brand: string;
+  product: string;
+  /** Short store search, brand + product type: "Green Beaver antiperspirant". */
+  query: string;
+  /** One sentence on why it counts as Canadian. Shown under the card. */
+  claim: string;
+  /** Page backing the claim. Mandatory; a lead without one is dropped. */
+  sourceUrl: string | null;
+}
+
+/** A lead handed to the extension to search the stores the server cannot reach. */
+export interface BrowserLead extends AiLead {
+  /** Looked up server-side, so browser-found candidates carry the same verdict as server-found ones. */
+  provenance: ProvenanceVerdict;
+}
+
 // ---------------------------------------------------------------------------
 // API payloads
 // ---------------------------------------------------------------------------
@@ -189,13 +212,23 @@ export interface ResolveRequest {
    */
   fromSearch?: boolean;
   destinationRegion?: string | null;
+  /**
+   * The caller will search the stores itself, in a browser. The allowed
+   * stores block servers, so without this AI suggestions cannot be turned
+   * into listings. Only the extension sets it.
+   */
+  browserCheck?: boolean;
 }
 
 export type AbstentionReason =
   | 'no_canadian_alternative'
   | 'category_out_of_scope'
   | 'insufficient_product_data'
-  | 'all_candidates_failed_validation';
+  | 'all_candidates_failed_validation'
+  /** The AI search itself failed (quota, outage), so we cannot say either way. */
+  | 'ai_unavailable'
+  /** The AI suggested alternatives, but none could be found on the allowed stores. */
+  | 'not_in_allowed_stores';
 
 /**
  * What the product in front of the user already is. Drives whether we offer
@@ -229,6 +262,11 @@ export interface ResolveResponse {
   /** Shown when the user clicks the toolbar icon on an abstained page. */
   abstentionMessage: string | null;
   diagnostics: ResolveDiagnostics;
+  /**
+   * Set when the AI made suggestions. The extension searches `sites`, in
+   * order, for each lead, verifies what it finds, and merges the results in.
+   */
+  browserSearch?: { leads: BrowserLead[]; sites: string[] } | null;
 }
 
 export interface ResolveDiagnostics {
@@ -244,6 +282,11 @@ export interface ResolveDiagnostics {
   dataSource: string;
   /** Which AI backend answered. "mock" means the fallback is a stub. */
   aiSource: string;
+  /**
+   * Set when the AI search errored. A transient failure, not an answer - the
+   * extension does not cache responses that carry it.
+   */
+  aiError?: string | null;
 }
 
 export interface GateRejection {

@@ -12,7 +12,9 @@
     "watch:ext:dev": "node scripts/build-extension.mjs --watch --dev",
     "typecheck": "tsc --noEmit",
     "build": "npm run build:ext && npm run typecheck && npm test",
-    "test": "tsx scripts/smoke.ts"
+    "test": "tsx scripts/smoke.ts",
+    "server:gemini": "AI_BACKEND=gemini tsx --env-file=.env src/server/index.ts",
+    "try:gemini": "tsx --env-file=.env scripts/try-gemini.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",

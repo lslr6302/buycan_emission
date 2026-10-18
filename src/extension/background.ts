@@ -1,5 +1,5 @@
 import { productKey } from '../shared/normalize';
-import type { CartAnalysis, CartLine, ProductRef, ResolveResponse } from '../shared/types';
+import type { Candidate, CartAnalysis, CartLine, ProductRef, ResolveResponse } from '../shared/types';
 import {
   DEFAULT_SETTINGS,
   type Message,
@@ -8,6 +8,7 @@ import {
   type Settings,
   type TabState,
 } from './messages';
+import { searchStoresInBrowser } from './store-search';
 
 /**
  * Service worker. Holds every network call, so the content script never talks
@@ -38,7 +39,51 @@ const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const ABSTENTION_TTL_MS = 5 * 60 * 1000;
 const MAX_CACHE_ENTRIES = 500;
 
-const tabStates = new Map<number, TabState>();
+// --- per-tab state ---------------------------------------------------------
+
+/**
+ * Kept in session storage, not in memory: Chrome stops an idle service worker
+ * after ~30s, and an in-memory map died with it - so opening the popup a
+ * minute after the page loaded said "no supported shopping page".
+ *
+ * Updates for one tab are chained so a report landing mid-lookup cannot
+ * overwrite the lookup's result with a stale read.
+ */
+const tabQueues = new Map<number, Promise<unknown>>();
+
+async function getTab(tabId: number): Promise<TabState | undefined> {
+  const key = `tab:${tabId}`;
+  const stored = await chrome.storage.session.get(key);
+  return stored[key] as TabState | undefined;
+}
+
+async function allTabs(): Promise<TabState[]> {
+  const stored = await chrome.storage.session.get(null);
+  return Object.entries(stored)
+    .filter(([key]) => key.startsWith('tab:'))
+    .map(([, value]) => value as TabState);
+}
+
+/** Forget a tab, queued behind any update still in flight for it. */
+function clearTab(tabId: number): Promise<void> {
+  const previous = tabQueues.get(tabId) ?? Promise.resolve();
+  const next = previous
+    .catch(() => undefined)
+    .then(() => chrome.storage.session.remove(`tab:${tabId}`));
+  tabQueues.set(tabId, next);
+  return next;
+}
+
+function updateTab(tabId: number, change: (existing: TabState | undefined) => TabState): Promise<void> {
+  const previous = tabQueues.get(tabId) ?? Promise.resolve();
+  const next = previous
+    .catch(() => undefined)
+    .then(async () => {
+      await chrome.storage.session.set({ [`tab:${tabId}`]: change(await getTab(tabId)) });
+    });
+  tabQueues.set(tabId, next);
+  return next;
+}
 
 // --- settings --------------------------------------------------------------
 
@@ -112,27 +157,55 @@ async function resolve(product: ProductRef): Promise<ResolveResponse> {
   const cached = await cacheGet(`${CACHE_VERSION}:${key}`);
   if (cached) return cached;
 
-  const data = await post<ResolveResponse>(
+  const response = await post<ResolveResponse>(
     '/v1/product/resolve',
     {
       product,
       weights: settings.weights,
       verifiedOnly: settings.verifiedOnly,
       destinationRegion: settings.province ? `CA-${settings.province}` : null,
+      browserCheck: true,
     },
     settings,
   );
-  await cachePut(`${CACHE_VERSION}:${key}`, data);
+  const { data, found, transientFailure } = await searchStoresInBrowser(response, settings.weights);
+  if (found.length > 0) void reportFinds(data.key, found, settings);
+  // An AI outage or an unreachable store is not an answer; caching it would
+  // keep saying "nothing found" for a day after the problem cleared.
+  if (!data.diagnostics.aiError && !transientFailure) await cachePut(`${CACHE_VERSION}:${key}`, data);
   return data;
+}
+
+/**
+ * Tells the server what the store search found, so the AI store remembers it
+ * and the next shopper on this product skips the AI call and the searches.
+ * Best effort: a failure only costs that saving.
+ */
+async function reportFinds(key: string, found: Candidate[], settings: Settings): Promise<void> {
+  const finds = found.map((c) => ({
+    url: c.url,
+    title: c.title,
+    brand: c.brand,
+    retailer: c.retailer,
+    priceCad: c.priceCad,
+    gtin: c.gtin,
+    massKg: c.massKg,
+    sourceUrl: c.sourceUrl,
+    claim: c.rationale,
+  }));
+  await post('/v1/ai/finds', { key, finds }, settings).catch((error) =>
+    console.warn('[buycan] could not report AI finds', error),
+  );
 }
 
 async function searchAlternatives(site: string, query: string): Promise<ResolveResponse> {
   const settings = await getSettings();
-  return post<ResolveResponse>(
+  const response = await post<ResolveResponse>(
     '/v1/search',
-    { site, query, weights: settings.weights, verifiedOnly: settings.verifiedOnly },
+    { site, query, weights: settings.weights, verifiedOnly: settings.verifiedOnly, browserCheck: true },
     settings,
   );
+  return (await searchStoresInBrowser(response, settings.weights)).data;
 }
 
 async function analyzeCart(site: string, lines: CartLine[]): Promise<CartAnalysis> {
@@ -161,7 +234,7 @@ function setBadge(tabId: number, state: 'match' | 'canadian' | 'abstain' | 'idle
   if (state === 'canadian') {
     void chrome.action.setBadgeText({ tabId, text: '✓' });
     void chrome.action.setBadgeBackgroundColor({ tabId, color: '#15803D' });
-    void chrome.action.setTitle({ tabId, title: 'Already Canadian-owned' });
+    void chrome.action.setTitle({ tabId, title: 'Already Canadian - click for details' });
   } else if (state === 'match') {
     void chrome.action.setBadgeText({ tabId, text: String(count) });
     void chrome.action.setBadgeBackgroundColor({ tabId, color: '#B5121B' });
@@ -176,6 +249,11 @@ function setBadge(tabId: number, state: 'match' | 'canadian' | 'abstain' | 'idle
   }
 }
 
+function badgeFor(data: ResolveResponse): 'match' | 'abstain' | 'canadian' {
+  if (data.alreadyCanadian) return 'canadian';
+  return data.abstained ? 'abstain' : 'match';
+}
+
 // --- message handling ------------------------------------------------------
 
 chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) => {
@@ -186,24 +264,24 @@ chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) =>
       switch (message.type) {
         case 'report': {
           if (tabId !== undefined) {
-            const existing = tabStates.get(tabId);
-
-            // Carry the result forward only when this is the SAME page.
-            // A tab keeps its id across navigations, so preserving it
-            // unconditionally left the previous product's verdict sitting
-            // above the new page's diagnostics - the popup would say
-            // "Doritos, foreign-owned" while describing a Walmart shampoo
-            // page it had just failed to read.
-            const samePage = existing?.url === message.report.url;
-
-            tabStates.set(tabId, {
-              url: message.report.url,
-              site: message.report.site,
-              kind: message.report.pageKind,
-              resolve: samePage ? existing?.resolve : undefined,
-              cart: samePage ? existing?.cart : undefined,
-              report: message.report,
-              updatedAt: Date.now(),
+            const report = message.report;
+            await updateTab(tabId, (existing) => {
+              // Carry the result forward only when this is the SAME page.
+              // A tab keeps its id across navigations, so preserving it
+              // unconditionally left the previous product's verdict sitting
+              // above the new page's diagnostics - the popup would say
+              // "Doritos, foreign-owned" while describing a Walmart shampoo
+              // page it had just failed to read.
+              const samePage = existing?.url === report.url;
+              return {
+                url: report.url,
+                site: report.site,
+                kind: report.pageKind,
+                resolve: samePage ? existing?.resolve : undefined,
+                cart: samePage ? existing?.cart : undefined,
+                report,
+                updatedAt: Date.now(),
+              };
             });
             if (message.report.pageKind === 'none' || message.report.error) {
               setBadge(tabId, 'idle');
@@ -215,19 +293,15 @@ chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) =>
         case 'resolve': {
           const data = await resolve(message.product);
           if (tabId !== undefined) {
-            tabStates.set(tabId, {
-              ...tabStates.get(tabId),
-              url: message.product.url,
+            await updateTab(tabId, (existing) => ({
+              ...existing,
+              url: existing?.url ?? message.product.url,
               site: message.product.site,
               kind: 'product',
               resolve: data,
               updatedAt: Date.now(),
-            });
-            setBadge(
-              tabId,
-              data.alreadyCanadian ? 'canadian' : data.abstained ? 'abstain' : 'match',
-              data.candidates.length,
-            );
+            }));
+            setBadge(tabId, badgeFor(data), data.candidates.length);
           }
           sendResponse({ ok: true, kind: 'resolve', data } satisfies Response);
           break;
@@ -235,17 +309,17 @@ chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) =>
         case 'search': {
           const data = await searchAlternatives(message.site, message.query);
           if (tabId !== undefined) {
-            tabStates.set(tabId, {
-              ...tabStates.get(tabId),
+            await updateTab(tabId, (existing) => ({
+              ...existing,
               // Keep the page's url, so the follow-up report from the
               // content script is recognised as the same page.
-              url: tabStates.get(tabId)?.url ?? '',
+              url: existing?.url ?? '',
               site: message.site,
               kind: 'search',
               resolve: data,
               updatedAt: Date.now(),
-            });
-            setBadge(tabId, data.abstained ? 'abstain' : 'match', data.candidates.length);
+            }));
+            setBadge(tabId, badgeFor(data), data.candidates.length);
           }
           sendResponse({ ok: true, kind: 'search', data } satisfies Response);
           break;
@@ -253,14 +327,14 @@ chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) =>
         case 'analyzeCart': {
           const data = await analyzeCart(message.site, message.lines);
           if (tabId !== undefined) {
-            tabStates.set(tabId, {
-              ...tabStates.get(tabId),
-              url: tabStates.get(tabId)?.url ?? '',
+            await updateTab(tabId, (existing) => ({
+              ...existing,
+              url: existing?.url ?? '',
               site: message.site,
               kind: 'cart',
               cart: data,
               updatedAt: Date.now(),
-            });
+            }));
             setBadge(tabId, data.swapCount > 0 ? 'match' : 'abstain', data.swapCount);
           }
           sendResponse({ ok: true, kind: 'cart', data } satisfies Response);
@@ -278,10 +352,10 @@ chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) =>
           let state: TabState | null = null;
 
           if (!ownPage && tab?.id !== undefined) {
-            state = tabStates.get(tab.id) ?? null;
+            state = (await getTab(tab.id)) ?? null;
           } else {
             let newest = 0;
-            for (const candidate of tabStates.values()) {
+            for (const candidate of await allTabs()) {
               if (candidate.updatedAt > newest) {
                 newest = candidate.updatedAt;
                 state = candidate;
@@ -309,7 +383,8 @@ chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) =>
           const stored = await chrome.storage.local.get(null);
           const doomed = Object.keys(stored).filter((k) => k !== 'settings');
           if (doomed.length > 0) await chrome.storage.local.remove(doomed);
-          tabStates.clear();
+          await chrome.storage.session.clear();
+          tabQueues.clear();
           console.info(`[buycan] cleared ${doomed.length} stored key(s); settings kept`);
           sendResponse({ ok: true, kind: 'tabState', data: null } satisfies Response);
           break;
@@ -333,10 +408,11 @@ chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) =>
       const detail = error instanceof Error ? error.message : String(error);
       if (tabId !== undefined) {
         setBadge(tabId, 'idle');
-        const existing = tabStates.get(tabId);
-        if (existing?.report) {
-          existing.report = { ...existing.report, error: detail } satisfies PageReport;
-        }
+        await updateTab(tabId, (existing) =>
+          existing?.report
+            ? { ...existing, report: { ...existing.report, error: detail } satisfies PageReport }
+            : (existing ?? { url: '', site: '', kind: 'none', updatedAt: Date.now() }),
+        ).catch(() => undefined);
       }
       sendResponse({ ok: false, error: detail } satisfies Response);
     }
@@ -345,7 +421,7 @@ chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) =>
   return true; // Keep the channel open for the async reply.
 });
 
-chrome.tabs.onRemoved.addListener((tabId) => tabStates.delete(tabId));
+chrome.tabs.onRemoved.addListener((tabId) => void clearTab(tabId));
 
 /**
  * Drop a tab's state the moment it navigates.
@@ -357,11 +433,14 @@ chrome.tabs.onRemoved.addListener((tabId) => tabStates.delete(tabId));
  */
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
   if (!changeInfo.url) return;
-  const existing = tabStates.get(tabId);
-  if (existing && existing.url !== changeInfo.url) {
-    tabStates.delete(tabId);
-    setBadge(tabId, 'idle');
-  }
+  const url = changeInfo.url;
+  void (async () => {
+    const existing = await getTab(tabId);
+    if (existing && existing.url !== url) {
+      await clearTab(tabId);
+      setBadge(tabId, 'idle');
+    }
+  })();
 });
 
 /**
@@ -408,6 +487,25 @@ async function purgeLegacyDismissals(): Promise<void> {
 
 void purgeLegacyDismissals();
 
-chrome.runtime.onInstalled.addListener(() => void purgeStaleCache());
+chrome.runtime.onInstalled.addListener(() => {
+  void purgeStaleCache();
+  void injectIntoOpenTabs();
+});
 chrome.runtime.onStartup.addListener(() => void purgeStaleCache());
 void purgeStaleCache();
+
+/**
+ * Chrome only injects content scripts into pages loaded after install, so a
+ * freshly installed or reloaded extension did nothing on tabs already open
+ * until each was refreshed. Inject into them directly instead.
+ */
+async function injectIntoOpenTabs(): Promise<void> {
+  for (const script of chrome.runtime.getManifest().content_scripts ?? []) {
+    if (!script.matches || !script.js) continue;
+    const tabs = await chrome.tabs.query({ url: script.matches });
+    for (const tab of tabs) {
+      if (tab.id === undefined || tab.discarded) continue;
+      await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: script.js }).catch(() => undefined);
+    }
+  }
+}

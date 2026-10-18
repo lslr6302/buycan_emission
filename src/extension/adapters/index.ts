@@ -15,14 +15,14 @@ export type { SiteAdapter, PageKind } from './types';
 export const genericAdapter: SiteAdapter = {
   id: 'generic',
 
-  pageKind: () => {
+  pageKind: (doc = document) => {
     if (/\/(cart|checkout|panier|basket)(\/|$)/i.test(location.pathname)) {
       // A cart we have no adapter for. Saying 'none' keeps us quiet rather
       // than half-reading a page and reporting a wrong total.
       return 'none';
     }
     // The honest product-page test: does the page claim to be one?
-    if (findProductNode(jsonLdNodesFromDocument(document))) return 'product';
+    if (findProductNode(jsonLdNodesFromDocument(doc))) return 'product';
 
     // Search before URL shape, because a search page can sit under a path
     // that also looks product-ish.
@@ -89,6 +89,15 @@ function genericSearchQuery(): string | null {
  */
 const HOST_ADAPTERS: SiteAdapter[] = [amazonAdapter];
 const DETECTED_ADAPTERS: SiteAdapter[] = [shopifyAdapter];
+
+/**
+ * For pages that are not the live tab - parsed from a fetch, where there is no
+ * window to run `detect()` against. Hostname-matched adapters only; everything
+ * else gets the generic ladder.
+ */
+export function adapterForHost(hostname: string): SiteAdapter | null {
+  return HOST_ADAPTERS.find((adapter) => adapter.match?.test(hostname)) ?? null;
+}
 
 export function resolveAdapter(hostname: string): SiteAdapter {
   for (const adapter of HOST_ADAPTERS) {

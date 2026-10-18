@@ -6,6 +6,7 @@ import { DEFAULT_WEIGHTS } from '../shared/scoring';
 import { analyzeCart } from './pipeline/cart';
 import { type PipelineDeps, resolveProduct } from './pipeline/resolve';
 import { createAiClient, createAiStore, createRepository, loadConfig } from './config';
+import { saveBrowserFinds } from './pipeline/ai-finds';
 
 /**
  * The API the extension talks to.
@@ -45,6 +46,7 @@ const resolveSchema = z.object({
   weights: weightsSchema.optional(),
   verifiedOnly: z.boolean().optional(),
   destinationRegion: z.string().nullable().optional(),
+  browserCheck: z.boolean().optional(),
 });
 
 const searchSchema = z.object({
@@ -52,6 +54,7 @@ const searchSchema = z.object({
   query: z.string().min(2).max(300),
   weights: weightsSchema.optional(),
   verifiedOnly: z.boolean().optional(),
+  browserCheck: z.boolean().optional(),
 });
 
 const cartSchema = z.object({
@@ -62,6 +65,25 @@ const cartSchema = z.object({
   weights: weightsSchema.optional(),
   verifiedOnly: z.boolean().optional(),
   destinationRegion: z.string().nullable().optional(),
+});
+
+const findsSchema = z.object({
+  key: z.string().min(1).max(500),
+  finds: z
+    .array(
+      z.object({
+        url: z.string().url(),
+        title: z.string().min(1).max(500),
+        brand: z.string().max(200).nullable(),
+        retailer: z.string().max(200),
+        priceCad: z.number().positive().nullable(),
+        gtin: z.string().max(20).nullable(),
+        massKg: z.number().nullable(),
+        sourceUrl: z.string().url().nullable(),
+        claim: z.string().max(1000),
+      }),
+    )
+    .max(10),
 });
 
 async function main(): Promise<void> {
@@ -124,7 +146,7 @@ async function main(): Promise<void> {
       res.status(400).json({ error: 'invalid_request', detail: parsed.error.flatten() });
       return;
     }
-    const { site, query, weights, verifiedOnly } = parsed.data;
+    const { site, query, weights, verifiedOnly, browserCheck } = parsed.data;
     try {
       res.json(
         await resolveProduct(
@@ -145,12 +167,35 @@ async function main(): Promise<void> {
             weights,
             verifiedOnly,
             fromSearch: true,
+            browserCheck,
           },
           deps,
         ),
       );
     } catch (error) {
       fail(res, error, 'search');
+    }
+  });
+
+  /**
+   * The extension reporting what it found and verified for an AI lead, so the
+   * AI store can remember it. Only finds that answer a lead this server just
+   * issued are kept; see pipeline/ai-finds.ts.
+   */
+  app.post('/v1/ai/finds', async (req, res) => {
+    const parsed = findsSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: 'invalid_request', detail: parsed.error.flatten() });
+      return;
+    }
+    if (!aiStore) {
+      res.json({ saved: 0, refused: parsed.data.finds.length });
+      return;
+    }
+    try {
+      res.json(await saveBrowserFinds(parsed.data.key, parsed.data.finds, aiStore));
+    } catch (error) {
+      fail(res, error, 'ai-finds');
     }
   });
 

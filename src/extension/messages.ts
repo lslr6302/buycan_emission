@@ -51,6 +51,18 @@ export interface PageReport {
   error: string | null;
 }
 
+/**
+ * Service worker -> offscreen document: parse a fetched page, either as one
+ * product page or as a store's search results.
+ */
+export interface OffscreenParse {
+  type: 'offscreen:parse';
+  kind: 'product' | 'listings';
+  html: string;
+  url: string;
+  site: string;
+}
+
 /** What the popup reads for the active tab, including when we stayed silent. */
 export interface TabState {
   url: string;

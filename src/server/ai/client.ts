@@ -1,14 +1,14 @@
-import type { ProductRef, ProductSpec } from '../../shared/types';
+import type { AiLead, ProductRef, ProductSpec } from '../../shared/types';
 
 /**
  * THE AI SEAM.
  *
  * Three calls, three jobs, each one narrow on purpose:
  *
- *   extractSpec     - parse messy listing text into a structured spec
- *   searchAlternative - web-grounded search, used ONLY when the verified
- *                     dataset came up empty
- *   sanityCheck     - yes/no veto on a top candidate
+ *   extractSpec          - parse messy listing text into a structured spec
+ *   suggestAlternatives  - name Canadian products worth looking for, used
+ *                          ONLY when the verified dataset came up empty
+ *   sanityCheck          - yes/no veto on a top candidate
  *
  * What is deliberately absent: anything that ranks, and anything that recalls
  * ownership. Ranking is arithmetic (shared/scoring.ts) because it has to be
@@ -26,11 +26,11 @@ export interface AiClient {
   extractSpec(product: ProductRef): Promise<ProductSpec | null>;
 
   /**
-   * Must return real, resolvable product URLs. Fabricated storefronts are the
-   * expected failure mode, so every result is validated before display -
-   * callers must not trust this output.
+   * What to look for, not where: brand, product and store search terms. The
+   * pipeline searches the allowed stores itself, so a model can suggest a
+   * brand that is not stocked (dropped) but never a listing that does not exist.
    */
-  searchAlternative(input: AlternativeSearchInput): Promise<AiCandidate[]>;
+  suggestAlternatives(input: AlternativeSearchInput): Promise<AiLead[]>;
 
   /** "Would a shopper buying X reasonably accept Y?" A filter, never a ranker. */
   sanityCheck(original: ProductRef, candidateTitle: string): Promise<SanityVerdict>;
@@ -41,8 +41,11 @@ export interface AlternativeSearchInput {
   spec: ProductSpec | null;
   /** How many to ask for before validation culls them. */
   limit: number;
+  /** The stores that will be searched, so suggestions favour what they stock. */
+  sites: string[];
 }
 
+/** A store listing found for a lead, on its way through the gates. */
 export interface AiCandidate {
   title: string;
   brand: string | null;
@@ -69,7 +72,7 @@ export class NullAiClient implements AiClient {
   async extractSpec(): Promise<ProductSpec | null> {
     return null;
   }
-  async searchAlternative(): Promise<AiCandidate[]> {
+  async suggestAlternatives(): Promise<AiLead[]> {
     return [];
   }
   async sanityCheck(): Promise<SanityVerdict> {

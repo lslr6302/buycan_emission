@@ -1,14 +1,17 @@
 import { normalizeBrand, productKey, round } from '../../shared/normalize';
+import { allowedSitesFor } from '../../shared/retailers';
 import {
   DEFAULT_WEIGHTS,
   equivalenceScore,
   priceScore,
-  rank,
+  rankPreferringSite,
   totalScore,
 } from '../../shared/scoring';
 import type {
   AbstentionReason,
+  AiLead,
   BrandRecord,
+  BrowserLead,
   Candidate,
   GateRejection,
   ProductRef,
@@ -19,9 +22,9 @@ import type {
   Weights,
 } from '../../shared/types';
 import type { AiClient } from '../ai/client';
-import type { AiStore, StoredAlternative, StoredAlternativeInput } from '../data/ai-store';
+import type { AiStore, StoredAlternative } from '../data/ai-store';
 import type { CatalogueItem, Repository } from '../data/repository';
-import { runGates } from './gates';
+import { rememberIssuedLeads } from './ai-finds';
 import { findProductLink, priceCeiling, requiredNouns, searchTermsFor } from './storefront';
 import { ownStatusFor, qualifiesAsCanadian, verdictFor } from './provenance';
 
@@ -29,8 +32,8 @@ import { ownStatusFor, qualifiesAsCanadian, verdictFor } from './provenance';
  * The runtime pipeline for one product.
  *
  *   spec -> brand -> provenance -> verified retrieval
- *        -> stored AI discoveries -> AI fallback (gated, then stored)
- *        -> retailer fallback -> score -> abstain?
+ *        -> stored AI discoveries -> retailer fallback -> score -> abstain?
+ *        -> (still nothing) AI suggestions -> store search in the browser
  *
  * Order matters and is not an accident. The verified dataset always runs
  * first; the AI only sees products the database could not answer for.
@@ -64,6 +67,8 @@ export async function resolveProduct(
 
   const rejections: GateRejection[] = [];
   let aiCandidatesSeen = 0;
+  let aiError: string | null = null;
+  let browserSearch: ResolveResponse['browserSearch'] = null;
 
   // 1. Spec. Cached by stable key, so this runs once per product ever.
   const spec = await loadSpec(key, product, repo, ai);
@@ -83,11 +88,14 @@ export async function resolveProduct(
   const siteBrand = await findSiteBrand(product, repo);
   const ownStatus = ownStatusFor(provenance);
 
-  // 3. Already Canadian-owned? Then there is nothing to switch to, and
-  //    suggesting a "better" Canadian option would be noise. Stop here and
-  //    let the UI confirm what they are already holding. Skipping retrieval
-  //    also saves a database round trip and any AI call on this path.
-  if (ownStatus === 'canadian') {
+  // 3. Already Canadian? Then there is nothing to switch to, and suggesting
+  //    a "better" Canadian option would be noise. Stop here and let the UI
+  //    confirm what they are already holding. Skipping retrieval also saves a
+  //    database round trip and any AI call on this path.
+  //    Either test counts: Canadian-owned (or directory-listed), or clearing
+  //    the same bar an alternative has to - so a brand made, run and founded
+  //    in Canada under a foreign parent is not "replaced" with another one.
+  if (ownStatus === 'canadian' || qualifiesAsCanadian(provenance)) {
     return {
       key,
       product,
@@ -111,7 +119,9 @@ export async function resolveProduct(
         elapsedMs: Date.now() - started,
         dataSource: repo.name,
         aiSource: ai.name,
+        aiError: null,
       },
+      browserSearch: null,
     };
   }
 
@@ -121,12 +131,10 @@ export async function resolveProduct(
     toCandidate(item, product, spec, 'verified', item.gtin && item.gtin === product.gtin ? 'gtin_exact' : 'equivalent', null),
   );
 
-  // 5. AI fallback - only when the database came up empty. Earlier AI
-  //    discoveries for this product are tried first; the model is only asked
-  //    when there are none. Either way they stay origin 'ai'.
+  // 5. Earlier AI discoveries for this product, when the database came up
+  //    empty. They stay origin 'ai'. Fresh suggestions come last (step 9).
   const brandKey = normalizeBrand(product.brand) || null;
   let aiStoreHits = 0;
-  const freshAiIds = new Set<string>();
 
   if (candidates.length === 0 && !request.verifiedOnly && deps.aiStore) {
     const stored = await deps.aiStore
@@ -139,26 +147,14 @@ export async function resolveProduct(
     candidates = stored.map((entry) => toCandidateFromStore(entry, product, spec));
   }
 
-  if (candidates.length === 0 && !request.verifiedOnly) {
-    const proposed = await ai.searchAlternative({ product, spec, limit: 4 }).catch(() => []);
-    aiCandidatesSeen = proposed.length;
-
-    for (const proposal of proposed) {
-      const result = await runGates(proposal, { fetchImpl: deps.fetchImpl });
-      if (!result.passed) {
-        if (result.rejection) rejections.push(result.rejection);
-        continue;
-      }
-      const candidate = toCandidateFromAi(proposal, result.verified!, product, spec);
-      freshAiIds.add(candidate.id);
-      candidates.push(candidate);
-    }
-  }
-
   // 6. Provenance filter. A candidate that is not actually Canadian is not an
   //    alternative, however well it matches on attributes.
+  //    An AI find whose brand the dataset has never heard of stays, shown as
+  //    AI-found with ownership unknown; one the dataset knows is foreign goes.
   candidates = await attachProvenance(candidates, repo);
-  candidates = candidates.filter((c) => qualifiesAsCanadian(c.provenance));
+  candidates = candidates.filter(
+    (c) => qualifiesAsCanadian(c.provenance) || (c.origin === 'ai' && c.provenance.canadianScore === null),
+  );
 
   // A brand is not an alternative to itself. On a Canadian brand's own
   // store the retrieval happily matches the brand to its own catalogue and
@@ -170,11 +166,11 @@ export async function resolveProduct(
     candidates = candidates.filter((c) => normalizeBrand(c.brand ?? '') !== pageBrand);
   }
 
-  // 7. Rank deterministically, then veto the top few.
-  candidates = rank(candidates, weights);
+  // 7. Rank deterministically (shopper's own site first), then veto the top few.
+  candidates = rankPreferringSite(candidates, weights, product.site);
   if (deps.sanityVeto !== false && candidates.length > 0) {
     candidates = await applySanityVeto(candidates.slice(0, maxCandidates + 2), product, ai, rejections);
-    candidates = rank(candidates, weights);
+    candidates = rankPreferringSite(candidates, weights, product.site);
   }
   candidates = candidates.slice(0, maxCandidates);
 
@@ -195,18 +191,7 @@ export async function resolveProduct(
     candidates = candidates.filter((c) => c.priceCad === null || c.priceCad <= ceiling);
   }
 
-  candidates = rank(candidates, weights);
-
-  // Only fresh discoveries that survived every gate, the provenance filter
-  // and the veto are worth remembering.
-  if (deps.aiStore && freshAiIds.size > 0) {
-    const keep = candidates.filter((c) => freshAiIds.has(c.id));
-    await deps.aiStore
-      .save(keep.map((c) => toStoredInput(c, product, key, brandKey, spec, ai.name)))
-      .catch((error) => {
-        console.error('[ai-store] save failed:', error instanceof Error ? error.message : error);
-      });
-  }
+  candidates = rankPreferringSite(candidates, weights, product.site);
 
   // 8. Retailer fallback. When there is no Canadian product, the lever moves
   //    from what you buy to where you buy it.
@@ -215,9 +200,31 @@ export async function resolveProduct(
     candidates = swaps.slice(0, maxCandidates);
   }
 
+  // 9. AI fallback - only when nothing above found anything. The AI names
+  //    Canadian products to look for; it never supplies a listing. The four
+  //    stores (and usually the shopper's own) block servers, so the actual
+  //    store search runs in the extension, which gets the leads back here.
+  if (candidates.length === 0 && !request.verifiedOnly) {
+    const sites = allowedSitesFor(product.site);
+    // A failed call is not "nothing found" - remember it, or a quota error
+    // reaches the shopper as "no Canadian alternative exists".
+    const leads = await ai.suggestAlternatives({ product, spec, limit: 4, sites }).catch((error: unknown) => {
+      aiError = error instanceof Error ? error.message : String(error);
+      return [] as AiLead[];
+    });
+    aiCandidatesSeen = leads.length;
+
+    const kept = await screenLeads(leads, brandName ?? product.brand, repo, rejections);
+    if (kept.length > 0 && request.browserCheck) {
+      browserSearch = { leads: kept, sites };
+      // So the finds the extension reports back can be checked and stored.
+      if (deps.aiStore) rememberIssuedLeads(key, { product, spec, leads: kept, sites, aiBackend: ai.name });
+    }
+  }
+
   const abstained = candidates.length === 0;
   const abstentionReason = abstained
-    ? pickAbstentionReason(spec, rejections, aiCandidatesSeen)
+    ? pickAbstentionReason(spec, rejections, aiCandidatesSeen, aiError)
     : null;
 
   return {
@@ -245,7 +252,9 @@ export async function resolveProduct(
       elapsedMs: Date.now() - started,
       dataSource: repo.name,
       aiSource: ai.name,
+      aiError,
     },
+    browserSearch,
   };
 }
 
@@ -403,46 +412,6 @@ function toCandidate(
   };
 }
 
-function toCandidateFromAi(
-  proposal: { title: string; brand: string | null; retailer: string | null; sourceUrl: string | null; claim: string },
-  verified: ProductRef,
-  product: ProductRef,
-  spec: ProductSpec | null,
-): Candidate {
-  const equivalence = equivalenceScore(
-    { gtin: product.gtin, title: product.title, spec },
-    { gtin: verified.gtin, title: verified.title, category: null, attrs: {} },
-  );
-
-  return {
-    // Facts come from the retailer's own page, not from the model. The model
-    // only supplied the lead; everything displayed was re-read from source.
-    id: `ai:${verified.site}:${verified.siteId ?? verified.title.slice(0, 40)}`,
-    origin: 'ai',
-    matchType: 'equivalent',
-    title: verified.title,
-    brand: verified.brand ?? proposal.brand,
-    url: verified.url,
-    retailer: proposal.retailer ?? verified.site,
-    retailerCanadianOwned: null,
-    priceCad: verified.price?.amount ?? null,
-    priceChecked: new Date().toISOString().slice(0, 10),
-    gtin: verified.gtin,
-    massKg: verified.massKg,
-    shipsFrom: null,
-    provenance: placeholderProvenance(verified.brand ?? proposal.brand),
-    linkKind: 'product',
-    components: {
-      equivalence,
-      canadian: 0.5,
-      price: priceScore(product.price?.amount ?? null, verified.price?.amount ?? null),
-    },
-    score: 0,
-    sourceUrl: proposal.sourceUrl,
-    rationale: proposal.claim,
-  };
-}
-
 /**
  * A previous AI discovery. Its facts were re-read from the retailer page when
  * it was stored; provenance is looked up afresh by attachProvenance.
@@ -484,32 +453,40 @@ function toCandidateFromStore(
   };
 }
 
-function toStoredInput(
-  candidate: Candidate,
-  product: ProductRef,
-  key: string,
-  brandKey: string | null,
-  spec: ProductSpec | null,
-  aiBackend: string,
-): StoredAlternativeInput {
-  return {
-    productKey: key,
-    originalBrandKey: brandKey,
-    originalTitle: product.title,
-    originalSite: product.site,
-    category: spec?.category ?? null,
-    url: candidate.url,
-    title: candidate.title,
-    brand: candidate.brand,
-    retailer: candidate.retailer,
-    priceCad: candidate.priceCad,
-    gtin: candidate.gtin,
-    massKg: candidate.massKg,
-    // The gates refuse any candidate without one, so this is always set here.
-    sourceUrl: candidate.sourceUrl ?? candidate.url,
-    claim: candidate.rationale,
-    aiBackend,
-  };
+/**
+ * Before any store is searched: a lead needs a citation, must not be the
+ * brand the shopper is already looking at, and must not be a brand the
+ * dataset knows to be foreign. A brand the dataset has never heard of stays -
+ * absence of evidence is not evidence of foreign ownership - and is shown as
+ * AI-found with its ownership marked unknown.
+ */
+async function screenLeads(
+  leads: AiLead[],
+  pageBrand: string | null,
+  repo: Repository,
+  rejections: GateRejection[],
+): Promise<BrowserLead[]> {
+  const ownBrand = normalizeBrand(pageBrand);
+  const kept: BrowserLead[] = [];
+  for (const lead of leads) {
+    const where = `lead:${lead.query}`;
+    if (!lead.sourceUrl) {
+      rejections.push({ gate: 'source_url_required', url: where, detail: `${lead.brand}: no source for the Canadian claim` });
+      continue;
+    }
+    if (ownBrand && normalizeBrand(lead.brand) === ownBrand) {
+      rejections.push({ gate: 'same_brand', url: where, detail: `${lead.brand} is the brand already on the page` });
+      continue;
+    }
+    const record = await repo.findBrand(lead.brand);
+    const verdict = verdictFor(record, lead.brand);
+    if (verdict.canadianScore !== null && !qualifiesAsCanadian(verdict)) {
+      rejections.push({ gate: 'brand_not_canadian', url: where, detail: `${lead.brand}: ${verdict.summary}` });
+      continue;
+    }
+    kept.push({ ...lead, provenance: verdict });
+  }
+  return kept;
 }
 
 function placeholderProvenance(brand: string | null): ProvenanceVerdict {
@@ -670,12 +647,14 @@ function sameProductUrl(a: string, b: string): boolean {
 function pickAbstentionReason(
   spec: ProductSpec | null,
   rejections: GateRejection[],
-  aiCandidatesSeen: number,
+  aiLeads: number,
+  aiError: string | null,
 ): AbstentionReason {
-  if (!spec) return 'insufficient_product_data';
-  if (aiCandidatesSeen > 0 && rejections.length >= aiCandidatesSeen) {
-    return 'all_candidates_failed_validation';
+  if (aiError) return 'ai_unavailable';
+  if (aiLeads > 0) {
+    return rejections.length >= aiLeads ? 'all_candidates_failed_validation' : 'not_in_allowed_stores';
   }
+  if (!spec) return 'insufficient_product_data';
   return 'no_canadian_alternative';
 }
 
@@ -697,10 +676,22 @@ function abstentionMessage(
         `That is a real answer, not a loading state - for some categories no Canadian ` +
         `manufacturing exists, and we would rather say so than invent a match.`
       );
+    case 'ai_unavailable':
+      return (
+        `Nothing in our database matched, and the AI search could not run this time ` +
+        `(quota or outage), so we cannot say whether a Canadian alternative exists. ` +
+        `Try again later.`
+      );
+    case 'not_in_allowed_stores':
+      // The extension replaces this once it has searched the stores.
+      return (
+        `Nothing in our database matched. The AI suggested Canadian alternatives; ` +
+        `the store search for them runs in the browser extension.`
+      );
     case 'all_candidates_failed_validation':
       return (
-        `We found possible Canadian alternatives but could not verify any of them - ` +
-        `the links did not resolve to a real product page we could read a price from. ` +
+        `The AI suggested possible Canadian alternatives, but none passed our checks ` +
+        `(no cited source, or a brand our dataset knows is not Canadian). ` +
         `Unverified suggestions are withheld rather than shown with a caveat.`
       );
     case 'insufficient_product_data':
@@ -718,17 +709,10 @@ function abstentionMessage(
   }
 }
 
-/**
- * While the AI fallback is a stub it rejects everything by construction, so an
- * abstention there says nothing about whether a Canadian alternative exists.
- * Saying so beats letting someone conclude the matcher is broken.
- */
-function stubNote(aiName: string, aiCandidatesSeen: number): string {
-  if (aiName !== 'mock' || aiCandidatesSeen === 0) return '';
-  return (
-    ' (Note: the AI fallback is still a stub - it returns fixtures that fail validation by design, ' +
-    'so this abstention reflects the placeholder backend, not a real search.)'
-  );
+/** Says so when suggestions came from the offline mock rather than Gemini. */
+function stubNote(aiName: string, aiLeads: number): string {
+  if (aiName !== 'mock' || aiLeads === 0) return '';
+  return ' (Note: AI suggestions came from the mock backend, not Gemini.)';
 }
 
 export function normalizeWeights(weights: Weights | undefined): Weights {

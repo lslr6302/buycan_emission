@@ -88,7 +88,9 @@ curl localhost:8787/v1/health
 - `dataBackend: mock(seed)` → running on seed data, so `.env` was not found.
   Make sure you ran `npm run server` from the project root.
 
-`aiBackend: mock` is expected for now — the Gemini integration is still a stub.
+`aiBackend: mock` means the offline stand-in. For real AI suggestions, put
+`GEMINI_API_KEY` in `.env` and run `npm run server:gemini` instead (free-tier
+key is enough).
 
 ---
 
@@ -214,7 +216,7 @@ src/
   shared/        types, HTML extraction, scoring — used by both halves
   server/
     data/        database access       <- repository.ts is the interface
-    ai/          Gemini seam (stub)    <- client.ts is the interface
+    ai/          Gemini seam           <- client.ts is the interface
     pipeline/    the resolve logic
   extension/
     adapters/    per-site code (amazon, shopify, generic)

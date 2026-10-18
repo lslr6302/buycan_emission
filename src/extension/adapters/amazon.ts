@@ -15,19 +15,23 @@ import type { SiteAdapter } from './types';
  * This is one site among several. It is not the design centre.
  */
 
-function firstText(...selectors: string[]): string | null {
+/**
+ * Every read takes the document explicitly: the same extractor runs on the
+ * live tab and on pages the extension fetches to verify an AI candidate.
+ */
+function firstText(doc: Document, ...selectors: string[]): string | null {
   for (const selector of selectors) {
-    const text = document.querySelector(selector)?.textContent?.replace(/\s+/g, ' ').trim();
+    const text = doc.querySelector(selector)?.textContent?.replace(/\s+/g, ' ').trim();
     if (text) return text;
   }
   return null;
 }
 
-function asinFromPage(): string | null {
-  const fromUrl = location.pathname.match(/\/(?:dp|gp\/product)\/([A-Z0-9]{10})/i);
+function asinFromPage(doc: Document, url: string): string | null {
+  const fromUrl = url.match(/\/(?:dp|gp\/product)\/([A-Z0-9]{10})/i);
   if (fromUrl) return fromUrl[1]!.toUpperCase();
-  const input = document.querySelector<HTMLInputElement>('input#ASIN, input[name="ASIN"]');
-  return input?.value?.toUpperCase() ?? null;
+  const input = doc.querySelector<HTMLInputElement>('input#ASIN, input[name="ASIN"]');
+  return input?.getAttribute('value')?.toUpperCase() ?? null;
 }
 
 /**
@@ -37,27 +41,27 @@ function asinFromPage(): string | null {
  * logo image with no text node, and an unread brand costs us the curated
  * brand-to-brand match entirely - which is the good path.
  */
-function brandFromPage(): string | null {
-  const byline = cleanBrand(firstText('#bylineInfo', 'a#bylineInfo', '#brand', '#bylineInfo_feature_div'));
+function brandFromPage(doc: Document): string | null {
+  const byline = cleanBrand(firstText(doc, '#bylineInfo', 'a#bylineInfo', '#brand', '#bylineInfo_feature_div'));
   if (byline) return byline;
 
   // The "Brand" row of the product-overview table. Stable and text-based.
-  const fromTable = brandFromLabelledRow();
+  const fromTable = brandFromLabelledRow(doc);
   if (fromTable) return fromTable;
 
   // Byline rendered as a logo: the alt text usually carries the brand.
-  const logo = document.querySelector<HTMLImageElement>(
+  const logo = doc.querySelector<HTMLImageElement>(
     '#bylineInfo_feature_div img, #brandLogo img, a[id*="byline" i] img',
   );
-  const alt = cleanBrand(logo?.alt ?? null);
+  const alt = cleanBrand(logo?.getAttribute('alt') ?? null);
   if (alt) return alt;
 
   return null;
 }
 
 /** Scans label/value pairs for a row literally labelled "Brand". */
-function brandFromLabelledRow(): string | null {
-  const rows = document.querySelectorAll(
+function brandFromLabelledRow(doc: Document): string | null {
+  const rows = doc.querySelectorAll(
     '#productOverview_feature_div tr, #productDetails_techSpec_section_1 tr, ' +
       '#detailBullets_feature_div li, .a-normal.a-spacing-micro tr',
   );
@@ -91,7 +95,7 @@ export const amazonAdapter: SiteAdapter = {
   id: 'amazon',
   match: /(^|\.)amazon\.(ca|com)$/,
 
-  pageKind: () => {
+  pageKind: (doc = document) => {
     const path = location.pathname;
     if (/\/gp\/cart\/|\/cart\b/.test(path)) return 'cart';
     if (/\/(dp|gp\/product|gp\/aw\/d)\//.test(path)) return 'product';
@@ -99,10 +103,10 @@ export const amazonAdapter: SiteAdapter = {
 
     // URL shapes change and vary by locale. If the page is serving a product
     // title and an ASIN, it is a product page whatever the path looks like.
-    if (document.querySelector('#productTitle, input#ASIN, input[name="ASIN"]')) return 'product';
+    if (doc.querySelector('#productTitle, input#ASIN, input[name="ASIN"]')) return 'product';
 
     // Likewise, a results grid is a search page even on /b/ or /gp/bestsellers.
-    if (document.querySelector('.s-search-results, [data-component-type="s-search-result"]')) {
+    if (doc.querySelector('.s-search-results, [data-component-type="s-search-result"]')) {
       return 'search';
     }
     return 'none';
@@ -115,12 +119,13 @@ export const amazonAdapter: SiteAdapter = {
     return box?.value?.trim() || null;
   },
 
-  product: (_doc, ctx): ProductRef | null => {
-    const title = firstText('#productTitle', '#title span');
+  product: (doc, ctx): ProductRef | null => {
+    const title = firstText(doc, '#productTitle', '#title span');
     if (!title) return null;
 
     const amount = parsePrice(
       firstText(
+        doc,
         '#corePrice_feature_div .a-offscreen',
         '#corePriceDisplay_desktop_feature_div .a-offscreen',
         '.priceToPay .a-offscreen',
@@ -131,15 +136,15 @@ export const amazonAdapter: SiteAdapter = {
 
     return {
       site: ctx.site,
-      siteId: asinFromPage(),
+      siteId: asinFromPage(doc, ctx.url),
       url: ctx.url,
       title,
-      brand: brandFromPage(),
+      brand: brandFromPage(doc),
       gtin: null, // Amazon does not expose barcodes; the ASIN is the only key.
       price: amount === null ? null : { amount, currency: 'CAD' },
-      categoryHint: breadcrumbFromDom(document) ?? firstText('#wayfinding-breadcrumbs_feature_div'),
+      categoryHint: breadcrumbFromDom(doc) ?? firstText(doc, '#wayfinding-breadcrumbs_feature_div'),
       imageUrl:
-        document.querySelector<HTMLImageElement>('#landingImage, #imgTagWrapperId img')?.src ?? null,
+        doc.querySelector<HTMLImageElement>('#landingImage, #imgTagWrapperId img')?.getAttribute('src') ?? null,
       massKg: null,
       extraction: { tier: 'adapter', confidence: 'medium' },
     };

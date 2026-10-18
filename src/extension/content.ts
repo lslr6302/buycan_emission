@@ -115,10 +115,45 @@ async function extractWithRetry(): Promise<ProductRef | null> {
     // The URL changed under us; the navigation handler owns it now.
     if (location.href !== currentUrl) return null;
   }
+
+  // Still nothing after an in-site navigation: some single-page apps
+  // (Walmart among them) swap the visible content but never render the
+  // structured data the server-rendered page carries. Read that instead -
+  // the same URL, fetched with the shopper's cookies.
+  if (navigatedInPage && location.href === currentUrl) {
+    const fresh = await fetchPage();
+    const found = fresh ? extractFromDocument(fresh, { site, url: location.href }, adapter.product ?? null) : null;
+    if (found) {
+      log('extracted from a fresh copy of the page (live page had no product markup)');
+      return found;
+    }
+  }
   return null;
 }
 
+async function fetchPage(): Promise<Document | null> {
+  try {
+    const response = await fetch(location.href, { credentials: 'include', headers: { accept: 'text/html' } });
+    if (!response.ok) return null;
+    return new DOMParser().parseFromString(await response.text(), 'text/html');
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * True when the shopper has moved to another product since `identity` was
+ * taken. Lookups can take many seconds (AI suggestions, store searches), and
+ * a result for the previous product must never be painted under a new one.
+ */
+function movedOn(identity: string): boolean {
+  if (identity === currentIdentity) return false;
+  log('page changed while the lookup ran; dropping its result');
+  return true;
+}
+
 async function runProduct(): Promise<void> {
+  const identity = currentIdentity;
   const product = await extractWithRetry();
 
   if (!product) {
@@ -144,6 +179,7 @@ async function runProduct(): Promise<void> {
   });
 
   const response = await send({ type: 'resolve', product });
+  if (movedOn(identity)) return;
   if (!response.ok || response.kind !== 'resolve') {
     const detail = response.ok ? 'unexpected reply' : response.error;
     log('lookup failed:', detail);
@@ -237,7 +273,9 @@ async function runSearch(): Promise<void> {
 
   report({ pageKind: 'search', searchQuery: query, tier: 'adapter' });
 
+  const identity = currentIdentity;
   const response = await send({ type: 'search', site, query });
+  if (movedOn(identity)) return;
   if (!response.ok || response.kind !== 'search') {
     report({
       pageKind: 'search',
@@ -277,7 +315,9 @@ async function runCart(): Promise<void> {
 
   report({ pageKind: 'cart', cartLines: lines.length, tier: 'adapter' });
 
+  const identity = currentIdentity;
   const response = await send({ type: 'analyzeCart', site, lines });
+  if (movedOn(identity)) return;
   if (!response.ok || response.kind !== 'cart') {
     report({
       pageKind: 'cart',
@@ -397,6 +437,8 @@ function pageIdentity(href: string): string {
 }
 
 let currentUrl = location.href;
+/** Set after the first in-site navigation; a fresh page load never needs the fetch fallback. */
+let navigatedInPage = false;
 let currentIdentity = pageIdentity(location.href);
 
 /** A cheap fingerprint of what the page is currently showing. */
@@ -414,6 +456,7 @@ function onNavigated(): void {
   const identity = pageIdentity(location.href);
   if (identity === currentIdentity) return;
   currentIdentity = identity;
+  navigatedInPage = true;
 
   log('navigated, re-running');
 
@@ -450,7 +493,15 @@ function watchNavigation(): void {
   // Backstop. A content script lives in an isolated world, so patching
   // history.pushState here would not intercept the page's own calls -
   // polling is the only thing guaranteed to notice every route change.
-  setInterval(onNavigated, 700);
+  const poll = setInterval(() => {
+    // After the extension is reloaded, this copy is orphaned (its runtime is
+    // gone) while a freshly injected one takes over. Stop quietly.
+    if (!chrome.runtime?.id) {
+      clearInterval(poll);
+      return;
+    }
+    onNavigated();
+  }, 700);
 }
 
 /**

@@ -91,6 +91,17 @@ function firstOffer(node: Record<string, unknown>): Record<string, unknown> | nu
   return null;
 }
 
+/**
+ * Shopify's current themes emit a ProductGroup with no offers of its own; the
+ * price lives on each entry of hasVariant. The first variant with an offer
+ * stands in for the group, which is what the page shows before a choice.
+ */
+function firstVariantWithOffer(node: Record<string, unknown>): Record<string, unknown> | null {
+  const variants = node['hasVariant'];
+  const list = Array.isArray(variants) ? variants : [variants];
+  return list.filter(isRecord).find((v) => v['offers'] !== undefined) ?? null;
+}
+
 function gtinFrom(node: Record<string, unknown>): string | null {
   for (const key of ['gtin14', 'gtin13', 'gtin12', 'gtin8', 'gtin', 'ean', 'upc', 'isbn']) {
     const found = normalizeGtin(text(node[key]));
@@ -143,17 +154,18 @@ export function productFromJsonLd(nodes: unknown[], ctx: ExtractContext): Produc
   const title = text(node['name']);
   if (!title) return null;
 
-  const offer = firstOffer(node);
+  const variant = node['offers'] === undefined ? firstVariantWithOffer(node) : null;
+  const offer = firstOffer(variant ?? node);
   const amount = offer ? parsePrice(text(offer['price'])) : null;
   const currency = offer ? text(offer['priceCurrency']) : null;
 
   return {
     site: ctx.site,
-    siteId: text(node['sku']) ?? text(node['mpn']) ?? null,
+    siteId: text(node['sku']) ?? text(node['mpn']) ?? (variant ? text(variant['sku']) : null) ?? text(node['productGroupID']),
     url: text(offer?.['url']) ?? text(node['url']) ?? ctx.url,
     title,
     brand: text(node['brand']) ?? text(node['manufacturer']),
-    gtin: gtinFrom(node),
+    gtin: gtinFrom(node) ?? (variant ? gtinFrom(variant) : null),
     price: amount === null ? null : { amount, currency: currency ?? 'CAD' },
     categoryHint: text(node['category']) ?? breadcrumbFrom(nodes),
     imageUrl: text(node['image']),
