@@ -62,6 +62,9 @@ export async function saveBrowserFinds(
 ): Promise<{ saved: number; refused: number }> {
   const entry = issued.get(key);
   if (!entry || Date.now() - entry.at > ISSUED_TTL_MS) return { saved: 0, refused: finds.length };
+  // The mock model always suggests the same brand whatever the product, so its
+  // finds are meaningless outside a test. Keep them out of the shared database.
+  if (entry.aiBackend === 'mock' && aiStore.name !== 'memory') return { saved: 0, refused: finds.length };
 
   const accepted: StoredAlternativeInput[] = [];
   for (const find of finds) {
