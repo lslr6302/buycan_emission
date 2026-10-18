@@ -194,6 +194,8 @@ export interface ResolveRequest {
 
 export type AbstentionReason =
   | 'no_canadian_alternative'
+  /** The product on the page is already Canadian by our dataset. Nothing to swap to. */
+  | 'already_canadian'
   | 'category_out_of_scope'
   | 'insufficient_product_data'
   | 'all_candidates_failed_validation'

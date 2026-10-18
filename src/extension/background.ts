@@ -24,7 +24,7 @@ import { searchStoresInBrowser } from './store-search';
  * abstention cached before a data fix keeps being served for a day, and the
  * fix looks like it did not work.
  */
-const CACHE_VERSION = 'v4';
+const CACHE_VERSION = 'v5';
 
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const MAX_CACHE_ENTRIES = 500;
@@ -179,8 +179,12 @@ async function analyzeCart(site: string, lines: CartLine[]): Promise<CartAnalysi
  * demonstrated on stage, and a user who sees nothing cannot tell "no Canadian
  * alternative exists" apart from "the extension is broken".
  */
-function setBadge(tabId: number, state: 'match' | 'abstain' | 'idle', count = 0): void {
-  if (state === 'match') {
+function setBadge(tabId: number, state: 'match' | 'abstain' | 'canadian' | 'idle', count = 0): void {
+  if (state === 'canadian') {
+    void chrome.action.setBadgeText({ tabId, text: '✓' });
+    void chrome.action.setBadgeBackgroundColor({ tabId, color: '#15803D' });
+    void chrome.action.setTitle({ tabId, title: 'Already Canadian - click for details' });
+  } else if (state === 'match') {
     void chrome.action.setBadgeText({ tabId, text: String(count) });
     void chrome.action.setBadgeBackgroundColor({ tabId, color: '#B5121B' });
     void chrome.action.setTitle({ tabId, title: `${count} Canadian alternative(s) found` });
@@ -192,6 +196,11 @@ function setBadge(tabId: number, state: 'match' | 'abstain' | 'idle', count = 0)
     void chrome.action.setBadgeText({ tabId, text: '' });
     void chrome.action.setTitle({ tabId, title: 'Canadian Alternatives' });
   }
+}
+
+function badgeFor(data: ResolveResponse): 'match' | 'abstain' | 'canadian' {
+  if (data.abstentionReason === 'already_canadian') return 'canadian';
+  return data.abstained ? 'abstain' : 'match';
 }
 
 // --- message handling ------------------------------------------------------
@@ -236,7 +245,7 @@ chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) =>
               resolve: data,
               updatedAt: Date.now(),
             }));
-            setBadge(tabId, data.abstained ? 'abstain' : 'match', data.candidates.length);
+            setBadge(tabId, badgeFor(data), data.candidates.length);
           }
           sendResponse({ ok: true, kind: 'resolve', data } satisfies Response);
           break;
@@ -252,7 +261,7 @@ chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) =>
               resolve: data,
               updatedAt: Date.now(),
             }));
-            setBadge(tabId, data.abstained ? 'abstain' : 'match', data.candidates.length);
+            setBadge(tabId, badgeFor(data), data.candidates.length);
           }
           sendResponse({ ok: true, kind: 'search', data } satisfies Response);
           break;

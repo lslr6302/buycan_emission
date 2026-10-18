@@ -160,6 +160,13 @@ function render(): void {
 
   status.textContent = `${escapeHtml(resolved.provenance.displayName)} · ${escapeHtml(resolved.provenance.summary)}`;
 
+  if (resolved.abstentionReason === 'already_canadian') {
+    result.innerHTML = `<div class="abstain" style="border-left-color:#15803d">
+      <strong>Already Canadian.</strong><br />${escapeHtml(resolved.abstentionMessage ?? '')}
+    </div>`;
+    return;
+  }
+
   // The abstention path. This is the whole reason the popup exists.
   if (resolved.abstained) {
     const rejected = resolved.diagnostics.aiCandidatesRejected;

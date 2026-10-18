@@ -62,13 +62,43 @@ export async function resolveProduct(
   let aiError: string | null = null;
   let browserSearch: ResolveResponse['browserSearch'] = null;
 
-  // 1. Spec. Cached by stable key, so this runs once per product ever.
-  const spec = await loadSpec(key, product, repo, ai);
-
-  // 2. Brand linking and the decomposed provenance verdict for what the user
+  // 1. Brand linking and the decomposed provenance verdict for what the user
   //    is looking at. This renders even when we have no alternative to offer.
   const brand = product.brand ? await repo.findBrand(product.brand) : null;
   const provenance = verdictFor(brand, product.brand);
+
+  // Already Canadian by the same bar an alternative has to clear: there is
+  // nothing to swap to, so stop before spending a spec parse or an AI call.
+  // Only a sourced verdict counts - a brand we have never heard of is unknown,
+  // not Canadian, and still gets the search.
+  if (qualifiesAsCanadian(provenance)) {
+    return {
+      key,
+      product,
+      spec: null,
+      provenance,
+      candidates: [],
+      abstained: true,
+      abstentionReason: 'already_canadian',
+      abstentionMessage: abstentionMessage('already_canadian', product, provenance),
+      browserSearch: null,
+      diagnostics: {
+        extractionTier: product.extraction.tier,
+        brandLinked: true,
+        verifiedCandidates: 0,
+        aiCandidates: 0,
+        aiCandidatesRejected: 0,
+        rejections: [],
+        elapsedMs: Date.now() - started,
+        dataSource: repo.name,
+        aiSource: ai.name,
+        aiError: null,
+      },
+    };
+  }
+
+  // 2. Spec. Cached by stable key, so this runs once per product ever.
+  const spec = await loadSpec(key, product, repo, ai);
 
   // 3. Verified path.
   const verifiedItems = await findVerified(product, spec, repo);
@@ -376,6 +406,8 @@ function abstentionMessage(
 ): string {
   const brand = provenance.displayName;
   switch (reason) {
+    case 'already_canadian':
+      return `${brand} is already Canadian - ${provenance.summary} Nothing to swap.`;
     case 'no_canadian_alternative':
       return (
         `No Canadian alternative found for this ${product.categoryHint ?? 'product'}. ` +

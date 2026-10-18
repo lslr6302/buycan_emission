@@ -13,7 +13,10 @@ import { runGates } from '../src/server/pipeline/gates';
 import { allowedSitesFor, siteFor } from '../src/shared/retailers';
 import { listingMatchesLead, parseWalmartSearch, pickListing, searchUrl } from '../src/shared/stores';
 import { rankPreferringSite } from '../src/shared/scoring';
-import type { Candidate } from '../src/shared/types';
+import type { Candidate, ProductRef } from '../src/shared/types';
+import { MockAiClient } from '../src/server/ai/mock-client';
+import { MockRepository } from '../src/server/data/mock-repository';
+import { resolveProduct } from '../src/server/pipeline/resolve';
 
 let passed = 0;
 let failed = 0;
@@ -209,6 +212,29 @@ const base = { title: 'T', brand: 'B', retailer: 'R', priceCad: 1, claim: 'c' };
   check('reads Walmart search results', walmartListings[0]?.url === 'https://www.walmart.ca/en/ip/Green-Beaver/6000202015029' && walmartListings[0]?.priceCad === 12.97,
     JSON.stringify(walmartListings[0]));
   check('builds store search URLs', searchUrl('amazon.ca', 'maple syrup') === 'https://www.amazon.ca/s?k=maple%20syrup');
+
+  console.log('\nAlready-Canadian products get no suggestions');
+
+  const repo = new MockRepository();
+  await repo.init();
+  const deps = { repo, ai: new MockAiClient() };
+  const onPage = (title: string, brand: string): ProductRef => ({
+    site: 'walmart.ca', siteId: null, url: 'u', title, brand, gtin: null,
+    price: { amount: 9.99, currency: 'CAD' }, categoryHint: null, imageUrl: null, massKg: null,
+    extraction: { tier: 'jsonld', confidence: 'high' },
+  });
+
+  const canadian = await resolveProduct({ product: onPage('Green Beaver Natural Deodorant Stick 50 g', 'The Green Beaver Company'), browserCheck: true }, deps);
+  check('stops on a Canadian brand', canadian.abstentionReason === 'already_canadian' && canadian.candidates.length === 0,
+    `${canadian.abstentionReason} / ${canadian.candidates.length}`);
+  check('and never asks the AI', canadian.browserSearch === null && canadian.diagnostics.aiCandidates === 0);
+
+  const foreign = await resolveProduct({ product: onPage('Dove Men+Care Antiperspirant Stick 76 g', 'Dove'), browserCheck: true }, deps);
+  check('still suggests for a foreign brand', foreign.abstentionReason !== 'already_canadian' && foreign.candidates.length > 0,
+    `${foreign.abstentionReason} / ${foreign.candidates.length}`);
+
+  const unknownBrand = await resolveProduct({ product: onPage('Some Brand Maple Syrup 500 ml', 'Some Unheard Of Brand'), browserCheck: true }, deps);
+  check('an unknown brand is not treated as Canadian', unknownBrand.abstentionReason !== 'already_canadian');
 
   console.log(`\n${passed} passed, ${failed} failed\n`);
   process.exit(failed > 0 ? 1 : 0);
