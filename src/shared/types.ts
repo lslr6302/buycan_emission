@@ -237,6 +237,8 @@ export interface ResolveDiagnostics {
   verifiedCandidates: number;
   aiCandidates: number;
   aiCandidatesRejected: number;
+  /** Earlier AI discoveries reused from the AI store instead of asking the model. */
+  aiStoreHits: number;
   rejections: GateRejection[];
   elapsedMs: number;
   dataSource: string;
