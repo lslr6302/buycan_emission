@@ -229,11 +229,17 @@ const STYLES = `
     position: absolute; right: 12px; bottom: 12px;
     width: 36px; height: 28px; border: 0; border-radius: 4px;
     background: ${TAN}; color: ${INK}; cursor: pointer;
-    font: inherit; font-size: 15px; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
   }
-  /* Points down to open, up to close - the direction the card will move. */
-  .chev::before { content: '^'; display: block; transform: translateY(5px) rotate(180deg); }
-  .card.open .chev::before { transform: translateY(2px) rotate(0deg); }
+  /* Points down to open, up to close - the direction the card will move.
+     Half a square, rotated: a real glyph cannot be optically centred in a
+     box this small. */
+  .chev::before {
+    content: ''; width: 8px; height: 8px;
+    border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+    transform: translateY(-2px) rotate(45deg);
+  }
+  .card.open .chev::before { transform: translateY(2px) rotate(225deg); }
   .card .rest { padding-right: 46px; }
 
   a { color: ${INK}; text-decoration: underline; text-underline-offset: 2px; }
@@ -462,16 +468,16 @@ function candidateCard(candidate: Candidate, originalPrice: number | null): stri
 
   return `<div class="card">
     <div class="card-top">
-      <div class="card-title">${escapeHtml(candidate.title)}${
+      <div class="card-title"><a href="${escapeHtml(
+        candidate.url,
+      )}" target="_blank" rel="noopener">${escapeHtml(candidate.title)}</a>${
         price ? ` <span class="price">${price}${delta}</span>` : ''
       }</div>
       <div class="badge"><span class="dot ${dotClass}"></span>${badge}</div>
     </div>
     <div class="rest">
       <div class="row bullet">
-        <a href="${escapeHtml(candidate.url)}" target="_blank" rel="noopener">${escapeHtml(
-          candidate.retailer,
-        )}</a>${linkNote}<span class="more"> ... more</span>
+        ${escapeHtml(candidate.retailer)}${linkNote}<span class="more"> ... more</span>
       </div>
       ${source}
       <div class="label">comments</div>
