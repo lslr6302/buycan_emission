@@ -26,6 +26,12 @@ export interface Repository {
    */
   findBrand(rawBrand: string): Promise<BrandRecord | null>;
 
+  /**
+   * Optional. A brand known only by product-line rows ("Gay Lea Butter"),
+   * matched when the rest of the row's name is in the product title.
+   */
+  findBrandByProductLine?(rawBrand: string, title: string): Promise<BrandRecord | null>;
+
   findBrandsByKeys(keys: string[]): Promise<BrandRecord[]>;
 
   /**

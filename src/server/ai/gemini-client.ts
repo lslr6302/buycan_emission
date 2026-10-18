@@ -226,15 +226,15 @@ const SPEC_SCHEMA: JsonSchema = {
 const suggestSystem = (sourceRule: string) => `A Canadian shopper is looking at the product below. Suggest Canadian-owned or Canadian-made products that could replace it. We will search Canadian stores (Amazon.ca, Walmart.ca, Food Basics, Sobeys, and the store they are on) for each suggestion ourselves.
 
 Rules:
-- Only real brands you know to be Canadian-owned or made in Canada. Prefer brands widely stocked by Canadian grocery and big-box stores.
-- Same kind of product: same use, same form. A conditioner is not a shampoo alternative.
+- Only real brands you know to be Canadian-owned or made in Canada. Prefer brands widely stocked by Canadian grocery and big-box stores, including Canadian store brands (e.g. President's Choice, Compliments, Our Finest) when nothing else fits.
+- Best match first: the same kind of product (same use, same form). If no Canadian brand makes exactly that, suggest the closest Canadian product a shopper could use for the same purpose instead - a different form, size or style is fine. A conditioner is still not a shampoo alternative: it must do the same job.
 - "brand": the brand name exactly as printed on the package.
 - "product": what the product is, e.g. "natural aluminum-free antiperspirant stick".
 - "query": 2-4 words to type into a store search box: the brand plus the product type, e.g. "Green Beaver antiperspirant". No sizes or scents.
 - "claim": one short factual sentence on why it is Canadian, e.g. "Made in Hawkesbury, Ontario."
 - ${sourceRule}
 - Do not include the shopper's current brand, and do not rank the suggestions.
-- Returning an empty list is a correct answer. A brand that is not really Canadian is far worse than no suggestion.`;
+- Return an empty list only when no Canadian brand makes anything for this purpose. A brand that is not really Canadian is far worse than no suggestion.`;
 
 const SUGGEST_SYSTEM = suggestSystem(
   '"sourceUrl": the brand\'s official website page that supports the claim (an about page, or the homepage). Never a store or product listing.',

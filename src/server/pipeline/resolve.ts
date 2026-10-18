@@ -69,6 +69,7 @@ export async function resolveProduct(
   let aiCandidatesSeen = 0;
   let aiError: string | null = null;
   let browserSearch: ResolveResponse['browserSearch'] = null;
+  let aiAsked = false;
 
   // 1. Spec. Cached by stable key, so this runs once per product ever.
   const spec = await loadSpec(key, product, repo, ai);
@@ -205,6 +206,7 @@ export async function resolveProduct(
   //    stores (and usually the shopper's own) block servers, so the actual
   //    store search runs in the extension, which gets the leads back here.
   if (candidates.length === 0 && !request.verifiedOnly) {
+    aiAsked = true;
     const sites = allowedSitesFor(product.site);
     // A failed call is not "nothing found" - remember it, or a quota error
     // reaches the shopper as "no Canadian alternative exists".
@@ -239,7 +241,7 @@ export async function resolveProduct(
     abstained,
     abstentionReason,
     abstentionMessage: abstained
-      ? abstentionMessage(abstentionReason!, product, provenance) + stubNote(ai.name, aiCandidatesSeen)
+      ? abstentionMessage(abstentionReason!, product, provenance, aiAsked) + stubNote(ai.name, aiCandidatesSeen)
       : null,
     diagnostics: {
       extractionTier: product.extraction.tier,
@@ -286,6 +288,16 @@ async function linkBrand(
   for (const candidate of brandCandidatesFromTitle(product.title)) {
     const found = await repo.findBrand(candidate);
     if (found) return { brand: found, brandName: found.displayName };
+  }
+
+  // Last: a brand the dataset knows only by product line ("Gay Lea Butter"),
+  // when this page is that product line.
+  if (repo.findBrandByProductLine) {
+    const guesses = [product.brand, ...brandCandidatesFromTitle(product.title)].filter((g): g is string => !!g);
+    for (const guess of guesses) {
+      const found = await repo.findBrandByProductLine(guess, product.title);
+      if (found) return { brand: found, brandName: found.displayName };
+    }
   }
 
   return { brand: null, brandName: product.brand };
@@ -652,7 +664,10 @@ function pickAbstentionReason(
 ): AbstentionReason {
   if (aiError) return 'ai_unavailable';
   if (aiLeads > 0) {
-    return rejections.length >= aiLeads ? 'all_candidates_failed_validation' : 'not_in_allowed_stores';
+    // Only rejections of the AI's own suggestions count here, not sanity
+    // vetoes of database matches made earlier in the same lookup.
+    const leadRejections = rejections.filter((r) => r.url.startsWith('lead:')).length;
+    return leadRejections >= aiLeads ? 'all_candidates_failed_validation' : 'not_in_allowed_stores';
   }
   if (!spec) return 'insufficient_product_data';
   return 'no_canadian_alternative';
@@ -667,10 +682,19 @@ function abstentionMessage(
   reason: AbstentionReason,
   product: ProductRef,
   provenance: ProvenanceVerdict,
+  /** True when the AI was asked for alternatives and named none. */
+  aiAsked = false,
 ): string {
   const brand = provenance.displayName;
   switch (reason) {
     case 'no_canadian_alternative':
+      if (aiAsked) {
+        return (
+          `Nothing in our database matched, and the AI could not name any Canadian-made or ` +
+          `Canadian-owned product for this purpose, not even a close one. For some categories ` +
+          `(much of electronics, for example) none exists, and we would rather say so than invent one.`
+        );
+      }
       return (
         `No Canadian alternative found for this ${product.categoryHint ?? 'product'}. ` +
         `That is a real answer, not a loading state - for some categories no Canadian ` +

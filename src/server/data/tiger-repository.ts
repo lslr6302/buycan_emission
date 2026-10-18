@@ -1,4 +1,4 @@
-import { normalizeBrand } from '../../shared/normalize';
+import { normalizeBrand, titleTokens } from '../../shared/normalize';
 import { requiredNouns } from '../pipeline/storefront';
 import { clamp01 } from '../../shared/normalize';
 import type { BrandRecord, Confidence, ProductSpec, Sourced } from '../../shared/types';
@@ -188,6 +188,40 @@ export class TigerRepository implements Repository {
     if (fuzzyForeign.rows[0]) return this.foreignBrandRecord(fuzzyForeign.rows[0]);
 
     return null;
+  }
+
+  /**
+   * A brand recorded only under its product lines. The team added rows like
+   * "Gay Lea Butter" and "Gay Lea Whipped Cream" but no plain "Gay Lea", so
+   * the page's "Gay Lea" misses findBrand entirely. A row named
+   * "<brand> <words>" counts only when every one of those words is in the
+   * product title - the page IS that product line. Matching on the brand
+   * alone read "Kraft" as Canadian through a "Kraft Real Mayo" row.
+   *
+   * Only rows with evidence or team entries; never bare stubs.
+   */
+  async findBrandByProductLine(rawBrand: string, title: string): Promise<BrandRecord | null> {
+    const name = rawBrand.trim();
+    if (name.length < 3) return null;
+    const { rows } = await this.sql.query(
+      `select b.*, o.owner_name, o.owner_country, o.note as owner_note,
+              o.source_url as owner_source, o.team_confirmed
+         from brands b
+         left join ownership_overrides o on o.brand_slug = b.slug
+        where lower(b.name) like $1 escape '\\'
+          and (cardinality(b.status_tags) > 0 or b.slug like 'team-%')
+        order by length(b.name) desc
+        limit 25`,
+      [`${escapeLike(name.toLowerCase())} %`],
+    );
+    const titleWords = titleTokens(title);
+    const brandWords = new Set(titleTokens(name));
+    // Longest first, so "Gay Lea Real Whipped Cream" beats "Gay Lea Whipped Cream" when both fit.
+    const row = rows.find((r) => {
+      const rest = [...titleTokens(String(r['name'] ?? ''))].filter((w) => !brandWords.has(w));
+      return rest.length > 0 && rest.every((w) => titleWords.has(w));
+    });
+    return row ? { ...this.canadianBrandRecord(row), displayName: name } : null;
   }
 
   async findBrandsByKeys(keys: string[]): Promise<BrandRecord[]> {
@@ -675,3 +709,8 @@ function safeParse(text: string): unknown {
 }
 
 export { normalizeBrand };
+
+/** Escapes LIKE wildcards so a brand name is matched literally. */
+function escapeLike(value: string): string {
+  return value.replace(/[\\%_]/g, (c) => `\\${c}`);
+}
