@@ -128,9 +128,12 @@ const STYLES = `
      The scallop is a repeating radial rather than eight ellipses - same
      silhouette, one paint, no extra assets to make web-accessible. */
   .head {
-    position: relative;
+    /* Above the body: the cards are positioned too (for the chevron), so
+       without this they paint over the scalloped edge as they scroll up
+       under the band. */
+    position: relative; z-index: 1;
     display: flex; align-items: center; gap: 8px;
-    min-height: 82px; padding: 12px 34px 14px 94px;
+    min-height: 82px; padding: 10px 34px 10px 12px;
     cursor: pointer;
     background:
       radial-gradient(circle 4.5px at 4.5px 4.5px, ${MINT_DOT} 98%, transparent 100%)
@@ -144,9 +147,10 @@ const STYLES = `
       0 0 / 36px 36px repeat-x;
   }
   .mascot {
-    /* Kept wholly inside the band: the panel clips its own overflow, so a
-       loon that pokes out above or to the left loses that part of itself. */
-    position: absolute; left: 9px; bottom: -3px;
+    /* In the flow, not absolutely positioned. The panel clips its own
+       overflow, so a loon that hangs outside the band loses whatever hangs
+       out; as a flex item it sizes the band instead and cannot be cut. */
+    flex: none;
     width: 78px; height: 78px;
     background: url("${assetUrl('assets/quack.png')}") center / contain no-repeat;
     /* Faces right on the canvas, left in the design. */

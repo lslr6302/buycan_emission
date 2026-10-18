@@ -39,7 +39,8 @@
         background: var(--bg); color: var(--fg);
       }
       header {
-        position: relative; min-height: 82px; padding: 12px 40px 20px 94px;
+        position: relative; z-index: 1; min-height: 82px; padding: 10px 14px 20px 12px;
+        display: flex; align-items: center; gap: 10px;
         background:
           radial-gradient(circle 4.5px at 4.5px 4.5px, var(--mint-dot) 98%, transparent 100%)
             0 0 / 27px 27px repeat,
@@ -52,12 +53,14 @@
         background: radial-gradient(circle 18px at 50% 0, var(--mint) 98%, transparent 100%)
           0 0 / 36px 36px repeat-x;
       }
+      .head-text { flex: 1; min-width: 0; }
       h1 {
         font-size: 17px; margin: 0; display: flex; align-items: center; gap: 7px;
         text-transform: uppercase; letter-spacing: .01em; color: var(--coral);
       }
+      /* A flex item, so the band always grows to fit it. */
       .mascot {
-        position: absolute; left: 9px; bottom: 8px;
+        flex: none;
         width: 78px; height: 78px;
         background: url("../assets/quack.png") center / contain no-repeat;
         transform: scaleX(-1);
@@ -129,11 +132,13 @@
   <body>
     <header>
       <span class="mascot"></span>
-      <h1>
-        Canadian Alternatives
-        <button id="detach" type="button" title="Open in a tab so it stays open">↗</button>
-      </h1>
-      <div class="sub" id="status">Reading page…</div>
+      <div class="head-text">
+        <h1>
+          Canadian Alternatives
+          <button id="detach" type="button" title="Open in a tab so it stays open">↗</button>
+        </h1>
+        <div class="sub" id="status">Reading page…</div>
+      </div>
     </header>
 
     <section id="result"></section>
