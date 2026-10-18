@@ -4,78 +4,133 @@
     <meta charset="utf-8" />
     <title>Canadian Alternatives</title>
     <style>
-      :root { color-scheme: light dark; --bg:#fff; --fg:#18181b; --dim:#71717a; --line:#e4e4e7; --card:#fafafa; }
-      @media (prefers-color-scheme: dark) {
-        :root { --bg:#18181b; --fg:#f4f4f5; --dim:#a1a1aa; --line:#3f3f46; --card:#27272a; }
+      /* Same palette and typeface as the injected overlay, so the toolbar
+         panel and the on-page panel read as one product. Both files hold
+         their own copy: the overlay's styles live in a shadow root and
+         cannot be shared with an extension page. */
+      @font-face {
+        font-family: Grandstander;
+        src: url("../assets/fonts/grandstander-latin.woff2") format("woff2");
+        font-weight: 100 900;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: Grandstander;
+        src: url("../assets/fonts/grandstander-latin-ext.woff2") format("woff2");
+        font-weight: 100 900;
+        font-display: swap;
+        unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+          U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F,
+          U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F,
+          U+A720-A7FF;
+      }
+      :root {
+        /* Warm and light by intent; dark mode is deliberately not offered. */
+        color-scheme: light;
+        --bg: #fffdf4; --fg: #5f4d31; --dim: rgba(95,77,49,.6);
+        --line: #d3b991; --card: #f4e7d3;
+        --mint: #cee9df; --mint-dot: #dff4eb; --coral: #f4836e;
       }
       * { box-sizing: border-box; }
       body {
-        width: 360px; margin: 0; padding: 0;
-        font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        width: 400px; margin: 0; padding: 0;
+        font: 13px/1.45 Grandstander, "Trebuchet MS", -apple-system,
+              BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         background: var(--bg); color: var(--fg);
       }
-      header { padding: 12px 14px 10px; border-bottom: 1px solid var(--line); }
-      h1 { font-size: 14px; margin: 0; display: flex; align-items: center; gap: 7px; }
-      h1 button#detach {
-        margin-left: auto; border: 1px solid var(--line); background: var(--card);
-        color: var(--dim); border-radius: 5px; cursor: pointer;
-        font: inherit; font-size: 12px; line-height: 1; padding: 3px 7px;
+      header {
+        position: relative; min-height: 82px; padding: 12px 40px 20px 94px;
+        background:
+          radial-gradient(circle 4.5px at 4.5px 4.5px, var(--mint-dot) 98%, transparent 100%)
+            0 0 / 27px 27px repeat,
+          var(--mint);
       }
-      h1 button#detach:hover { color: var(--fg); border-color: var(--dim); }
+      /* Scalloped lower edge, drawn into the header's own bottom padding. */
+      header::after {
+        content: ''; position: absolute; left: 0; right: 0; bottom: -13px;
+        height: 14px; pointer-events: none;
+        background: radial-gradient(circle 18px at 50% 0, var(--mint) 98%, transparent 100%)
+          0 0 / 36px 36px repeat-x;
+      }
+      h1 {
+        font-size: 17px; margin: 0; display: flex; align-items: center; gap: 7px;
+        text-transform: uppercase; letter-spacing: .01em; color: var(--coral);
+      }
+      .mascot {
+        position: absolute; left: 9px; bottom: 8px;
+        width: 78px; height: 78px;
+        background: url("../assets/quack.png") center / contain no-repeat;
+        transform: scaleX(-1);
+      }
+      h1 button#detach {
+        margin-left: auto; border: 0; background: var(--card);
+        color: var(--fg); border-radius: 5px; cursor: pointer;
+        font: inherit; font-size: 12px; line-height: 1; padding: 4px 8px;
+      }
+      h1 button#detach:hover { background: var(--line); }
       body.detached button#detach { display: none; }
-      .sub { color: var(--dim); font-size: 11.5px; margin-top: 3px; }
-      section { padding: 12px 14px; border-bottom: 1px solid var(--line); }
+      .sub { color: var(--fg); font-size: 11.5px; margin-top: 4px; opacity: .8; }
+      section { padding: 12px 14px; border-bottom: 2px dashed var(--line); }
       h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .05em;
            color: var(--dim); margin: 0 0 8px; font-weight: 600; }
       .row { display: flex; align-items: center; gap: 9px; margin-bottom: 8px; }
       .row label { width: 92px; font-size: 11.5px; flex-shrink: 0; }
-      .row input[type=range] { flex: 1; min-width: 0; }
+      /* Drawn by hand: the UA track follows the host window's theme, so on a
+         dark desktop it paints near-black through the cream panel. */
+      .row input[type=range] {
+        flex: 1; min-width: 0; height: 16px;
+        -webkit-appearance: none; appearance: none; background: transparent;
+      }
+      .row input[type=range]::-webkit-slider-runnable-track {
+        height: 6px; border-radius: 999px; background: var(--card);
+      }
+      .row input[type=range]::-webkit-slider-thumb {
+        -webkit-appearance: none; appearance: none;
+        width: 16px; height: 16px; margin-top: -5px;
+        border-radius: 50%; background: var(--coral); cursor: pointer;
+      }
       .row output { width: 30px; text-align: right; font-variant-numeric: tabular-nums;
                     font-size: 11.5px; color: var(--dim); }
-      .card { background: var(--card); border: 1px solid var(--line);
-              border-radius: 7px; padding: 9px 10px; margin-bottom: 7px; }
-      .card-title { font-weight: 600; font-size: 12.5px; }
+      .card { background: var(--card); border: 0;
+              border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
+      .card-title { font-weight: 600; font-size: 13px; }
       .muted { color: var(--dim); font-size: 11.5px; }
-      .abstain { background: var(--card); border-left: 3px solid #6b7280;
-                 padding: 10px 11px; border-radius: 0 6px 6px 0; font-size: 12px; }
-      a { color: #1d4ed8; }
-      @media (prefers-color-scheme: dark) { a { color: #93c5fd; } }
+      .abstain { background: var(--card); border-left: 4px solid var(--line);
+                 padding: 10px 11px; border-radius: 0 8px 8px 0; font-size: 12px; }
+      a { color: var(--fg); text-decoration: underline; text-underline-offset: 2px; }
+      a:hover { color: var(--coral); }
       input[type=text], select {
-        width: 100%; padding: 5px 7px; font: inherit; font-size: 12px;
-        border: 1px solid var(--line); border-radius: 5px;
-        background: var(--bg); color: var(--fg);
+        width: 100%; padding: 6px 8px; font: inherit; font-size: 12px;
+        border: 2px solid var(--line); border-radius: 6px;
+        background: #fff; color: var(--fg);
       }
       .check { display: flex; align-items: center; gap: 7px; font-size: 11.5px; margin-top: 7px; }
+      .check input { accent-color: var(--coral); }
       .field { margin-bottom: 9px; }
       .field > span { display: block; font-size: 11px; color: var(--dim); margin-bottom: 3px; }
-      footer { padding: 9px 14px; font-size: 10.5px; color: var(--dim); }
-      button#undismiss {
-        width: 100%; padding: 6px 8px; font: inherit; font-size: 11.5px;
-        border: 1px solid var(--line); border-radius: 5px; cursor: pointer;
-        background: var(--bg); color: var(--fg);
-      }
-      button#undismiss:hover:enabled { border-color: var(--dim); }
-      button#undismiss:disabled { opacity: .6; cursor: default; }
-      button#reset {
-        margin-top: 10px; width: 100%; padding: 6px 8px; font: inherit; font-size: 11.5px;
-        border: 1px solid var(--line); border-radius: 5px; cursor: pointer;
+      footer { padding: 10px 14px; font-size: 10.5px; color: var(--dim); }
+      button#undismiss, button#reset {
+        width: 100%; padding: 7px 8px; font: inherit; font-size: 11.5px;
+        border: 0; border-radius: 6px; cursor: pointer;
         background: var(--card); color: var(--fg);
       }
-      button#reset:hover { border-color: var(--dim); }
+      button#reset { margin-top: 10px; }
+      button#undismiss:hover:enabled, button#reset:hover { background: var(--line); }
+      button#undismiss:disabled { opacity: .6; cursor: default; }
       table.diag { width: 100%; border-collapse: collapse; font-size: 11.5px; }
-      table.diag td { padding: 2px 0; vertical-align: top; }
+      table.diag td { padding: 3px 0; vertical-align: top; }
       table.diag td:first-child { color: var(--dim); width: 86px; }
       table.diag td:last-child { word-break: break-word; font-variant-numeric: tabular-nums; }
-      .err { color: #b91c1c; font-size: 11.5px; line-height: 1.4; }
-      @media (prefers-color-scheme: dark) { .err { color: #fca5a5; } }
+      .err { color: #b4553f; font-size: 11.5px; line-height: 1.4; }
       .err strong { display: block; margin-bottom: 2px; }
       code { font-size: 11px; background: var(--card); padding: 1px 4px; border-radius: 3px; }
     </style>
   </head>
   <body>
     <header>
+      <span class="mascot"></span>
       <h1>
-        <span>🍁</span> Canadian Alternatives
+        Canadian Alternatives
         <button id="detach" type="button" title="Open in a tab so it stays open">↗</button>
       </h1>
       <div class="sub" id="status">Reading page…</div>

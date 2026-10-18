@@ -18,85 +18,245 @@ import type { Candidate, CartAnalysis, ResolveResponse, Sourced } from '../share
 
 const HOST_ID = 'buycan-overlay-host';
 
+/**
+ * The loon lives in the extension bundle, not in the stylesheet. A 2048px
+ * PNG as a data: URI would be blocked by img-src on half the storefronts we
+ * run on; an extension-origin URL injected by a content script is exempt
+ * from the page's CSP, which is the whole reason this is a background-image
+ * on an element rather than an inline <img>.
+ */
+function assetUrl(path: string): string {
+  try {
+    return chrome.runtime.getURL(path);
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Grandstander, bundled with the extension so the panel reads the same on a
+ * machine that has never heard of it and on a storefront whose CSP blocks
+ * fonts.googleapis.com.
+ *
+ * It is registered through the FontFace API rather than an @font-face rule in
+ * the panel's stylesheet, because @font-face inside a shadow root is ignored:
+ * fonts resolve against the document's font set, so that is where it has to
+ * be added. Loading is fire-and-forget - the fallback stack below is what
+ * renders until it arrives, and what stays if it never does.
+ */
+const FONT_FACES: Array<{ file: string; unicodeRange: string }> = [
+  {
+    file: 'assets/fonts/grandstander-latin.woff2',
+    unicodeRange:
+      'U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, ' +
+      'U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, ' +
+      'U+2212, U+2215, U+FEFF, U+FFFD',
+  },
+  {
+    // Accented brand names are common on Canadian storefronts; without this
+    // subset "Liberté" falls back mid-word, which looks like a bug.
+    file: 'assets/fonts/grandstander-latin-ext.woff2',
+    unicodeRange:
+      'U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, ' +
+      'U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, ' +
+      'U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF',
+  },
+];
+
+let fontRequested = false;
+
+function ensureFont(): void {
+  if (fontRequested) return;
+  fontRequested = true;
+  try {
+    if (typeof FontFace !== 'function' || !document.fonts) return;
+    for (const { file, unicodeRange } of FONT_FACES) {
+      const url = assetUrl(file);
+      if (!url) return;
+      const face = new FontFace('Grandstander', `url("${url}") format("woff2")`, {
+        weight: '100 900',
+        style: 'normal',
+        display: 'swap',
+        unicodeRange,
+      });
+      face
+        .load()
+        .then((loaded) => document.fonts.add(loaded))
+        .catch(() => {
+          /* page CSP or a missing file; the fallback stack covers it */
+        });
+    }
+  } catch {
+    /* same */
+  }
+}
+
+/* Palette, straight from the design file. Named rather than repeated so a
+   retouch is one line each. */
+const CREAM = '#fffdf4';
+const MINT = '#cee9df';
+const MINT_DOT = '#dff4eb';
+const SAND = '#f4e7d3';
+const TAN = '#d3b991';
+const INK = '#5f4d31';
+const CORAL = '#f4836e';
+const GREEN = '#96de53';
+const AMBER = '#ffe46a';
+
 const STYLES = `
   /* The host carries its own inline reset; resetting it again here would
      clobber the fixed positioning. Only normalize what is inside. */
   * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* Grandstander ships with the extension (see ensureFont); the rest of the
+     stack is what renders while it loads, and what stays if a strict
+     font-src refuses it. */
   .panel {
-    font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    width: 340px; max-width: calc(100vw - 32px);
-    background: #fff; color: #18181b;
-    border: 1px solid #e4e4e7; border-radius: 10px;
-    box-shadow: 0 8px 28px rgba(0,0,0,.14);
+    font: 13px/1.45 Grandstander, "Comic Sans MS", "Trebuchet MS",
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    width: 400px; max-width: calc(100vw - 32px);
+    background: ${CREAM}; color: ${INK};
+    border-radius: 10px;
+    box-shadow: 0 8px 28px rgba(0,0,0,.18);
     overflow: hidden;
+    /* The design is warm and light by intent. Opting out of dark mode keeps
+       the cream and sand from being inverted into mud by the host page. */
+    color-scheme: light;
   }
-  @media (prefers-color-scheme: dark) {
-    .panel { background: #18181b; color: #f4f4f5; border-color: #3f3f46; }
-    .sub { color: #a1a1aa !important; }
-    .card { background: #27272a !important; border-color: #3f3f46 !important; }
-    .foot { background: #27272a !important; border-color: #3f3f46 !important; color: #a1a1aa !important; }
-    .dim { color: #a1a1aa !important; }
-  }
+
+  /* Header: mint band, polka dots, scalloped lower edge, loon on the left.
+     The scallop is a repeating radial rather than eight ellipses - same
+     silhouette, one paint, no extra assets to make web-accessible. */
   .head {
+    position: relative;
     display: flex; align-items: center; gap: 8px;
-    padding: 10px 12px; cursor: pointer;
-    border-bottom: 1px solid transparent;
+    min-height: 82px; padding: 12px 34px 14px 94px;
+    cursor: pointer;
+    background:
+      radial-gradient(circle 4.5px at 4.5px 4.5px, ${MINT_DOT} 98%, transparent 100%)
+        0 0 / 27px 27px repeat,
+      ${MINT};
   }
-  .panel.open .head { border-bottom-color: #e4e4e7; }
-  @media (prefers-color-scheme: dark) { .panel.open .head { border-bottom-color: #3f3f46; } }
-  .leaf { font-size: 15px; line-height: 1; }
+  .head::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: -13px;
+    height: 14px; pointer-events: none;
+    background: radial-gradient(circle 18px at 50% 0, ${MINT} 98%, transparent 100%)
+      0 0 / 36px 36px repeat-x;
+  }
+  .mascot {
+    /* Kept wholly inside the band: the panel clips its own overflow, so a
+       loon that pokes out above or to the left loses that part of itself. */
+    position: absolute; left: 9px; bottom: -3px;
+    width: 78px; height: 78px;
+    background: url("${assetUrl('assets/quack.png')}") center / contain no-repeat;
+    /* Faces right on the canvas, left in the design. */
+    transform: scaleX(-1);
+    pointer-events: none;
+  }
   .head-text { flex: 1; min-width: 0; }
-  .title { font-weight: 600; font-size: 13px; }
-  .sub { color: #71717a; font-size: 11.5px; margin-top: 1px; }
+  .title {
+    font-weight: 700; font-size: 17px; line-height: 1.08;
+    letter-spacing: .01em; text-transform: uppercase; color: ${CORAL};
+  }
+  .sub { color: ${INK}; font-size: 11.5px; margin-top: 3px; opacity: .8; }
   .x {
-    border: 0; background: none; cursor: pointer; color: inherit;
-    opacity: .5; font-size: 15px; padding: 0 2px; line-height: 1;
+    position: absolute; top: 8px; right: 10px;
+    border: 0; background: none; cursor: pointer; color: ${INK};
+    font-size: 20px; line-height: 1; padding: 0 2px; opacity: .65;
   }
   .x:hover { opacity: 1; }
-  .body { display: none; padding: 10px 12px 12px; max-height: 60vh; overflow-y: auto; }
+
+  /* Body. The mint rule down the left is a background stripe so it scrolls
+     with the cards instead of floating over them. */
+  .body {
+    display: none; padding: 24px 12px 14px 30px; max-height: 60vh; overflow-y: auto;
+    /* Longhands, not the shorthand: the position/size pair is easy to lose
+       in a gradient layer, and the rule then degrades to a full-bleed mint
+       panel. */
+    background-image: linear-gradient(${MINT}, ${MINT});
+    background-repeat: no-repeat;
+    /* Measured from the border edge, not the padding edge, or the rule
+       lands under the cards and disappears. */
+    background-origin: border-box;
+    background-position: 10px 0;
+    background-size: 6px 100%;
+  }
   .panel.open .body { display: block; }
+
   .verdict { font-size: 12px; margin-bottom: 10px; }
   .dims { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0; }
   .chip {
-    font-size: 10.5px; padding: 2px 6px; border-radius: 999px;
+    font-size: 10.5px; padding: 2px 7px; border-radius: 999px;
     border: 1px solid currentColor; white-space: nowrap;
   }
-  .yes { color: #15803d; } .no { color: #b91c1c; } .unk { color: #71717a; }
+  .yes { color: #3f7d26; } .no { color: #b4553f; } .unk { color: rgba(95,77,49,.55); }
+
+  /* Cards. Sand block, dashed tan rules between rows, chevron bottom-right. */
   .card {
-    border: 1px solid #e4e4e7; border-radius: 8px;
-    padding: 9px 10px; margin-bottom: 7px; background: #fafafa;
+    position: relative;
+    background: ${SAND}; border-radius: 8px;
+    padding: 10px 12px 12px; margin-bottom: 10px;
   }
-  .card-top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
-  .card-title { font-weight: 600; font-size: 12.5px; }
-  .price { font-variant-numeric: tabular-nums; white-space: nowrap; font-size: 12.5px; }
-  .why { font-size: 11.5px; margin-top: 4px; }
-  .dim { color: #71717a; }
-  .tag {
-    display: inline-block; font-size: 9.5px; text-transform: uppercase;
-    letter-spacing: .04em; padding: 1px 5px; border-radius: 3px;
-    margin-right: 5px; font-weight: 600;
+  .card-top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+  .card-title { font-weight: 600; font-size: 14px; }
+  .card-title .price { font-weight: 400; }
+  .badge { font-size: 12px; white-space: nowrap; display: flex; align-items: center; gap: 6px; }
+  .dot { width: 9px; height: 9px; border-radius: 7px; display: inline-block; flex: none; }
+  .dot-green { background: ${GREEN}; }
+  .dot-amber { background: ${AMBER}; }
+  .row {
+    font-size: 12px; padding: 7px 2px 7px 0;
+    border-top: 2px dashed ${TAN};
+    display: flex; align-items: center; gap: 7px;
   }
-  .tag-verified { background: #dcfce7; color: #166534; }
-  .tag-ai { background: #fef3c7; color: #92400e; }
-  .tag-swap { background: #e0e7ff; color: #3730a3; }
-  a { color: #1d4ed8; text-decoration: none; }
-  @media (prefers-color-scheme: dark) { a { color: #93c5fd; } }
-  a:hover { text-decoration: underline; }
+  .row:first-child { margin-top: 8px; }
+  .row.bullet::before { content: '·'; padding: 0 4px 0 8px; opacity: .7; }
+  .label {
+    font-size: 12px; padding-top: 8px; border-top: 2px dashed ${TAN};
+    margin-top: 2px; opacity: .85;
+  }
+  .price { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .why { font-size: 12px; margin-top: 4px; }
+  .dim { color: rgba(95,77,49,.55); }
+
+  /* Collapsed card shows its first line and says so; the chevron is the
+     only affordance, exactly as drawn. */
+  .card:not(.open) .rest .row:not(:first-child),
+  .card:not(.open) .rest .label { display: none; }
+  .card.open .more { display: none; }
+  .more { font-size: 12px; color: rgba(95,77,49,.5); }
+  .chev {
+    position: absolute; right: 12px; bottom: 12px;
+    width: 36px; height: 28px; border: 0; border-radius: 4px;
+    background: ${TAN}; color: ${INK}; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  /* Points down to open, up to close - the direction the card will move.
+     Half a square, rotated: a real glyph cannot be optically centred in a
+     box this small. */
+  .chev::before {
+    content: ''; width: 8px; height: 8px;
+    border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+    transform: translateY(-2px) rotate(45deg);
+  }
+  .card.open .chev::before { transform: translateY(2px) rotate(225deg); }
+  .card .rest { padding-right: 46px; }
+
+  a { color: ${INK}; text-decoration: underline; text-underline-offset: 2px; }
+  a:hover { color: ${CORAL}; }
+
   .foot {
-    font-size: 10.5px; color: #71717a; padding: 8px 12px;
-    border-top: 1px solid #e4e4e7; background: #fafafa;
+    font-size: 10.5px; color: rgba(95,77,49,.6); padding: 9px 12px 10px 30px;
+    border-top: 2px dashed ${TAN};
   }
-  .cart-line { display: flex; justify-content: space-between; gap: 8px; font-size: 11.5px; padding: 3px 0; }
-  /* Already-Canadian confirmation. A quiet green edge, not a celebration
-     banner - the point is reassurance, not a reward for shopping. */
-  .panel.success { border-color: #86efac; }
-  .panel.success .head { background: #f0fdf4; }
-  .panel.success .title { color: #15803d; }
-  @media (prefers-color-scheme: dark) {
-    .panel.success { border-color: #166534; }
-    .panel.success .head { background: #0f2a18; }
-    .panel.success .title { color: #86efac; }
+  .cart-line {
+    font-size: 12px; padding: 7px 0; border-top: 2px dashed ${TAN};
+    display: flex; justify-content: space-between; gap: 8px;
   }
+
+  /* Already-Canadian confirmation. The headline turns green instead of
+     coral - reassurance, not a reward for shopping. */
+  .panel.success .title { color: #3f7d26; }
 `;
 
 function escapeHtml(value: string): string {
@@ -132,6 +292,7 @@ function remove(): void {
 
 function mount(): ShadowRoot {
   remove();
+  ensureFont();
   const host = document.createElement('div');
   host.id = HOST_ID;
 
@@ -150,7 +311,7 @@ function mount(): ShadowRoot {
     // fixed-position host sized only by its shadow content measured 0x0 in
     // practice - present in the DOM, correctly positioned, and invisible.
     // Sizing the host directly removes the dependency entirely.
-    'width: 340px',
+    'width: 400px',
     'max-width: calc(100vw - 32px)',
     'height: auto',
     'margin: 0',
@@ -235,9 +396,20 @@ function verifyMounted(host: HTMLElement, usedAdoptedSheet: boolean): void {
 
 function wire(shadow: ShadowRoot): void {
   const panel = shadow.querySelector('.panel');
+  // The top suggestion is the one we are most confident in; it opens with
+  // the panel so an expanded panel is never a wall of collapsed titles.
+  shadow.querySelector('.card')?.classList.add('open');
   shadow.querySelector('.head')?.addEventListener('click', (event) => {
     if ((event.target as HTMLElement).classList.contains('x')) return;
     panel?.classList.toggle('open');
+  });
+  // One delegated listener: cards are re-rendered wholesale, so binding per
+  // card would leak handlers on every refresh.
+  shadow.addEventListener('click', (event) => {
+    const chev = (event.target as HTMLElement).closest?.('.chev');
+    if (!chev) return;
+    event.stopPropagation();
+    chev.closest('.card')?.classList.toggle('open');
   });
   shadow.querySelector('.x')?.addEventListener('click', (event) => {
     event.stopPropagation();
@@ -264,12 +436,14 @@ function dimensionChips(verdict: ResolveResponse['provenance']): string {
 }
 
 function candidateCard(candidate: Candidate, originalPrice: number | null): string {
-  const tag =
+  // Green dot for a record we verified, amber for an AI match we could only
+  // corroborate in part. The wording stays as blunt as the colour.
+  const [dotClass, badge] =
     candidate.matchType === 'retailer_swap'
-      ? '<span class="tag tag-swap">same product</span>'
+      ? ['dot-green', 'same product']
       : candidate.origin === 'ai'
-        ? '<span class="tag tag-ai">AI-found, verified</span>'
-        : '<span class="tag tag-verified">verified</span>';
+        ? ['dot-amber', 'ai matched']
+        : ['dot-green', 'verified'];
 
   const price = candidate.priceCad === null ? '' : `$${candidate.priceCad.toFixed(2)}`;
   const delta =
@@ -280,29 +454,37 @@ function candidateCard(candidate: Candidate, originalPrice: number | null): stri
       : '';
 
   const checked = candidate.priceChecked
-    ? `<span class="dim"> · price checked ${escapeHtml(candidate.priceChecked)}</span>`
-    : '<span class="dim"> · price unverified</span>';
+    ? `price checked ${escapeHtml(candidate.priceChecked)}`
+    : 'price unverified';
 
   // Say plainly when the link only reaches a homepage. Implying it is a
   // product page is the small dishonesty that costs trust in the rest.
   const linkNote =
-    candidate.linkKind === 'brand'
-      ? '<span class="dim"> · brand site, find the product there</span>'
-      : '';
+    candidate.linkKind === 'brand' ? ' <span class="dim">· brand site</span>' : '';
 
   const source = candidate.sourceUrl
-    ? ` · <a href="${escapeHtml(candidate.sourceUrl)}" target="_blank" rel="noopener">source</a>`
+    ? `<div class="row bullet"><a href="${escapeHtml(candidate.sourceUrl)}" target="_blank" rel="noopener">source</a></div>`
     : '';
 
   return `<div class="card">
     <div class="card-top">
-      <div class="card-title">
-        <a href="${escapeHtml(candidate.url)}" target="_blank" rel="noopener">${escapeHtml(candidate.title)}</a>
-      </div>
-      <div class="price">${price}${delta}</div>
+      <div class="card-title"><a href="${escapeHtml(
+        candidate.url,
+      )}" target="_blank" rel="noopener">${escapeHtml(candidate.title)}</a>${
+        price ? ` <span class="price">${price}${delta}</span>` : ''
+      }</div>
+      <div class="badge"><span class="dot ${dotClass}"></span>${badge}</div>
     </div>
-    <div class="why">${tag}${escapeHtml(candidate.rationale)}</div>
-    <div class="why dim">${escapeHtml(candidate.retailer)}${checked}${linkNote}${source}</div>
+    <div class="rest">
+      <div class="row bullet">
+        ${escapeHtml(candidate.retailer)}${linkNote}<span class="more"> ... more</span>
+      </div>
+      ${source}
+      <div class="label">comments</div>
+      <div class="row"><span class="dot ${dotClass}"></span>${escapeHtml(candidate.rationale)}</div>
+      <div class="row"><span class="dot dot-amber"></span>${checked}</div>
+    </div>
+    <button class="chev" type="button" aria-label="Show more"></button>
   </div>`;
 }
 
@@ -334,7 +516,7 @@ export function renderAlreadyCanadian(result: ResolveResponse): void {
   container.innerHTML = `
     <div class="panel open success">
       <div class="head">
-        <span class="leaf">🍁</span>
+        <span class="mascot"></span>
         <div class="head-text">
           <div class="title">${listedOnly ? 'Listed as Canadian' : 'This one is Canadian'}</div>
           <div class="sub">${escapeHtml(p.displayName)} · ${escapeHtml(madeNote)}</div>
@@ -383,7 +565,7 @@ function renderCanadianRetailer(result: ResolveResponse): void {
   container.innerHTML = `
     <div class="panel open success">
       <div class="head">
-        <span class="leaf">🍁</span>
+        <span class="mascot"></span>
         <div class="head-text">
           <div class="title">You are on a Canadian shop</div>
           <div class="sub">${escapeHtml(site.name)}</div>
@@ -432,10 +614,9 @@ export function renderProduct(result: ResolveResponse, expanded: boolean): void 
   container.innerHTML = `
     <div class="panel${expanded ? ' open' : ''}">
       <div class="head">
-        <span class="leaf">🍁</span>
+        <span class="mascot"></span>
         <div class="head-text">
           <div class="title">${count} Canadian alternative${count === 1 ? '' : 's'}</div>
-          <div class="sub">${escapeHtml(result.provenance.summary)}</div>
         </div>
         <button class="x" title="Hide for this page">×</button>
       </div>
@@ -443,6 +624,7 @@ export function renderProduct(result: ResolveResponse, expanded: boolean): void 
         <div class="verdict">
           <strong>${escapeHtml(result.provenance.displayName)}</strong>
           ${dimensionChips(result.provenance)}
+          <div class="why dim">${escapeHtml(result.provenance.summary)}</div>
         </div>
         ${result.candidates.map((c) => candidateCard(c, originalPrice)).join('')}
       </div>
@@ -473,7 +655,7 @@ export function renderSearch(result: ResolveResponse, query: string): void {
   container.innerHTML = `
     <div class="panel open">
       <div class="head">
-        <span class="leaf">🍁</span>
+        <span class="mascot"></span>
         <div class="head-text">
           <div class="title">${count} Canadian option${count === 1 ? '' : 's'} for "${escapeHtml(
             query.slice(0, 40),
@@ -519,7 +701,7 @@ export function renderCart(analysis: CartAnalysis): void {
   container.innerHTML = `
     <div class="panel open">
       <div class="head">
-        <span class="leaf">🍁</span>
+        <span class="mascot"></span>
         <div class="head-text">
           <div class="title">${money(analysis.leavesCanadaCad)} of ${money(analysis.totalCad)} leaves Canada</div>
           <div class="sub">${analysis.swapCount} swap${analysis.swapCount === 1 ? '' : 's'} available</div>

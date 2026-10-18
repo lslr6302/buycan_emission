@@ -3,9 +3,11 @@
   "name": "Canadian Alternatives",
   "version": "0.1.0",
   "description": "Shows who really owns a brand and whether a verified Canadian alternative exists. Says \"unknown\" when it does not know.",
-
-  "permissions": ["storage", "offscreen", "scripting"],
-
+  "permissions": [
+    "storage",
+    "offscreen",
+    "scripting"
+  ],
   "host_permissions": [
     "http://localhost:8787/*",
     "*://*.amazon.ca/*",
@@ -18,16 +20,16 @@
     "*://*.simons.ca/*",
     "*://*.leevalley.com/*"
   ],
-
-  "optional_host_permissions": ["*://*/*"],
-
-  "background": { "service_worker": "background.js" },
-
+  "optional_host_permissions": [
+    "*://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "action": {
     "default_popup": "popup/popup.html",
     "default_title": "Canadian Alternatives"
   },
-
   "content_scripts": [
     {
       "matches": [
@@ -41,15 +43,22 @@
         "*://*.simons.ca/*",
         "*://*.leevalley.com/*"
       ],
-      "js": ["content.js"],
+      "js": [
+        "content.js"
+      ],
       "run_at": "document_idle"
     }
   ],
-
   "web_accessible_resources": [
     {
-      "resources": ["demo-cart.json"],
-      "matches": ["*://*/*"]
+      "resources": [
+        "demo-cart.json",
+        "assets/*",
+        "assets/fonts/*"
+      ],
+      "matches": [
+        "*://*/*"
+      ]
     }
   ]
 }

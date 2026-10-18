@@ -8,7 +8,7 @@
  * Load it: chrome://extensions -> Developer mode -> Load unpacked -> dist/extension
  */
 import { build, context } from 'esbuild';
-import { copyFileSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { copyFileSync, cpSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -46,6 +46,12 @@ function copyStatic() {
 
   const demo = join(SRC, 'demo-cart.json');
   if (existsSafe(demo)) copyFileSync(demo, join(OUT, 'demo-cart.json'));
+
+  // Overlay artwork. Referenced through chrome.runtime.getURL, so it also
+  // has to be listed in web_accessible_resources or the page gets a 404.
+  // Recursive: assets/fonts/ has to come along too.
+  const assets = join(SRC, 'assets');
+  if (existsSafe(assets)) cpSync(assets, join(OUT, 'assets'), { recursive: true });
 }
 
 function existsSafe(path) {

@@ -43,7 +43,17 @@ function log(...args: unknown[]): void {
  * usual cause is the service worker having failed to start, which produces
  * "Could not establish connection. Receiving end does not exist."
  */
+/**
+ * Set once the extension is reloaded, updated or disabled underneath a page
+ * that is already running this script. Chrome tears the context away but
+ * leaves the script running, so every later call throws "Extension context
+ * invalidated" forever. It is not a bug in the page and there is nothing to
+ * retry: the fix is a refresh, so say that once and go quiet.
+ */
+let contextInvalidated = false;
+
 async function send(message: Message): Promise<Response> {
+  if (contextInvalidated) return { ok: false, error: 'extension reloaded; refresh the page' };
   try {
     const response = (await chrome.runtime.sendMessage(message)) as Response | undefined;
     if (!response) {
@@ -52,6 +62,12 @@ async function send(message: Message): Promise<Response> {
     return response;
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
+    if (detail.includes('Extension context invalidated')) {
+      contextInvalidated = true;
+      removeOverlay();
+      log('the extension was reloaded; refresh this page to bring the panel back');
+      return { ok: false, error: 'extension reloaded; refresh the page' };
+    }
     console.warn('[buycan] could not reach the service worker:', detail);
     return { ok: false, error: `service worker unreachable: ${detail}` };
   }
